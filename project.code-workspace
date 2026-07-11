@@ -3,5 +3,10 @@
 		{
 			"path": "."
 		}
-	]
+	],
+	"extensions": {
+		"recommendations": [
+			"marimo-team.vscode-marimo"
+		]
+	}
 }
