@@ -52,7 +52,7 @@ GitHub Actions runs two workflows (see `.github/workflows/`):
   - spell-checks the text in every notebook under `notebooks/` with [`codespell`](https://github.com/codespell-project/codespell)
   - confirms every notebook executes cleanly via `marimo export html`
 - **`autofix-typos.yml`** — on every PR into `main` (from a branch in this repo, not a fork), runs `codespell -w` on `notebooks/` and pushes a `Fix typos (autofix)` commit back to the PR branch if it finds anything to fix, so `ci.yml`'s spelling check turns green without manual effort.
-- **`publish.yml`** — on push to `main` (i.e. after a merge), re-runs the tests, exports each notebook in `notebooks/` to a standalone HTML file (`dist/<notebook_name>.html`) via `scripts/export_notebooks.py`, and publishes the `dist/` directory to the `gh-pages` branch under `dist/` using [`peaceiris/actions-gh-pages`](https://github.com/peaceiris/actions-gh-pages).
+- **`publish.yml`** — on push to `main` (i.e. after a merge), re-runs the tests, exports each notebook in `notebooks/` to a standalone HTML file (`docs/notebooks/<notebook_name>.html`) via `scripts/export_notebooks.py`, and publishes that directory to the `gh-pages` branch under `docs/notebooks/` using [`peaceiris/actions-gh-pages`](https://github.com/peaceiris/actions-gh-pages) — matching this repo's GitHub Pages source (`gh-pages` branch, `/docs` folder), so the exported notebooks show up at `https://egsy-intell.github.io/team-project/notebooks/<notebook_name>.html`.
 
 To reproduce the export locally:
 
