@@ -100,7 +100,7 @@ def _(mo):
 
     No unusual computing resources are expected to be required.
 
-    Privacy
+    #### Privacy
     USGS anonymized the sampling locations to protect participant privacy. The project will retain the anonymized identifiers and will not attempt to infer exact home addresses or private-well locations.
     """)
     return
