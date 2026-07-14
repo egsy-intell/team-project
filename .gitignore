@@ -12,3 +12,6 @@ wheels/
 # marimo
 __marimo__/
 marimo/session/
+
+# generated notebook exports (published to gh-pages, not committed on main)
+docs/notebooks/

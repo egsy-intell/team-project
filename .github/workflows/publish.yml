@@ -29,10 +29,10 @@ jobs:
       - name: Export notebooks to HTML
         run: uv run python scripts/export_notebooks.py
 
-      - name: Publish dist/ to gh-pages branch
+      - name: Publish docs/notebooks/ to gh-pages branch
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist
-          destination_dir: dist
+          publish_dir: ./docs/notebooks
+          destination_dir: docs/notebooks
           publish_branch: gh-pages
