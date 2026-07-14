@@ -86,9 +86,9 @@ def _(mo):
     EPA?
 
     ### Data source
-    Data Source 1: USGS Tap-Water PFAS Concentration Data
-    Data Source 2: USGS PFAS Reconnaissance Landscape Data
-    Data Source 3: EPA UCMR 5 PFAS Results
+    * Data Source 1: USGS Tap-Water PFAS Concentration Data
+    * Data Source 2: USGS PFAS Reconnaissance Landscape Data
+    * Data Source 3: EPA UCMR 5 PFAS Results
 
     ### Data availability and ethical considerations
     The two primary USGS datasets are publicly available government data releases. The landscape release is marked CC0, and the concentration data are publicly accessible without licensing fees. The datasets do not require access to restricted health, financial, educational, or personally identifiable information.
