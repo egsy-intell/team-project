@@ -71,14 +71,14 @@ def _(mo):
 
     ### Constraints
     The project will not:
-    Make causal claims about individual PFAS sources
-    Determine regulatory compliance
-    replace laboratory sampling
-    Estimate the exact PFAS exposure of individual residents
-    Publish or attempt to reconstruct exact residential locations
-    Use repeated temporal samples as independent observations
-    Use quality-assurance samples as model observations
-    Use previously generated PFAS predictions as predictor variables
+    * Make causal claims about individual PFAS sources
+    * Determine regulatory compliance
+    * replace laboratory sampling
+    * Estimate the exact PFAS exposure of individual residents
+    * Publish or attempt to reconstruct exact residential locations
+    * Use repeated temporal samples as independent observations
+    * Use quality-assurance samples as model observations
+    * Use previously generated PFAS predictions as predictor variables
 
 
     ## Step two: Data source identification
