@@ -7,3 +7,12 @@ requires-python = ">=3.14"
 dependencies = [
     "marimo>=0.23.14",
 ]
+
+[dependency-groups]
+dev = [
+    "codespell>=2.4.1",
+    "pytest>=8.3.5",
+]
+
+[tool.codespell]
+skip = ".git,*.lock,.venv"
