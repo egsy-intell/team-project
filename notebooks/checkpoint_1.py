@@ -54,10 +54,10 @@ def _(mo):
     The proposed model is intended to function as a screening and sampling-prioritization tool. It will not replace laboratory testing and will not be used to declare a drinking-water source safe, unsafe, compliant, or noncompliant.
 
     Potential users could include:
-    Environmental and public-health agencies
-    Water-resource managers
-    Researchers planning PFAS sampling programs
-    Community organizations identifying locations where testing resources may be most useful
+    * Environmental and public-health agencies
+    * Water-resource managers
+    * Researchers planning PFAS sampling programs
+    * Community organizations identifying locations where testing resources may be most useful
 
     ### Application feasibility of the model
     The project is feasible because EPA(US Environmental Protection Agency) and USGS(US Geological Survey) provides resources and data such as masured PFAS concentration data and landscape summaries for sites included in its national PFAS tap-water reconnaissance.The 2021–2022 USGS concentration release contains results for 34 PFAS compounds from 409 residential and commercial tap-water samples.
