@@ -40,7 +40,7 @@ def _(mo):
     3. **Data-driven decision making:** Predicting PFAS levels from traceable, highly correlated geographic and
        land-use features would let water system operators prioritize remediation efforts efficiently.
 
-    ### Application feasability of the model
+    ### Application feasibility of the model
 
     ### Scope and Constraints
 
@@ -64,7 +64,7 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ### Data suitability and project feasability
+    ### Data suitability and project feasibility
 
     ## Proposed task assignments
 
