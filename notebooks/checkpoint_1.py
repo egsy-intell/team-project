@@ -1,13 +1,15 @@
 import marimo
 
-__generated_with = "0.23.9"
+__generated_with = "0.23.14"
 app = marimo.App(width="medium")
+
 
 @app.cell
 def _():
     import marimo as mo
 
     return (mo,)
+
 
 @app.cell
 def _(mo):
@@ -31,9 +33,9 @@ def _(mo):
 
     A provisional classification approach is:
 
-    Low: No PFAS compounds detected above the applicable laboratory reporting limits.
-    Medium: At least one PFAS detected, with cumulative concentration at or below the median concentration among detected samples.
-    High: At least one PFAS detected, with cumulative concentration above the median concentration among detected samples.
+    * Low: No PFAS compounds detected above the applicable laboratory reporting limits.
+    * Medium: At least one PFAS detected, with cumulative concentration at or below the median concentration among detected samples.
+    * High: At least one PFAS detected, with cumulative concentration above the median concentration among detected samples.
 
     The cutoff between medium and high will be established using the model-development data and frozen before final evaluation.
 
@@ -48,6 +50,10 @@ def _(mo):
        land-use features would let water system operators prioritize remediation efforts efficiently.
 
     #### Intended Application
+<<<<<<< HEAD
+=======
+
+>>>>>>> 701aa104b747ed5ea01c96d72c0ee4ce504b173c
     The proposed model is intended to function as a screening and sampling-prioritization tool. It will not replace laboratory testing and will not be used to declare a drinking-water source safe, unsafe, compliant, or noncompliant.
 
     Potential users could include:
@@ -55,6 +61,12 @@ def _(mo):
     * Water-resource managers
     * Researchers planning PFAS sampling programs
     * Community organizations identifying locations where testing resources may be most useful
+<<<<<<< HEAD
+=======
+
+    ### Application feasibility of the model
+    The project is feasible because EPA(US Environmental Protection Agency) and USGS(US Geological Survey) provides resources and data such as masured PFAS concentration data and landscape summaries for sites included in its national PFAS tap-water reconnaissance.The 2021–2022 USGS concentration release contains results for 34 PFAS compounds from 409 residential and commercial tap-water samples.
+>>>>>>> 701aa104b747ed5ea01c96d72c0ee4ce504b173c
 
     ### Scope
     * Publicly supplied and privately sourced drinking water
@@ -64,6 +76,10 @@ def _(mo):
     * Classification of cumulative PFAS concentration into three categories
 
     ### Constraints
+<<<<<<< HEAD
+=======
+    The project will not:
+>>>>>>> 701aa104b747ed5ea01c96d72c0ee4ce504b173c
     * Make causal claims about individual PFAS sources
     * Determine regulatory compliance
     * replace laboratory sampling
@@ -72,6 +88,7 @@ def _(mo):
     * Use repeated temporal samples as independent observations
     * Use quality-assurance samples as model observations
     * Use previously generated PFAS predictions as predictor variables
+<<<<<<< HEAD
           
     ### Data source
     Data Source 1: USGS Tap-Water PFAS Concentration Data
@@ -100,13 +117,33 @@ def _(mo):
     #### Privacy
    
           
+=======
+
+
+    ## Step two: Data source identification
+    USGS?
+    EPA?
+
+    ### Data source
+    * Data Source 1: USGS Tap-Water PFAS Concentration Data
+    * Data Source 2: USGS PFAS Reconnaissance Landscape Data
+    * Data Source 3: EPA UCMR 5 PFAS Results
+
+>>>>>>> 701aa104b747ed5ea01c96d72c0ee4ce504b173c
     ### Data availability and ethical considerations
     The two primary USGS datasets are publicly available government data releases. The landscape release is marked CC0, and the concentration data are publicly accessible without licensing fees. 
     The datasets do not require access to restricted health, financial, educational, or personally identifiable information.
     The data can be downloaded and analyzed using standard Python libraries.
 
+<<<<<<< HEAD
     USGS anonymized the sampling locations to protect participant privacy. The project will retain the anonymized identifiers and will not attempt to infer exact home addresses or private-well 
     locations.
+=======
+    No unusual computing resources are expected to be required.
+
+    #### Privacy
+    USGS anonymized the sampling locations to protect participant privacy. The project will retain the anonymized identifiers and will not attempt to infer exact home addresses or private-well locations.
+>>>>>>> 701aa104b747ed5ea01c96d72c0ee4ce504b173c
     """)
     return
 
