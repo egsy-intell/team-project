@@ -33,9 +33,9 @@ def _(mo):
 
     A provisional classification approach is:
 
-    Low: No PFAS compounds detected above the applicable laboratory reporting limits.
-    Medium: At least one PFAS detected, with cumulative concentration at or below the median concentration among detected samples.
-    High: At least one PFAS detected, with cumulative concentration above the median concentration among detected samples.
+    * Low: No PFAS compounds detected above the applicable laboratory reporting limits.
+    * Medium: At least one PFAS detected, with cumulative concentration at or below the median concentration among detected samples.
+    * High: At least one PFAS detected, with cumulative concentration above the median concentration among detected samples.
 
     The cutoff between medium and high will be established using the model-development data and frozen before final evaluation.
 
