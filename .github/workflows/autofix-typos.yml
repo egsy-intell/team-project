@@ -1,0 +1,38 @@
+name: Autofix typos
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  autofix:
+    name: Autofix notebook typos
+    runs-on: ubuntu-latest
+    # git-auto-commit-action needs push access to the PR branch, which the
+    # default GITHUB_TOKEN doesn't have for PRs coming from forks.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+      - name: Check out PR branch
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.3.2
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --all-groups
+
+      - name: Fix typos
+        run: uv run codespell -w notebooks/
+
+      - name: Commit fixes
+        uses: stefanzweifel/git-auto-commit-action@v7
+        with:
+          commit_message: "Fix typos (autofix)"
+          file_pattern: "notebooks/*.py"

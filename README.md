@@ -51,10 +51,17 @@ GitHub Actions runs two workflows (see `.github/workflows/`):
 - **`ci.yml`** — on every push/PR to `main`, installs dependencies with `uv` and runs `pytest tests/`, which:
   - spell-checks the text in every notebook under `notebooks/` with [`codespell`](https://github.com/codespell-project/codespell)
   - confirms every notebook executes cleanly via `marimo export html`
+- **`autofix-typos.yml`** — on every PR into `main` (from a branch in this repo, not a fork), runs `codespell -w` on `notebooks/` and pushes a `Fix typos (autofix)` commit back to the PR branch if it finds anything to fix, so `ci.yml`'s spelling check turns green without manual effort.
 - **`publish.yml`** — on push to `main` (i.e. after a merge), re-runs the tests, exports each notebook in `notebooks/` to a standalone HTML file (`dist/<notebook_name>.html`) via `scripts/export_notebooks.py`, and publishes the `dist/` directory to the `gh-pages` branch under `dist/` using [`peaceiris/actions-gh-pages`](https://github.com/peaceiris/actions-gh-pages).
 
 To reproduce the export locally:
 
 ```bash
 uv run python scripts/export_notebooks.py
+```
+
+To fix typos locally instead of waiting on CI (e.g. when working from a fork):
+
+```bash
+uv run codespell -w notebooks/
 ```
