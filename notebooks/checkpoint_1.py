@@ -49,7 +49,7 @@ def _(mo):
     3. **Data-driven decision making:** Predicting PFAS levels from traceable, highly correlated geographic and
        land-use features would let water system operators prioritize remediation efforts efficiently.
 
-    Intended Application
+    #### Intended Application
 
     The proposed model is intended to function as a screening and sampling-prioritization tool. It will not replace laboratory testing and will not be used to declare a drinking-water source safe, unsafe, compliant, or noncompliant.
 
