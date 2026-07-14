@@ -61,12 +61,12 @@ def _(mo):
     * Water-resource managers
     * Researchers planning PFAS sampling programs
     * Community organizations identifying locations where testing resources may be most useful
-<<<<<<< HEAD
-=======
+    <<<<<<< HEAD
+    =======
 
     ### Application feasibility of the model
     The project is feasible because EPA(US Environmental Protection Agency) and USGS(US Geological Survey) provides resources and data such as masured PFAS concentration data and landscape summaries for sites included in its national PFAS tap-water reconnaissance.The 2021–2022 USGS concentration release contains results for 34 PFAS compounds from 409 residential and commercial tap-water samples.
->>>>>>> 701aa104b747ed5ea01c96d72c0ee4ce504b173c
+    >>>>>>> 701aa104b747ed5ea01c96d72c0ee4ce504b173c
 
     ### Scope
     * Publicly supplied and privately sourced drinking water
@@ -76,10 +76,10 @@ def _(mo):
     * Classification of cumulative PFAS concentration into three categories
 
     ### Constraints
-<<<<<<< HEAD
-=======
+    <<<<<<< HEAD
+    =======
     The project will not:
->>>>>>> 701aa104b747ed5ea01c96d72c0ee4ce504b173c
+    >>>>>>> 701aa104b747ed5ea01c96d72c0ee4ce504b173c
     * Make causal claims about individual PFAS sources
     * Determine regulatory compliance
     * replace laboratory sampling
@@ -100,7 +100,7 @@ def _(mo):
     * Whether results were below the laboratory reporting limit
 
     Data Source 2: USGS PFAS Reconnaissance Landscape Data
-   It supplies most of the project’s independent variables or predictors, including indicators related to:
+       It supplies most of the project’s independent variables or predictors, including indicators related to:
     * Nearby potential PFAS-related facilities
     * Industrial or commercial activity
     * Urban and developed land
@@ -112,12 +112,12 @@ def _(mo):
 
 
     Data Source 3: EPA UCMR 5 PFAS Results
-    
+
           -TBD
     #### Privacy
-   
-          
-=======
+
+
+    =======
 
 
     ## Step two: Data source identification
@@ -129,21 +129,21 @@ def _(mo):
     * Data Source 2: USGS PFAS Reconnaissance Landscape Data
     * Data Source 3: EPA UCMR 5 PFAS Results
 
->>>>>>> 701aa104b747ed5ea01c96d72c0ee4ce504b173c
+    >>>>>>> 701aa104b747ed5ea01c96d72c0ee4ce504b173c
     ### Data availability and ethical considerations
     The two primary USGS datasets are publicly available government data releases. The landscape release is marked CC0, and the concentration data are publicly accessible without licensing fees.
     The datasets do not require access to restricted health, financial, educational, or personally identifiable information.
     The data can be downloaded and analyzed using standard Python libraries.
 
-<<<<<<< HEAD
-    USGS anonymized the sampling locations to protect participant privacy. The project will retain the anonymized identifiers and will not attempt to infer exact home addresses or private-well 
+    <<<<<<< HEAD
+    USGS anonymized the sampling locations to protect participant privacy. The project will retain the anonymized identifiers and will not attempt to infer exact home addresses or private-well
     locations.
-=======
+    =======
     No unusual computing resources are expected to be required.
 
     #### Privacy
     USGS anonymized the sampling locations to protect participant privacy. The project will retain the anonymized identifiers and will not attempt to infer exact home addresses or private-well locations.
->>>>>>> 701aa104b747ed5ea01c96d72c0ee4ce504b173c
+    >>>>>>> 701aa104b747ed5ea01c96d72c0ee4ce504b173c
     """)
     return
 
