@@ -43,3 +43,18 @@ Marimo notebooks are just Python files — no hidden state, no `.ipynb` JSON.
 - **Keyboard shortcuts**: `Ctrl/Cmd+Enter` runs a cell, `Ctrl/Cmd+Shift+Enter` runs all cells.
 
 Docs: https://docs.marimo.io
+
+# CI/CD
+
+GitHub Actions runs two workflows (see `.github/workflows/`):
+
+- **`ci.yml`** — on every push/PR to `main`, installs dependencies with `uv` and runs `pytest tests/`, which:
+  - spell-checks the text in every notebook under `notebooks/` with [`codespell`](https://github.com/codespell-project/codespell)
+  - confirms every notebook executes cleanly via `marimo export html`
+- **`publish.yml`** — on push to `main` (i.e. after a merge), re-runs the tests, exports each notebook in `notebooks/` to a standalone HTML file (`dist/<notebook_name>.html`) via `scripts/export_notebooks.py`, and publishes the `dist/` directory to the `gh-pages` branch under `dist/` using [`peaceiris/actions-gh-pages`](https://github.com/peaceiris/actions-gh-pages).
+
+To reproduce the export locally:
+
+```bash
+uv run python scripts/export_notebooks.py
+```
