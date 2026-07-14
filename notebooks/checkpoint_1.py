@@ -63,11 +63,11 @@ def _(mo):
     The project is feasible because EPA(US Environmental Protection Agency) and USGS(US Geological Survey) provides resources and data such as masured PFAS concentration data and landscape summaries for sites included in its national PFAS tap-water reconnaissance.The 2021–2022 USGS concentration release contains results for 34 PFAS compounds from 409 residential and commercial tap-water samples.
 
     ### Scope
-    Publicly supplied and privately sourced drinking water
-    PFAS concentration results from the national reconnaissance dataset
-    Landscape and potential-source indicators calculated by USGS
-    One observation per unique sampling location
-    Classification of cumulative PFAS concentration into three categories
+    * Publicly supplied and privately sourced drinking water
+    * PFAS concentration results from the national reconnaissance dataset
+    * Landscape and potential-source indicators calculated by USGS
+    * One observation per unique sampling location
+    * Classification of cumulative PFAS concentration into three categories
 
     ### Constraints
     The project will not:
