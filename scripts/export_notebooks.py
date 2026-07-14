@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Export every marimo notebook under notebooks/ to a standalone HTML file in dist/."""
+"""Export every marimo notebook under notebooks/ to a standalone HTML file in docs/notebooks/."""
 
 import pathlib
 import subprocess
@@ -7,11 +7,11 @@ import sys
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent
 NOTEBOOKS_DIR = REPO_ROOT / "notebooks"
-DIST_DIR = REPO_ROOT / "dist"
+OUTPUT_DIR = REPO_ROOT / "docs" / "notebooks"
 
 
 def main() -> int:
-    DIST_DIR.mkdir(parents=True, exist_ok=True)
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
     notebooks = sorted(NOTEBOOKS_DIR.glob("*.py"))
     if not notebooks:
@@ -19,7 +19,7 @@ def main() -> int:
         return 1
 
     for notebook in notebooks:
-        output = DIST_DIR / f"{notebook.stem}.html"
+        output = OUTPUT_DIR / f"{notebook.stem}.html"
         print(f"Exporting {notebook.relative_to(REPO_ROOT)} -> {output.relative_to(REPO_ROOT)}")
         result = subprocess.run(
             [
