@@ -56,7 +56,7 @@ def _(mo):
     * Community organizations identifying locations where testing resources may be most useful
 
     ### Application feasibility of the model
-    The project is feasible because EPA(US Environmental Protection Agency) and USGS(US Geological Survey) provides resources and data such as masured PFAS concentration data and landscape summaries for sites included in its national PFAS tap-water reconnaissance.The 2021–2022 USGS concentration release contains results for 34 PFAS compounds from 409 residential and commercial tap-water samples.
+    The project is feasible because EPA(US Environmental Protection Agency) and USGS(US Geological Survey) provides resources and data such as measured PFAS concentration data and landscape summaries for sites included in its national PFAS tap-water reconnaissance.The 2021–2022 USGS concentration release contains results for 34 PFAS compounds from 409 residential and commercial tap-water samples.
 
     ### Scope
     * Publicly supplied and privately sourced drinking water
