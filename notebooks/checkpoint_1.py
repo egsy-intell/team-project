@@ -26,10 +26,8 @@ def _(mo):
 
     ### Problem statement
     Per- and polyfluoroalkyl substances, commonly known as PFAS, are persistent environmental contaminants that may enter drinking-water sources through industrial activities, waste disposal, firefighting foam use, urban development, and other landscape-level sources.
-    This project aims to develop a predictive model for the occurrence of Per- and polyfluoroalkyl substances (PFAS) in
-    drinking water, using USGS summary data on potential landscape sources (Seawolf et al., 2023). The question we aim
-    to answer is: Can we predict low, medium, and high levels of PFAS concentration in U.S. drinking water sources based
-    on key geographic and land-use indicators?
+    This project aims to develop a predictive model for the occurrence of Per- and polyfluoroalkyl substances (PFAS) in drinking water, using USGS summary data on potential landscape sources (Seawolf et al., 2023). EPA Fifth Unregulated Contaminant Monitoring Rule, or UCMR 5, results will be used as a supplementary national dataset to compare PFAS occurrence patterns and assess whether findings from the USGS data are consistent with monitoring results from public water systems.
+    The question we aim to answer is: Can we predict low, medium, and high levels of PFAS concentration in U.S. drinking water sources based on key geographic and land-use indicators?
 
     A provisional classification approach is:
     * Low: No PFAS compounds detected above the applicable laboratory reporting limits.
@@ -79,7 +77,7 @@ def _(mo):
 
     ### Data source
     #### Data Source 1: USGS Tap-Water PFAS Concentration Data
-    It supplies the project’s dependent variable or target variable. For each sampling site, it can show:
+    It supplies the project’s dependent variable or target variable i.e Provides the outcome the model is trying to predict. It will be used to calculate total PFAS concentration at each sampled location and assign the target category: low, medium, or high.For each sampling site, it can show:
     * Which PFAS compounds were detected
     * The measured concentration of each compound
     * The number of PFAS compounds detected
@@ -87,7 +85,7 @@ def _(mo):
     * Whether results were below the laboratory reporting limit
 
     #### Data Source 2: USGS PFAS Reconnaissance Landscape Data
-    It supplies most of the project’s independent variables or predictors, including indicators related to:
+    This dataset provides most of the project’s independent variables, or predictors. It describes the environmental and geographic characteristics surrounding each sampling location that may be associated with PFAS contamination, including:
     * Nearby potential PFAS-related facilities
     * Industrial or commercial activity
     * Urban and developed land
@@ -98,21 +96,23 @@ def _(mo):
     * Other geographic or landscape summaries around the sampling location
 
     #### Data Source 3: EPA UCMR 5 PFAS Results
+    This dataset provides supplementary PFAS monitoring results from public water systems across the United States. It can be used to compare PFAS occurrence and concentration patterns with the USGS findings and to assess whether the model’s results are consistent with a broader national dataset, including indicators related to:
+    * PFAS detection frequency
+    * Concentration levels of individual PFAS compounds
+    * Total or cumulative PFAS concentration
+    * Public water-system characteristics
+    * Differences in PFAS occurrence across water systems
+    * Comparison of results across sampling locations
+    * Broader validation of trends identified in the USGS data
 
 
-    ## Step two: Data source identification
-    USGS?
-    EPA?
-
-    ### Data source
-    * Data Source 1: USGS Tap-Water PFAS Concentration Data
-    * Data Source 2: USGS PFAS Reconnaissance Landscape Data
-    * Data Source 3: EPA UCMR 5 PFAS Results
 
     ### Data availability and ethical considerations
-    The two primary USGS datasets are publicly available government data releases. The landscape release is marked CC0, and the concentration data are publicly accessible without licensing fees.
-    The datasets do not require access to restricted health, financial, educational, or personally identifiable information.
-    The data can be downloaded and analyzed using standard Python libraries.
+    The two primary from USGS datasets are publicly available government data releases. The landscape release is marked CC0, and the concentration data are publicly accessible without licensing fees.The datasets do not require access to restricted health, financial, educational, or personally identifiable information.
+
+    The EPA UCMR 5 PFAS results are also publicly available government data. EPA provides the analytical results through the UCMR 5 Data Finder and downloadable occurrence-data files at no cost.
+
+    The data can be downloaded, filtered, and analyzed using standard tools.
 
     #### Privacy
     USGS anonymized the sampling locations to protect participant privacy. The project will retain the anonymized identifiers and will not attempt to infer exact home addresses or private-well
@@ -139,13 +139,15 @@ def _(mo):
     ## Conclusion
 
     ## References
-    * US Environmental Protection Agency [EPA]. (2016, May 25). Lifetime health advisories and health effects support
+    * U.S. Environmental Protection Agency [EPA]. (2016, May 25). Lifetime health advisories and health effects support
        documents for perfluorooctanoic acid and perfluorooctane sulfonate (No. 101; Vol. 81, pp. 33250–33251).
        https://www.govinfo.gov/content/pkg/FR-2016-05-25/pdf/2016-12361.pdf
     * Seawolf, S. M., Williams, B. M., Gordon, S. E., Romanok, K., Smalling, K., Bradley, P. M., & Morriss, M. C.
       (2023). PFAS Reconnaissance Landscape Data [Dataset]. U.S. Geological Survey. https://doi.org/10.5066/P9JF1EXH
-    * US Environmental Protection Agency. (n.d.). Our current understanding of the human health and
+    * U.S. Environmental Protection Agency. (n.d.). Our current understanding of the human health and
       environmental risks of PFAS. https://www.epa.gov/pfas/our-current-understanding-human-health-and-environmental-risks-pfas
+    * U.S. Environmental Protection Agency. (n.d.). Fifth Unregulated Contaminant Monitoring Rule Data Finder [Data set]. Retrieved July 14, 2026.
+      https://www.epa.gov/dwucmr/fifth-unregulated-contaminant-monitoring-rule-data-finder
 
     ## AI usage appendix
 
