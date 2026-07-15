@@ -66,6 +66,7 @@ def _(mo):
     * Classification of cumulative PFAS concentration into three categories
 
     ### Constraints
+    The model will not...
     * Make causal claims about individual PFAS sources
     * Determine regulatory compliance
     * replace laboratory sampling
