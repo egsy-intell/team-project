@@ -222,9 +222,24 @@ def _(merged_df, mo, smalling_df):
     unmatched_count = unmatched_df.shape[0]
 
     mo.md(f"""
-    The count of unmatched rows is: {unmatched_count}. This means that, out of the merged data set, we are keeping
+    The count of unmatched rows is: `{unmatched_count}`. This means that, out of the merged data set, we are keeping
     {merged_df.shape[0] - unmatched_count} out of the {smalling_df.shape[0]} samples is Smalling's study 
     (`{(merged_df.shape[0] - unmatched_count)/smalling_df.shape[0] * 100:.2f}%`)
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ### Preliminary data explorations
+
+    ```
+    TBD. Suggested plan:
+    1. Integrate @gulshanrajshetty metrics
+    2. Go over literature and try to identify at least 2-3 high-signal predictors
+    3. Do a whisker/box for them and confirm
+    ```
     """)
     return
 
