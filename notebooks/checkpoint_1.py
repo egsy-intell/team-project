@@ -32,11 +32,14 @@ def _(mo):
     disposal, firefighting foam use, urban development, and other landscape-level sources. This
     project aims to develop a predictive model for the occurrence of PFAS in tap water,
     using USGS summary data on potential landscape sources (Seawolf et al., 2023),
-    and reported concentration at the point-of-use (Smalling et al., 2023).
+    and reported concentration at the point-of-use (Smalling et al., 2023). We will also attempt
+    the same modeling for groundwater, based on the data used in a similar exercise by McMahon et
+    al. (2022).
 
     The question we aim to answer is: Can we predict low, medium, and high levels of PFAS
-    concentration in tap water sources across the United States based on key geographic and
-    land-use indicators? In addition, can we triangulate our findings against similar, reputable studies?
+    concentration in tap and groundwater sources across the United States based on key geographic and
+    land-use indicators? In addition, how do our findings compare to those offered by researchers
+    in the domain?
 
     #### Proposed classification
     A provisional classification approach is:
@@ -64,14 +67,14 @@ def _(mo):
        equally uncertain. Predicting PFAS levels from traceable, highly correlated geographic and
        land-use features would let operators focus monitoring and remediation efforts on the sites
        most likely to need it, ahead of whichever compliance window ultimately applies.
-    3. **Private-well coverage gap:** EPA's 2024 rule applies only to public water systems, leaving
-       millions of Americans who rely on private wells outside its enforceable scope. Smalling et
-       al.'s (2023) dataset explicitly compares private-well and public-supply exposures,
-       positioning our model to speak to a population the new federal rule does not cover.
+     3. **Private-well coverage gap:** EPA's 2024 rule applies only to public water systems, leaving
+       millions of Americans who rely on private wells outside its enforceable scope. Our selected
+       datasets explicitly integrate private-well and public-supply exposures, positioning our model
+       to speak to a population the new federal rule does not cover.
 
     #### Intended Application
     The proposed model is intended to function as a screening and sampling-prioritization tool.
-    It will not replace laboratory testing and will not be used to declare a drinking-water
+    It will not replace laboratory testing and will not be used to declare a tap or groundwater
     source safe, unsafe, compliant, or noncompliant.
 
     Potential users could include:
@@ -86,9 +89,10 @@ def _(mo):
     for sites included in its national PFAS tap water reconnaissance.
 
     #### Scope
-    * Publicly supplied and privately sourced drinking water
-    * PFAS concentration results from the national reconnaissance dataset
-    * Landscape and potential-source indicators calculated by USGS
+    * Publicly supplied and privately sourced tap and groundwater
+    * PFAS concentration results from McMahon et al. (2022) and Smalling et al. (2023)
+    * Landscape and potential-source indicators calculated by McMahon et al. (2022)
+      and Seawolf et al. (2023)
     * One independent observation per unique sampling location
     * Classification of cumulative PFAS concentration into three categories
 
@@ -104,8 +108,8 @@ def _(mo):
     * Use previously generated PFAS predictions as predictor variables
 
     ### Data source
-    #### USGS Data Source 1: Per- and polyfluoroalkyl substances (PFAS) in United States tapwater: Comparison of underserved private-well and public-supply exposures and associated health implications (Smalling et al., 2023)
-    It supplies the project’s dependent variable, i.e., the outcome the model is trying to
+    #### USGS Data Source 1: Smalling et al., 2023 (Dependent Variable)
+    It supplies one of the project’s dependent variables, i.e., the outcome the model is trying to
     predict. It will be used to train our model in the categorization of tap water sites based
     on site controls. It includes:
 
@@ -114,9 +118,10 @@ def _(mo):
     * The number of PFAS compounds detected
     * The total or cumulative PFAS concentration
     * Whether results were below the laboratory reporting limit
+    * Type of service point: private v. public
 
-    #### USGS Data Source 2: PFAS Reconnaissance Landscape Data (Seawolf et al., 2023)
-    This dataset provides most of the project’s independent variables, or predictors. It
+    #### USGS Data Source 2: Seawolf et al., 2023 (Predictors)
+    This dataset provides predictors associated with Smalling et al.'s data. It
     describes the environmental and geographic characteristics surrounding each sampling
     location that may be associated with PFAS contamination, including:
 
@@ -129,10 +134,15 @@ def _(mo):
     * Public versus private water source
     * Other geographic or landscape summaries around the sampling location
 
-    #### USGS Data Source 3: Perfluoroalkyl and Polyfluoroalkyl Substances in Groundwater Used as a Source of Drinking Water in the Eastern United States (McMahon et al., 2022)
-    Alternate data set and report on PFAS concentration predictors in groundwater. We will use McMahon et al.'s
-    study as a benchmark when evaluating the quality of our predictors against a rigorous, closely related body
-    of work.
+    #### USGS Data Source 3: McMahon et al., 2022 (Predictors + Dependent Variables)
+    This comprehensive dataset provides environmental and geographic characteristics,
+    as well as PFAS concentrations, associated with various private and public wells
+    drawing from aquifers along the Eastern United States. It includes:
+
+    * Distance to PFAS-associated sites (fire stations and military facilities, for example)
+    * Measured PFAS concentrations for each sampled aquifer
+    * Land use percentages (farmland v. urban, for example)
+    * Type of well: private v. public
 
     ### Data availability and ethical considerations
     The three resources from USGS datasets are publicly available government data releases.
@@ -157,7 +167,9 @@ def _(mo):
     mo.md("""
     ## Step 2: Data exploration and quality assesssment
 
-    Before assessing the validity of our data, we take the following steps:
+    Before assessing the quality of our data, we take the following steps:
+
+    ### Smalling et al. (2023) and Sewolf et. al. (2023) join-ability (`ss_merged_df`)
 
     1. Load Seawolf and Smalling via `pandas`
     2. Clean Smalling: the dataset uses `-` and `nd` for two specific purposes (not analyzed, and non-detected
@@ -200,7 +212,7 @@ def _(mo, pd):
     smalling_clean["∑EAR"] = pd.to_numeric(smalling_clean["∑EAR"], errors="coerce")
 
     # Final step: left merge to preserve unmatched rows
-    merged_df = smalling_clean.merge(
+    ss_merged_df = smalling_clean.merge(
         right=seawolf_df,
         left_on=smalling_clean["Site Code"].str.strip(),
         right_on=seawolf_df["SiteCode"].str.strip(),
@@ -210,13 +222,22 @@ def _(mo, pd):
     )
 
     mo.show_code()
-    return merged_df, smalling_df
+    return smalling_df, ss_merged_df
 
 
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    `merged_df` now contains the resulting data frame.
+    ### McMahon et. al. (2022) join-ability (`m_merged_df`)
+    TBD
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    `ss_merged_df` and `mac_merged_df` now contains all data to be considered in our model design
 
     ### Unmatched rows
     """)
@@ -224,14 +245,14 @@ def _(mo):
 
 
 @app.cell
-def _(merged_df, mo, smalling_df):
-    unmatched_df = merged_df[merged_df["_merge"] == "left_only"]
-    unmatched_count = unmatched_df.shape[0]
+def _(mo, smalling_df, ss_merged_df):
+    ss_unmatched_df = ss_merged_df[ss_merged_df["_merge"] == "left_only"]
+    ss_unmatched_count = ss_unmatched_df.shape[0]
 
     mo.md(f"""
-    The count of unmatched rows is: `{unmatched_count}`. This means that, out of the merged data set, we are keeping
-    {merged_df.shape[0] - unmatched_count} out of the {smalling_df.shape[0]} samples is Smalling's study 
-    (`{(merged_df.shape[0] - unmatched_count)/smalling_df.shape[0] * 100:.2f}%`)
+    The count of unmatched rows for `ss_unmatched_count`: `{ss_unmatched_count}`. This means that, out of the merged data set, we are keeping
+    {ss_merged_df.shape[0] - ss_unmatched_count} out of the {smalling_df.shape[0]} samples is Smalling's study 
+    (`{(ss_merged_df.shape[0] - ss_unmatched_count)/smalling_df.shape[0] * 100:.2f}%`)
     """)
     return
 
