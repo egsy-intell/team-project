@@ -16,7 +16,7 @@ def _():
 @app.cell
 def _(mo):
     mo.md(r"""
-    # Predicting PFAS occurrence risk based on land use and hydrogeologic features
+    # Predicting PFAS occurrence risk based on land use features
 
     ## Team .egsy intelligence (Group #14)
     * Yaisiel (Yai) Torres
@@ -35,8 +35,8 @@ def _(mo):
     (Seawolf et al., 2023), and reported concentration at the point-of-use (Smalling et al., 2023).
 
     The question we aim to answer is: Can we predict low, medium, and high levels of PFAS
-    concentration in tap water sources across the U.S.A. sources based on key geographic and
-    land-use indicators?
+    concentration in tap water sources across the U.S.A. based on key geographic and
+    land-use indicators? In addition, can we triangulate our findings onto similar, reputable studies?
 
     #### Proposed classification
     A provisional classification approach is:
@@ -123,10 +123,8 @@ def _(mo):
     * Other geographic or landscape summaries around the sampling location
 
     #### USGS Data Source 3: Perfluoroalkyl and Polyfluoroalkyl Substances in Groundwater Used as a Source of Drinking Water in the Eastern United States (McMahon et al., 2022)
-    Alternate data set reporting on PFAS concentrations at groundwater level. The team will use
-    the data at the validation phase to see if the training is also applicable to groundwater
-    sources and their associated landscapes. We will also compare our predictor findings against
-    the McMahon et al. study (2022), and integrate into our model analysis.
+    Alternate data set and report on PFAS concentration predictors in groundwater. We will use McMahon et al.'s study
+    while we analyze the quality of our predictors when compared to such rigorous and related area of study.
 
     ### Data availability and ethical considerations
     The the three resources from USGS datasets are publicly available government data releases.
