@@ -9,8 +9,9 @@ def _():
     import marimo as mo
 
     import pandas as pd
+    import numpy as np
 
-    return mo, pd
+    return mo, np, pd
 
 
 @app.cell
@@ -169,7 +170,7 @@ def _(mo):
 
     Before assessing the quality of our data, we take the following steps:
 
-    ### Smalling et al. (2023) and Sewolf et. al. (2023) join-ability (`ss_merged_df`)
+    ### Smalling et al. (2023) and Sewolf et. al. (2023) load and join-ability (`ss_merged_df`)
 
     1. Load Seawolf and Smalling via `pandas`
     2. Clean Smalling: the dataset uses `-` and `nd` for two specific purposes (not analyzed, and non-detected
@@ -222,15 +223,54 @@ def _(mo, pd):
     )
 
     mo.show_code()
-    return smalling_df, ss_merged_df
+    return data_dir, smalling_df, ss_merged_df
 
 
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ### McMahon et. al. (2022) join-ability (`m_merged_df`)
-    TBD
+    ### McMahon et. al. (2022) load and join-ability (`m_merged_df`)
+
+    In this case, we perform similar operations
+
+    1. Load McMahon via `pandas`
+    2. Load McMahon data dictionary
+    3. Clean up concentration values based on remarks
+       1. `<`: Non-detect. Get the mean of ceiling value (`VA/2`)
+       2. `n`: Estimation. Flag as estimated
+    4. Merge: using a left join to capture any unmatched records
     """)
+    return
+
+
+@app.cell
+def _(data_dir, mo, np, pd):
+    mcmahon_dict_df = pd.read_csv(data_dir / "mcmahon" / "PFAS_Data_Dictionary.csv", encoding="latin1")
+    mcmahon_env_df= pd.read_csv(data_dir / "mcmahon" / "PFAS_ENV.csv")
+
+    # Data quirk: All values are labeled with <<compound>>-VA
+    # except for `"PFBS-V"`. This is a correction
+    mcmahon_env_df = mcmahon_env_df.rename(columns={"PFBS-V": "PFBS-VA"})
+
+    is_pfas_env = mcmahon_dict_df["TABLE"] == "PFAS_ENV"
+    is_compound = mcmahon_dict_df["DEFINITION"].str.contains(r"nanograms per liter", regex=True, na=False)
+
+    pfas_codes = mcmahon_dict_df.loc[is_pfas_env & is_compound, "PARAMETER"].str.strip().tolist()
+
+    mcmahon_env_clean = mcmahon_env_df.copy()
+
+    for c in pfas_codes:
+        rmk = mcmahon_env_clean[f"{c}-RMK"].fillna("").str.strip()
+        va = mcmahon_env_clean[f"{c}-VA"]
+
+        # <: non-detect, use half the reporting limit as the estimate
+        # n: trace detection, keep value as-is but flag low confidence
+        # blank: confident detection, keep value as-is
+        mcmahon_env_clean[f"{c}-VA_clean"] = np.where(rmk == "<", va / 2, va)
+        mcmahon_env_clean[f"{c}-estimated"] = rmk == "n"
+
+    # TODO: Merge with `PFAS_GEOSPATIAL.csv`
+    mo.show_code()
     return
 
 
