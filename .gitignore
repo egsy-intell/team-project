@@ -15,3 +15,6 @@ marimo/session/
 
 # generated notebook exports (published to gh-pages, not committed on main)
 docs/notebooks/
+
+# Mac
+.DS_Store
