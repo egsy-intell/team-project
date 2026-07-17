@@ -8,7 +8,9 @@ app = marimo.App(width="medium")
 def _():
     import marimo as mo
 
-    return (mo,)
+    import pandas as pd
+
+    return mo, pd
 
 
 @app.cell
@@ -148,6 +150,81 @@ def _(mo):
 def _(mo):
     mo.md("""
     ## Step 2: Data exploration and quality assesssment
+
+    First step before assessing the validity of our data consists of the following steps:
+    1. Load seawolf and smalling via `pandas`
+    2. Clean smalling: uses `-` and `nd` for especial purposes. Given their definitions (not analyzed, and non-detected
+       above minimum detection values, respectively). We decided to replace the former with `NaN` and the latter with
+       `0`. Ideally, we should know non-detected minimums, but these were not found.
+    3. Merge: using a left join, to report on any unmatched rows
+    """)
+    return
+
+
+@app.cell
+def _(mo, pd):
+    data_dir = mo.notebook_dir() / ".." / "data" / "usgs"
+
+    # First line of this file is a table caption, not a header row.
+    smalling_df = pd.read_csv(data_dir / "smalling" / "PFAS_ENV.csv", skiprows=1)
+    seawolf_df = pd.read_csv(
+        data_dir / "seawolf" / "PFAS_DataSummaries_5k_50k_SummaryData.csv"
+    )
+
+    # Individual PFAS compound columns mix numeric concentrations (ng/L) with
+    # two non-numeric sentinels: "nd" (tested, not detected above the lab
+    # reporting limit) and "NA" (compound not analyzed at that site, already
+    # read in as NaN). We treat nd as 0 so it stays distinct from true
+    # missingness, then coerce the rest to numeric.
+    pfas_cols = [
+        "PFBA", "PFPeA", "PFHxA", "PFHpA", "PFOA", "PFNA", "PFDA", "PFBS",
+        "PFPeS", "PFHxS", "PFHpS", "PFOS", "PFDS", "PFPrS", "6:2 FTS", "FOSA",
+        "HFPO-DA; GenX",
+    ]
+
+    smalling_clean = smalling_df.copy()
+    smalling_clean[pfas_cols] = smalling_clean[pfas_cols].replace("nd", 0)
+    smalling_clean[pfas_cols] = smalling_clean[pfas_cols].apply(pd.to_numeric, errors="coerce")
+
+    # Last column in smallings is empty
+    smalling_clean = smalling_clean.drop(columns=smalling_clean.columns[-1])
+
+    # ∑EAR uses "-" for "not analyzed" rather than NaN.
+    smalling_clean["∑EAR"] = pd.to_numeric(smalling_clean["∑EAR"], errors="coerce")
+
+    # Final step: left merge to preserve unmatched rows
+    merged_df = smalling_clean.merge(
+        right=seawolf_df,
+        left_on=smalling_clean["Site Code"].str.strip(),
+        right_on=seawolf_df["SiteCode"].str.strip(),
+        how="left",
+        suffixes=("_smalling", "_seawolf"),
+        indicator=True,
+    )
+
+    mo.show_code()
+    return merged_df, smalling_df
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    `merged_df` now contains the resulting data frame.
+
+    ### Unmatched rows
+    """)
+    return
+
+
+@app.cell
+def _(merged_df, mo, smalling_df):
+    unmatched_df = merged_df[merged_df["_merge"] == "left_only"]
+    unmatched_count = unmatched_df.shape[0]
+
+    mo.md(f"""
+    The count of unmatched rows is: {unmatched_count}. This means that, out of the merged data set, we are keeping
+    {merged_df.shape[0] - unmatched_count} out of the {smalling_df.shape[0]} samples is Smalling's study 
+    (`{(merged_df.shape[0] - unmatched_count)/smalling_df.shape[0] * 100:.2f}%`)
     """)
     return
 
