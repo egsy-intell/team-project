@@ -297,7 +297,7 @@ def _(mo):
     mo.md(r"""
     `ss_merged_df` and `mac_merged_df` now contains all data to be considered in our model design
 
-    ### Unmatched rows: minimal
+    ### Unmatched rows and `NaN` clean up
     """)
     return
 
@@ -312,32 +312,62 @@ def _(mac_merged_df, mo, ss_merged_df):
 
     mo.md(f"""
     After joining the features and the PFAS concentration sets we get minimal data loss. 
-    The only concentration measurement without landscape attributes is `{ss_unmatched_df.iloc[0, 0]}`
+    The only concentration measurement without landscape attributes is `{ss_unmatched_df.iloc[0, 0]}`.
+    It will be dropped.
     """)
-    return mac_unmatched_count, ss_unmatched_count
+    return
 
 
 @app.cell
-def _(
-    mac_merged_df,
-    mac_unmatched_count,
-    mo,
-    ss_merged_df,
-    ss_unmatched_count,
-):
-    mo.accordion({"Click for more details": mo.ui.table([
-        {
-            "source": "ss_merged_df", 
-            "unmatched_count": ss_unmatched_count,
-            "kept": ss_merged_df.shape[0] - ss_unmatched_count,
+def _(ss_merged_df):
+    ss_merged_clean_df = ss_merged_df[ss_merged_df["_merge"] != "left_only"]
+    return (ss_merged_clean_df,)
 
-        },
-        {
-            "source": "mac_merged_df", 
-            "unmatched_count": mac_unmatched_count,
-            "kept": mac_merged_df.shape[0] - mac_unmatched_count,
-        },
-    ])})
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    As for `NaN` values, the only ones found belong to the `Seawolf/Smalling` merged data set.
+    """)
+    return
+
+
+@app.cell
+def _(mac_merged_df, mo, ss_merged_clean_df):
+    def get_nan_counts(df, remove_non_matching = True):
+        nan_counts = df.isna().sum()
+        nan_table = (nan_counts
+            .reset_index()
+            .rename(columns={"index": "column", 0: "nan_count"})
+            .assign(nan_pct=lambda inner_df: inner_df["nan_count"] / df.shape[0] * 100)
+            .pipe(lambda df: df.query("nan_count > 0") if remove_non_matching else df)
+            .sort_values("nan_count", ascending=False)
+        )
+
+        return nan_table
+
+    mo.ui.tabs({
+        "Seawolf/Smalling": get_nan_counts(ss_merged_clean_df),
+        "McMahon": get_nan_counts(mac_merged_df)
+    })
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    #### results
+
+    McMahon data does not require any further cleanups. However, we would want to impute for landscape indicators based on max values under the included metadata file.
+    """)
+    return
+
+
+@app.cell
+def _(mac_merged_df):
+    mac_clean = mac_merged_df
+
+    # TODO: Impute ss_merged_df based on ../data/usgs/NationalPFASReconLandscapeMetadata.xml values
     return
 
 
