@@ -6,6 +6,8 @@ readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     "marimo>=0.23.14",
+    "numpy>=2.5.1",
+    "pandas>=3.0.3",
 ]
 
 [dependency-groups]
@@ -16,3 +18,4 @@ dev = [
 
 [tool.codespell]
 skip = ".git,*.lock,.venv"
+ignore-words-list = "nd,egsy,IST"

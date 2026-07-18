@@ -1,0 +1,848 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<metadata>
+  <idinfo>
+    <citation>
+      <citeinfo>
+        <origin>Seawolf, S.M.</origin>
+        <origin>Williams, B.M.</origin>
+        <origin>Gordon, S.E.</origin>
+        <origin>Romanok, K.M.</origin>
+        <origin>Smalling, K.L.</origin>
+        <origin>Bradley, P.M.</origin>
+        <origin>Morriss, M.C.</origin>
+        <pubdate>20230523</pubdate>
+        <title>PFAS Reconnaissance Landscape Data</title>
+        <geoform>tabular digital data</geoform>
+        <onlink>https://doi.org/10.5066/P9JF1EXH</onlink>
+      </citeinfo>
+    </citation>
+    <descript>
+      <abstract>This dataset consists of summary data for potential landscape sources of per- and poly-fluoroalkyl substances (PFAS). These summary items include facilities from the Environmental Protection Agency (EPA) PFAS Analytics Tools, which were pulled from its Enforcement and Compliance History Online (ECHO), areas affected by fires (burned and urban burned areas) from Monitoring Trends in Burn Severity (MTBS), and landcover data from National Land Cover Dataset (NLCD) and Coastal Change Analysis Portal (C-CAP) around sites sampled as part of a National PFAS Tapwater Reconnaissance. These data are presented as a comma separated file, which includes summaries for all variables listed within a 5-kilometer buffer around each site, with an additional summary of burn areas within a 50-kilometer buffer. The purpose of this effort is to identify and quantify PFAS in drinking water sources at the point-of-use across the United States (US) and these data will be used to identify potential landscape-scale drivers of PFAS contamination in US tapwater (TW).</abstract>
+      <purpose>This tabular dataset describes landscape characteristics for areas surrounding sites sampled as part of the PFAS National Tapwater Reconnaissance.</purpose>
+    </descript>
+    <timeperd>
+      <timeinfo>
+        <mdattim>
+          <sngdate>
+            <caldate>2011</caldate>
+          </sngdate>
+          <sngdate>
+            <caldate>2020</caldate>
+          </sngdate>
+        </mdattim>
+      </timeinfo>
+      <current>ground condition</current>
+    </timeperd>
+    <status>
+      <progress>Complete</progress>
+      <update>None planned</update>
+    </status>
+    <spdom>
+      <descgeog>United States</descgeog>
+      <bounding>
+        <westbc>-179.6484</westbc>
+        <eastbc>-63.4241</eastbc>
+        <northbc>71.5249</northbc>
+        <southbc>17.2982</southbc>
+      </bounding>
+    </spdom>
+    <keywords>
+      <theme>
+        <themekt>None</themekt>
+        <themekey>Tapwater</themekey>
+      </theme>
+      <theme>
+        <themekt>USGS Thesaurus</themekt>
+        <themekey>PFAS</themekey>
+        <themekey>land surface characteristics</themekey>
+        <themekey>facilities</themekey>
+        <themekey>land use and land cover</themekey>
+        <themekey>drinking water use</themekey>
+      </theme>
+      <theme>
+        <themekt>USGS Metadata Identifier</themekt>
+        <themekey>USGS:63c6fdcad34e92aad3d120fe</themekey>
+      </theme>
+      <place>
+        <placekt>Common geographic areas</placekt>
+        <placekey>United States</placekey>
+        <placekey>Virgin Islands of the United States</placekey>
+        <placekey>Puerto Rico</placekey>
+      </place>
+    </keywords>
+    <accconst>None.  Please see 'Distribution Info' for details.</accconst>
+    <useconst>None.  Users are advised to read the dataset's metadata thoroughly to understand appropriate use and data limitations.</useconst>
+    <ptcontac>
+      <cntinfo>
+        <cntperp>
+          <cntper>Serena M Seawolf</cntper>
+          <cntorg>U.S. Geological Survey, ROCKY MOUNTAIN REGION</cntorg>
+        </cntperp>
+        <cntpos>Hydrologist</cntpos>
+        <cntaddr>
+          <addrtype>mailing address</addrtype>
+          <address>2329 West Orton Circle</address>
+          <city>West Valley City</city>
+          <state>UT</state>
+          <postal>84119</postal>
+          <country>US</country>
+        </cntaddr>
+        <cntvoice>801-908-5000</cntvoice>
+        <cntfax>801-908-5001</cntfax>
+        <cntemail>sseawolf@usgs.gov</cntemail>
+      </cntinfo>
+    </ptcontac>
+  </idinfo>
+  <dataqual>
+    <attracc>
+      <attraccr>No formal attribute accuracy tests were conducted</attraccr>
+    </attracc>
+    <logic>No formal logical accuracy tests were conducted</logic>
+    <complete>Dataset is considered complete for the information presented, as described in the abstract. Users are advised to read the rest of the metadata record for additional details.</complete>
+    <posacc>
+      <horizpa>
+        <horizpar>No formal positional accuracy tests were conducted</horizpar>
+      </horizpa>
+      <vertacc>
+        <vertaccr>No formal positional accuracy tests were conducted</vertaccr>
+      </vertacc>
+    </posacc>
+    <lineage>
+      <srcinfo>
+        <srccite>
+          <citeinfo>
+            <origin>EPA</origin>
+            <pubdate>20220801</pubdate>
+            <title>EPA PFAS Analytics tool, Handling Industry Sectors Layer</title>
+            <geoform>tabular digital data</geoform>
+            <othercit>EPA developed datasets from various sources that show which industries may be handling PFAS – and which facilities EPA has records about within those industries.</othercit>
+          </citeinfo>
+        </srccite>
+        <typesrc>Digital and/or Hardcopy</typesrc>
+        <srctime>
+          <timeinfo>
+            <sngdate>
+              <caldate>2022</caldate>
+            </sngdate>
+          </timeinfo>
+          <srccurr>publication date</srccurr>
+        </srctime>
+        <srccitea>EPA PFAS Analytics tool</srccitea>
+        <srccontr>Data points were used in the summary of landscape characteristics at study sites</srccontr>
+      </srcinfo>
+      <srcinfo>
+        <srccite>
+          <citeinfo>
+            <origin>US Department of Agriculture</origin>
+            <origin>US Forest Service</origin>
+            <pubdate>2020</pubdate>
+            <title>Monitoring Trends in Burn Severity (MTBS)</title>
+            <geoform>tabular digital data</geoform>
+            <onlink>www.MTBS.gov</onlink>
+          </citeinfo>
+        </srccite>
+        <typesrc>Digital and/or Hardcopy</typesrc>
+        <srctime>
+          <timeinfo>
+            <rngdates>
+              <begdate>1984</begdate>
+              <enddate>2020</enddate>
+            </rngdates>
+          </timeinfo>
+          <srccurr>ground condition</srccurr>
+        </srctime>
+        <srccitea>MTBS</srccitea>
+        <srccontr>Dataset was used to summarize burned areas within an area surrounding the study sites</srccontr>
+      </srcinfo>
+      <srcinfo>
+        <srccite>
+          <citeinfo>
+            <origin>Multi-Resolution Land Characteristics (MRLC) Consortium</origin>
+            <pubdate>2014</pubdate>
+            <title>National Land Cover Database (NLCD) 2011</title>
+            <geoform>raster digital data</geoform>
+            <pubinfo>
+              <pubplace>n/a</pubplace>
+              <publish>US Geological Survey</publish>
+            </pubinfo>
+            <onlink>www.mrlc.gov/data</onlink>
+          </citeinfo>
+        </srccite>
+        <typesrc>Digital and/or Hardcopy</typesrc>
+        <srctime>
+          <timeinfo>
+            <sngdate>
+              <caldate>2011</caldate>
+            </sngdate>
+          </timeinfo>
+          <srccurr>ground condition</srccurr>
+        </srctime>
+        <srccitea>NLCD</srccitea>
+        <srccontr>Dataset was used to summarize land cover types within an area surrounding the study sites; data covered CONUS and Alaska</srccontr>
+      </srcinfo>
+      <srcinfo>
+        <srccite>
+          <citeinfo>
+            <origin>NOAA</origin>
+            <pubdate>2012</pubdate>
+            <title>Coastal Change Analysis Program</title>
+            <geoform>raster digital data</geoform>
+            <othercit>Nationally standardized, raster-based inventories of land cover for the coastal areas of the U.S. Data are derived, through the Coastal Change Analysis Program, from the analysis of multiple dates of remotely sensed imagery.</othercit>
+            <onlink>https://coast.noaa.gov/htdata/raster1/landcover/bulkdownload/30m_lc/</onlink>
+          </citeinfo>
+        </srccite>
+        <typesrc>Digital and/or Hardcopy</typesrc>
+        <srctime>
+          <timeinfo>
+            <mdattim>
+              <sngdate>
+                <caldate>2010</caldate>
+              </sngdate>
+              <sngdate>
+                <caldate>2011</caldate>
+              </sngdate>
+              <sngdate>
+                <caldate>2012</caldate>
+              </sngdate>
+            </mdattim>
+          </timeinfo>
+          <srccurr>ground condition</srccurr>
+        </srctime>
+        <srccitea>C-CAP</srccitea>
+        <srccontr>Dataset was used to summarize land cover types within an area surrounding the study sites; data covered Hawaiian Islands and US Territories</srccontr>
+      </srcinfo>
+      <procstep>
+        <procdesc>Study site locations were mapped using ArcGIS Pro 3.0.0. 5km and 50km buffers were generated using the Buffer tool. All work was done using ArcGIS Pro (version 3.0.0).
+
+Landcover data downloaded for NLCD 2011 and C-CAP 2010, 2011, and 2012 were summarized for each sample location by: 
+1) reprojecting and converting all C-CAP rasters from 3m to 30m cells to match the NLCD dataset; 
+2) reclassifying C-CAP landcover categories to match NLCD landcover categories (C-CAP values 21, 22, 23 = NLCD 11; C-CAP 24, 25 = NLCD 12; C-CAP 5 = NLCD 21, C-CAP 4 = 22, C-CAP 3 = 23, C-CAP 2 = 24, C-CAP 19, 20 = 31, C-CAP 9 = 41, C-CAP 10 = 42, C-CAP 11 = 43, C-CAP 12 = 52, C-CAP 8 = 71, C-CAP 7 = 81, C-CAP 6 = 82, C-CAP 13, 14, 16, 17 = 90, C-CAP 15, 18 = 95);
+3) generating area summaries of each landcover type within the 5km buffer for each site using the Zonal Statistics as Table tool.</procdesc>
+        <srcused>NLCD</srcused>
+        <srcused>C-CAP</srcused>
+        <procdate>2022</procdate>
+      </procstep>
+      <procstep>
+        <procdesc>1) MTBS data were downloaded and converted from vector to raster using the Polygon to Raster tool. The raster was then resampled to a 100m cell size.
+2) Burn areas within the 5km and 50km buffers were summarized using the Zonal Statistics as Table tool.
+3) NLCD and C-CAP urban areas were identified and resampled to a 100m cell size. MTBS was clipped to these urban areas. Urban burn areas were summarized using the Zonal Statistics as Table tool for both the 5km and 50km buffers around the study sites.</procdesc>
+        <srcused>MTBS</srcused>
+        <srcused>C-CAP</srcused>
+        <srcused>NLCD</srcused>
+        <procdate>2022</procdate>
+      </procstep>
+      <procstep>
+        <procdesc>PFAS Industry Sector facilities data were downloaded through the online EPA Analytics Tool. This dataset includes point locations as well as descriptors of industry and industry category. Duplicates were removed based on UID and facility name, prioritizing the more generalized industry category. All records were manually checked. Records that were obtained where location was identified as state centroid were also removed. The Generate Near Table tool was used to identify the UID and distance from the study point for each facility within a 5km buffer.</procdesc>
+        <srcused>EPA Analytics Tool</srcused>
+        <procdate>2022</procdate>
+      </procstep>
+    </lineage>
+  </dataqual>
+  <eainfo>
+    <detailed>
+      <enttyp>
+        <enttypl>PFAS_DataSummaries_5k_50k_SummaryData.csv</enttypl>
+        <enttypd>Tabulated data describing landscape characteristics (land cover, burned area, PFAS-related facilities) surrounding tapwater sites within 5km and 50km buffers</enttypd>
+        <enttypds>Producer Defined</enttypds>
+      </enttyp>
+      <attr>
+        <attrlabl>station_nm</attrlabl>
+        <attrdef>Project defined site names for each tapwater sample collected, 2016-2021</attrdef>
+        <attrdefs>Producer Defined</attrdefs>
+        <attrdomv>
+          <udom>Project defined site names for each tapwater sample collected, 2016-2021</udom>
+        </attrdomv>
+      </attr>
+      <attr>
+        <attrlabl>Study</attrlabl>
+        <attrdef>Name of study</attrdef>
+        <attrdefs>Producer Defined</attrdefs>
+        <attrdomv>
+          <edom>
+            <edomv>National TapWater Recon</edomv>
+            <edomvd>National TapWater Recon</edomvd>
+            <edomvds>Producer defined</edomvds>
+          </edom>
+        </attrdomv>
+        <attrdomv>
+          <edom>
+            <edomv>Chicago</edomv>
+            <edomvd>Chicago</edomvd>
+            <edomvds>Producer defined</edomvds>
+          </edom>
+        </attrdomv>
+        <attrdomv>
+          <edom>
+            <edomv>NEIA</edomv>
+            <edomvd>Northeast Iowa</edomvd>
+            <edomvds>Producer defined</edomvds>
+          </edom>
+        </attrdomv>
+        <attrdomv>
+          <edom>
+            <edomv>PFAS Recon</edomv>
+            <edomvd>PFAS Recon</edomvd>
+            <edomvds>Producer defined</edomvds>
+          </edom>
+        </attrdomv>
+        <attrdomv>
+          <edom>
+            <edomv>Cape Cod</edomv>
+            <edomvd>Cape Cod</edomvd>
+            <edomvds>Producer defined</edomvds>
+          </edom>
+        </attrdomv>
+        <attrdomv>
+          <edom>
+            <edomv>Northern Plains</edomv>
+            <edomvd>Northern Plains</edomvd>
+            <edomvds>Producer defined</edomvds>
+          </edom>
+        </attrdomv>
+        <attrdomv>
+          <edom>
+            <edomv>Puerto Rico</edomv>
+            <edomvd>Puerto Rico</edomvd>
+            <edomvds>Producer defined</edomvds>
+          </edom>
+        </attrdomv>
+        <attrdomv>
+          <edom>
+            <edomv>California</edomv>
+            <edomvd>California</edomvd>
+            <edomvds>Producer defined</edomvds>
+          </edom>
+        </attrdomv>
+        <attrdomv>
+          <edom>
+            <edomv>Minnesota</edomv>
+            <edomvd>Minnesota</edomvd>
+            <edomvds>Producer defined</edomvds>
+          </edom>
+        </attrdomv>
+        <attrdomv>
+          <edom>
+            <edomv>French Island</edomv>
+            <edomvd>French Island</edomvd>
+            <edomvds>Producer defined</edomvds>
+          </edom>
+        </attrdomv>
+      </attr>
+      <attr>
+        <attrlabl>number_pfas_sites_proximal</attrlabl>
+        <attrdef>Number of PFAS source facilities identified from EPA PFAS Analytics Tools within a 5km buffer; individual facility information can be found in PFAS_ECHOfacilities_5km.csv</attrdef>
+        <attrdefs>Producer Defined</attrdefs>
+        <attrdomv>
+          <edom>
+            <edomv>NA</edomv>
+            <edomvd>No known PFAS source facilities within a 5km buffer</edomvd>
+            <edomvds>Producer defined</edomvds>
+          </edom>
+        </attrdomv>
+        <attrdomv>
+          <rdom>
+            <rdommin>1</rdommin>
+            <rdommax>214</rdommax>
+          </rdom>
+        </attrdomv>
+      </attr>
+      <attr>
+        <attrlabl>mean_dist_to_pfas_site</attrlabl>
+        <attrdef>Mean distance to PFAS source facilities within the 5km buffer; individual facility information can be found in PFAS_ECHOfacilities_5km.csv</attrdef>
+        <attrdefs>Producer Defined</attrdefs>
+        <attrdomv>
+          <edom>
+            <edomv>NA</edomv>
+            <edomvd>No known PFAS source facilities within a 5km buffer</edomvd>
+            <edomvds>Producer defined</edomvds>
+          </edom>
+        </attrdomv>
+        <attrdomv>
+          <rdom>
+            <rdommin>105.2658807</rdommin>
+            <rdommax>4997.394573</rdommax>
+          </rdom>
+        </attrdomv>
+      </attr>
+      <attr>
+        <attrlabl>Burn_Area_5k_frac</attrlabl>
+        <attrdef>Fraction of 5km buffer that is estimated as burned as defined by MTBS. Calculated as area burned divided by total 5km buffer area</attrdef>
+        <attrdefs>Producer Defined</attrdefs>
+        <attrdomv>
+          <edom>
+            <edomv>NA</edomv>
+            <edomvd>No known burned area within the 5km buffer</edomvd>
+            <edomvds>Producer defined</edomvds>
+          </edom>
+        </attrdomv>
+        <attrdomv>
+          <rdom>
+            <rdommin>0.00063662</rdommin>
+            <rdommax>0.949072757</rdommax>
+          </rdom>
+        </attrdomv>
+      </attr>
+      <attr>
+        <attrlabl>Burn_area_50k_frac</attrlabl>
+        <attrdef>Fraction of 50km buffer that is estimated as burned as defined by MTBS. Calculated as area burned divided by total 50km buffer area</attrdef>
+        <attrdefs>Producer Defined</attrdefs>
+        <attrdomv>
+          <edom>
+            <edomv>NA</edomv>
+            <edomvd>No known burned area within the 50km buffer</edomvd>
+            <edomvds>Producer defined</edomvds>
+          </edom>
+        </attrdomv>
+        <attrdomv>
+          <rdom>
+            <rdommin>0.00000127</rdommin>
+            <rdommax>0.408816846</rdommax>
+          </rdom>
+        </attrdomv>
+      </attr>
+      <attr>
+        <attrlabl>Urbn_burn_5k_frac</attrlabl>
+        <attrdef>Fraction of 5km buffer that is estimated as urban burned as defined by MTBS. Calculated as urban area burned divided by total 5km buffer area</attrdef>
+        <attrdefs>Producer Defined</attrdefs>
+        <attrdomv>
+          <edom>
+            <edomv>NA</edomv>
+            <edomvd>No known urban burned area within the 5km buffer</edomvd>
+            <edomvds>Producer defined</edomvds>
+          </edom>
+        </attrdomv>
+        <attrdomv>
+          <rdom>
+            <rdommin>0.000127324</rdommin>
+            <rdommax>0.006238874</rdommax>
+          </rdom>
+        </attrdomv>
+      </attr>
+      <attr>
+        <attrlabl>Urbn_burn_50k_frac</attrlabl>
+        <attrdef>Fraction of 50km buffer that is estimated as urban burned as defined by MTBS. Calculated as urban area burned divided by total 50km buffer area</attrdef>
+        <attrdefs>Producer Defined</attrdefs>
+        <attrdomv>
+          <edom>
+            <edomv>NA</edomv>
+            <edomvd>No known urban burned area within the 50km buffer</edomvd>
+            <edomvds>Producer defined</edomvds>
+          </edom>
+        </attrdomv>
+        <attrdomv>
+          <rdom>
+            <rdommin>0.00000127</rdommin>
+            <rdommax>0.012701838</rdommax>
+          </rdom>
+        </attrdomv>
+      </attr>
+      <attr>
+        <attrlabl>OpenWater</attrlabl>
+        <attrdef>Open Water as defined by NLCD or C-CAP. Fraction of 5km buffer area</attrdef>
+        <attrdefs>Producer Defined</attrdefs>
+        <attrdomv>
+          <rdom>
+            <rdommin>0.0</rdommin>
+            <rdommax>0.574584995</rdommax>
+          </rdom>
+        </attrdomv>
+      </attr>
+      <attr>
+        <attrlabl>PerennialIceSnow</attrlabl>
+        <attrdef>Perennial Ice/Snow as defined by NLCD or C-CAP. Fraction of 5km buffer area</attrdef>
+        <attrdefs>Producer Defined</attrdefs>
+        <attrdomv>
+          <rdom>
+            <rdommin>0.0</rdommin>
+            <rdommax>0.000618794</rdommax>
+          </rdom>
+        </attrdomv>
+      </attr>
+      <attr>
+        <attrlabl>DevelopedOpenSpace</attrlabl>
+        <attrdef>Developed-Open Space as defined by NLCD or C-CAP. Fraction of 5km buffer area</attrdef>
+        <attrdefs>Producer Defined</attrdefs>
+        <attrdomv>
+          <rdom>
+            <rdommin>0.0</rdommin>
+            <rdommax>0.394160586</rdommax>
+          </rdom>
+        </attrdomv>
+      </attr>
+      <attr>
+        <attrlabl>DevelopedLowIntensity</attrlabl>
+        <attrdef>Developed-Low Intensity as defined by NLCD or C-CAP. Fraction of 5km buffer area</attrdef>
+        <attrdefs>Producer Defined</attrdefs>
+        <attrdomv>
+          <rdom>
+            <rdommin>0.0</rdommin>
+            <rdommax>0.505566499</rdommax>
+          </rdom>
+        </attrdomv>
+      </attr>
+      <attr>
+        <attrlabl>DevelopedMediumIntensity</attrlabl>
+        <attrdef>Developed-Medium Intensity as defined by NLCD or C-CAP. Fraction of 5km buffer area</attrdef>
+        <attrdefs>Producer Defined</attrdefs>
+        <attrdomv>
+          <rdom>
+            <rdommin>0.0</rdommin>
+            <rdommax>0.623618723</rdommax>
+          </rdom>
+        </attrdomv>
+      </attr>
+      <attr>
+        <attrlabl>DevelopedHighIntensity</attrlabl>
+        <attrdef>Developed-High Intensity as defined by NLCD or C-CAP. Fraction of 5km buffer area</attrdef>
+        <attrdefs>Producer Defined</attrdefs>
+        <attrdomv>
+          <rdom>
+            <rdommin>0.0</rdommin>
+            <rdommax>0.57112433</rdommax>
+          </rdom>
+        </attrdomv>
+      </attr>
+      <attr>
+        <attrlabl>Barren</attrlabl>
+        <attrdef>Barren as defined by NLCD or C-CAP. Fraction of 5km buffer area</attrdef>
+        <attrdefs>Producer Defined</attrdefs>
+        <attrdomv>
+          <rdom>
+            <rdommin>0.0</rdommin>
+            <rdommax>0.33220093</rdommax>
+          </rdom>
+        </attrdomv>
+      </attr>
+      <attr>
+        <attrlabl>DeciduousForest</attrlabl>
+        <attrdef>Deciduous Forest as defined by NLCD or C-CAP. Fraction of 5km buffer area</attrdef>
+        <attrdefs>Producer Defined</attrdefs>
+        <attrdomv>
+          <rdom>
+            <rdommin>0.0</rdommin>
+            <rdommax>0.8365298</rdommax>
+          </rdom>
+        </attrdomv>
+      </attr>
+      <attr>
+        <attrlabl>EvergreenForest</attrlabl>
+        <attrdef>Evergreen Forest as defined by NLCD or C-CAP. Fraction of 5km buffer area</attrdef>
+        <attrdefs>Producer Defined</attrdefs>
+        <attrdomv>
+          <rdom>
+            <rdommin>0.0</rdommin>
+            <rdommax>0.94363857</rdommax>
+          </rdom>
+        </attrdomv>
+      </attr>
+      <attr>
+        <attrlabl>MixedForest</attrlabl>
+        <attrdef>Mixed Forest as defined by NLCD or C-CAP. Fraction of 5km buffer area</attrdef>
+        <attrdefs>Producer Defined</attrdefs>
+        <attrdomv>
+          <rdom>
+            <rdommin>0.0</rdommin>
+            <rdommax>0.8270302</rdommax>
+          </rdom>
+        </attrdomv>
+      </attr>
+      <attr>
+        <attrlabl>DwarfScrub</attrlabl>
+        <attrdef>Dwarf Scrub as defined by NLCD or C-CAP. Fraction of 5km buffer area</attrdef>
+        <attrdefs>Producer Defined</attrdefs>
+        <attrdomv>
+          <rdom>
+            <rdommin>0.0</rdommin>
+            <rdommax>0.361158217</rdommax>
+          </rdom>
+        </attrdomv>
+      </attr>
+      <attr>
+        <attrlabl>ShrubScrub</attrlabl>
+        <attrdef>Shrub/Scrub as defined by NLCD or C-CAP. Fraction of 5km buffer area</attrdef>
+        <attrdefs>Producer Defined</attrdefs>
+        <attrdomv>
+          <rdom>
+            <rdommin>0.0</rdommin>
+            <rdommax>0.9705676</rdommax>
+          </rdom>
+        </attrdomv>
+      </attr>
+      <attr>
+        <attrlabl>GrasslandHerbaceous</attrlabl>
+        <attrdef>Grassland/Herbaceous as defined by NLCD or C-CAP. Fraction of 5km buffer area</attrdef>
+        <attrdefs>Producer Defined</attrdefs>
+        <attrdomv>
+          <rdom>
+            <rdommin>0.0</rdommin>
+            <rdommax>0.963806685</rdommax>
+          </rdom>
+        </attrdomv>
+      </attr>
+      <attr>
+        <attrlabl>SedgeHerbaceous</attrlabl>
+        <attrdef>Sedge/Herbaceous as defined by NLCD or C-CAP. Fraction of 5km buffer area</attrdef>
+        <attrdefs>Producer Defined</attrdefs>
+        <attrdomv>
+          <rdom>
+            <rdommin>0.0</rdommin>
+            <rdommax>0.320546968</rdommax>
+          </rdom>
+        </attrdomv>
+      </attr>
+      <attr>
+        <attrlabl>Moss</attrlabl>
+        <attrdef>Moss as defined by NLCD or C-CAP. Fraction of 5km buffer area</attrdef>
+        <attrdefs>Producer Defined</attrdefs>
+        <attrdomv>
+          <rdom>
+            <rdommin>0.0</rdommin>
+            <rdommax>0.000309397</rdommax>
+          </rdom>
+        </attrdomv>
+      </attr>
+      <attr>
+        <attrlabl>PastureHay</attrlabl>
+        <attrdef>Pasture/Hay as defined by NLCD or C-CAP. Fraction of 5km buffer area</attrdef>
+        <attrdefs>Producer Defined</attrdefs>
+        <attrdomv>
+          <rdom>
+            <rdommin>0.0</rdommin>
+            <rdommax>0.653607334</rdommax>
+          </rdom>
+        </attrdomv>
+      </attr>
+      <attr>
+        <attrlabl>CultivatedCrop</attrlabl>
+        <attrdef>Cultivated Crop as defined by NLCD or C-CAP. Fraction of 5km buffer area</attrdef>
+        <attrdefs>Producer Defined</attrdefs>
+        <attrdomv>
+          <rdom>
+            <rdommin>0.0</rdommin>
+            <rdommax>0.94228639</rdommax>
+          </rdom>
+        </attrdomv>
+      </attr>
+      <attr>
+        <attrlabl>WoodyWetlands</attrlabl>
+        <attrdef>Woody Wetlands as defined by NLCD or C-CAP. Fraction of 5km buffer area</attrdef>
+        <attrdefs>Producer Defined</attrdefs>
+        <attrdomv>
+          <rdom>
+            <rdommin>0.0</rdommin>
+            <rdommax>0.432399789</rdommax>
+          </rdom>
+        </attrdomv>
+      </attr>
+      <attr>
+        <attrlabl>EmergentHerbaceousWetlands</attrlabl>
+        <attrdef>Emergent Herbaceous Wetlands as defined by NLCD or C-CAP. Fraction of 5km buffer area</attrdef>
+        <attrdefs>Producer Defined</attrdefs>
+        <attrdomv>
+          <rdom>
+            <rdommin>0.0</rdommin>
+            <rdommax>0.200031025</rdommax>
+          </rdom>
+        </attrdomv>
+      </attr>
+    </detailed>
+    <detailed>
+      <enttyp>
+        <enttypl>PFAS_ECHOfacilities_5k.csv</enttypl>
+        <enttypd>Tabulated data describing individual PFAS-related facilities and their characteristics within a 5km buffer of tapwater sites</enttypd>
+        <enttypds>Producer Defined</enttypds>
+      </enttyp>
+      <attr>
+        <attrlabl>station_nm</attrlabl>
+        <attrdef>Project defined site names associated with the National Tapwater Study</attrdef>
+        <attrdefs>Producer Defined</attrdefs>
+        <attrdomv>
+          <udom>Project defined site names associated with the National Tapwater Study</udom>
+        </attrdomv>
+      </attr>
+      <attr>
+        <attrlabl>SiteCode</attrlabl>
+        <attrdef>Project defined site names for each tapwater sample collected, 2016-2021</attrdef>
+        <attrdefs>Producer Defined</attrdefs>
+        <attrdomv>
+          <udom>Project defined site names associated with the National Tapwater Study</udom>
+        </attrdomv>
+      </attr>
+      <attr>
+        <attrlabl>NEAR_DIST</attrlabl>
+        <attrdef>Potential PFAS facility distance to site in meters, within a 5km buffer</attrdef>
+        <attrdefs>Producer Defined</attrdefs>
+        <attrdomv>
+          <edom>
+            <edomv>NA</edomv>
+            <edomvd>No PFAS facilities within 5km buffer of site</edomvd>
+            <edomvds>Producer defined</edomvds>
+          </edom>
+        </attrdomv>
+        <attrdomv>
+          <rdom>
+            <rdommin>77.26427671</rdommin>
+            <rdommax>4999.234925</rdommax>
+            <attrunit>meters</attrunit>
+          </rdom>
+        </attrdomv>
+      </attr>
+      <attr>
+        <attrlabl>Facility</attrlabl>
+        <attrdef>Manufacturing or chemical production facilities that produce or use PFAS</attrdef>
+        <attrdefs>EPA</attrdefs>
+        <attrdomv>
+          <edom>
+            <edomv>NA</edomv>
+            <edomvd>No PFAS facilities within 5km buffer of site</edomvd>
+            <edomvds>Producer defined</edomvds>
+          </edom>
+        </attrdomv>
+        <attrdomv>
+          <udom>Names of facilities</udom>
+        </attrdomv>
+      </attr>
+      <attr>
+        <attrlabl>Industry</attrlabl>
+        <attrdef>Type of production or manufacturing occurring at the listed facility</attrdef>
+        <attrdefs>EPA</attrdefs>
+        <attrdomv>
+          <edom>
+            <edomv>NA</edomv>
+            <edomvd>No PFAS facilities within 5km buffer of site</edomvd>
+            <edomvds>Producer defined</edomvds>
+          </edom>
+        </attrdomv>
+        <attrdomv>
+          <udom>Industry type as defined by NAICS</udom>
+        </attrdomv>
+      </attr>
+      <attr>
+        <attrlabl>ECHO_Facility_Report</attrlabl>
+        <attrdef>Link to the ECHO facility report</attrdef>
+        <attrdefs>EPA</attrdefs>
+        <attrdomv>
+          <edom>
+            <edomv>NA</edomv>
+            <edomvd>No PFAS facilities within 5km buffer of site</edomvd>
+            <edomvds>Producer defined</edomvds>
+          </edom>
+        </attrdomv>
+        <attrdomv>
+          <udom>Individual link to EPA facilities report</udom>
+        </attrdomv>
+      </attr>
+      <attr>
+        <attrlabl>EJSCREEN_Report</attrlabl>
+        <attrdef>Link to the EJSCREEN report</attrdef>
+        <attrdefs>Producer Defined</attrdefs>
+        <attrdomv>
+          <edom>
+            <edomv>NA</edomv>
+            <edomvd>No PFAS facilities within 5km buffer of site</edomvd>
+            <edomvds>Producer defined</edomvds>
+          </edom>
+        </attrdomv>
+        <attrdomv>
+          <udom>Individual link to EPA environmental  justice screening report</udom>
+        </attrdomv>
+      </attr>
+      <attr>
+        <attrlabl>EPA_Programs</attrlabl>
+        <attrdef>Type of program listed by the EPA</attrdef>
+        <attrdefs>EPA</attrdefs>
+        <attrdomv>
+          <edom>
+            <edomv>NA</edomv>
+            <edomvd>No PFAS facilities within 5km buffer of site</edomvd>
+            <edomvds>Producer defined</edomvds>
+          </edom>
+        </attrdomv>
+        <attrdomv>
+          <edom>
+            <edomv>RCRA</edomv>
+            <edomvd>Resource Conservation and Recovery Act</edomvd>
+            <edomvds>EPA</edomvds>
+          </edom>
+        </attrdomv>
+        <attrdomv>
+          <edom>
+            <edomv>CWA</edomv>
+            <edomvd>Clean Water Act</edomvd>
+            <edomvds>EPA</edomvds>
+          </edom>
+        </attrdomv>
+        <attrdomv>
+          <edom>
+            <edomv>CAA</edomv>
+            <edomvd>Clean Air Act</edomvd>
+            <edomvds>EPA</edomvds>
+          </edom>
+        </attrdomv>
+      </attr>
+    </detailed>
+  </eainfo>
+  <distinfo>
+    <distrib>
+      <cntinfo>
+        <cntperp>
+          <cntper>GS ScienceBase</cntper>
+          <cntorg>U.S. Geological Survey</cntorg>
+        </cntperp>
+        <cntaddr>
+          <addrtype>mailing address</addrtype>
+          <address>Denver Federal Center, Building 810, Mail Stop 302</address>
+          <city>Denver</city>
+          <state>CO</state>
+          <postal>80225</postal>
+          <country>United States</country>
+        </cntaddr>
+        <cntvoice>1-888-275-8747</cntvoice>
+        <cntemail>sciencebase@usgs.gov</cntemail>
+      </cntinfo>
+    </distrib>
+    <distliab>Unless otherwise stated, all data, metadata and related materials are considered to satisfy the quality standards relative to the purpose for which the data were collected. Although these data and associated metadata have been reviewed for accuracy and completeness and approved for release by the U.S. Geological Survey (USGS), no warranty expressed or implied is made regarding the display or utility of the data for other purposes, nor on all computer systems, nor shall the act of distribution constitute any such warranty.</distliab>
+    <stdorder>
+      <digform>
+        <digtinfo>
+          <formname>Digital Data</formname>
+        </digtinfo>
+        <digtopt>
+          <onlinopt>
+            <computer>
+              <networka>
+                <networkr>https://doi.org/10.5066/P9JF1EXH</networkr>
+              </networka>
+            </computer>
+          </onlinopt>
+        </digtopt>
+      </digform>
+      <fees>None</fees>
+    </stdorder>
+  </distinfo>
+  <metainfo>
+    <metd>20230523</metd>
+    <metc>
+      <cntinfo>
+        <cntperp>
+          <cntper>Serena M Seawolf</cntper>
+          <cntorg>U.S. Geological Survey, ROCKY MOUNTAIN REGION</cntorg>
+        </cntperp>
+        <cntpos>Hydrologist</cntpos>
+        <cntaddr>
+          <addrtype>mailing address</addrtype>
+          <address>2329 West Orton Circle</address>
+          <city>West Valley City</city>
+          <state>UT</state>
+          <postal>84119</postal>
+          <country>US</country>
+        </cntaddr>
+        <cntvoice>801-908-5000</cntvoice>
+        <cntfax>801-908-5001</cntfax>
+        <cntemail>sseawolf@usgs.gov</cntemail>
+      </cntinfo>
+    </metc>
+    <metstdn>FGDC Biological Data Profile of the Content Standard for Digital Geospatial Metadata</metstdn>
+    <metstdv>FGDC-STD-001.1-1999</metstdv>
+  </metainfo>
+</metadata>
