@@ -223,21 +223,21 @@ def _(mo, pd):
     )
 
     mo.show_code()
-    return data_dir, smalling_df, ss_merged_df
+    return data_dir, ss_merged_df
 
 
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ### McMahon et. al. (2022) load and join-ability (`m_merged_df`)
+    ### McMahon et. al. (2022) load and join-ability (`mac_merged_df`)
 
     In this case, we perform similar operations
 
     1. Load McMahon via `pandas`
     2. Load McMahon data dictionary
     3. Clean up concentration values based on remarks
-       1. `<`: Non-detect. Get the mean of ceiling value (`VA/2`)
-       2. `n`: Estimation. Flag as estimated
+        1. `<`: Non-detect. Get the mean of ceiling value (`VA/2`), which is standard practice.
+        2. `n`: Estimation. Flag as estimated
     4. Merge: using a left join to capture any unmatched records
     """)
     return
@@ -269,9 +269,27 @@ def _(data_dir, mo, np, pd):
         mcmahon_env_clean[f"{c}-VA_clean"] = np.where(rmk == "<", va / 2, va)
         mcmahon_env_clean[f"{c}-estimated"] = rmk == "n"
 
-    # TODO: Merge with `PFAS_GEOSPATIAL.csv`
+    # Drop raw remark/value columns now that -VA_clean and -estimated
+    # capture the same information in usable form.
+    raw_cols = [c for c in mcmahon_env_clean.columns if c.endswith("-RMK") or c.endswith("-VA")]
+    mcmahon_env_clean = mcmahon_env_clean.drop(columns=raw_cols)
+
+    mcmahon_geo_df = pd.read_csv(
+        data_dir / "mcmahon" / "PFAS_GEOSPATIAL.csv",
+        thousands=",",
+    )
+
+    mac_merged_df = mcmahon_env_clean.merge(
+        right=mcmahon_geo_df,
+        left_on=mcmahon_env_clean["NAWQA_ID"].str.strip(),
+        right_on=mcmahon_geo_df["NAWQA_ID"].str.strip(),
+        how="left",
+        suffixes=("_mac_env", "_mac_geo"),
+        indicator=True,
+    )
+
     mo.show_code()
-    return
+    return (mac_merged_df,)
 
 
 @app.cell(hide_code=True)
@@ -279,21 +297,47 @@ def _(mo):
     mo.md(r"""
     `ss_merged_df` and `mac_merged_df` now contains all data to be considered in our model design
 
-    ### Unmatched rows
+    ### Unmatched rows: minimal
     """)
     return
 
 
 @app.cell
-def _(mo, smalling_df, ss_merged_df):
+def _(mac_merged_df, mo, ss_merged_df):
     ss_unmatched_df = ss_merged_df[ss_merged_df["_merge"] == "left_only"]
     ss_unmatched_count = ss_unmatched_df.shape[0]
 
+    mac_unmatched_df = mac_merged_df[mac_merged_df["_merge"] == "left_only"]
+    mac_unmatched_count = mac_unmatched_df.shape[0]
+
     mo.md(f"""
-    The count of unmatched rows for `ss_unmatched_count`: `{ss_unmatched_count}`. This means that, out of the merged data set, we are keeping
-    {ss_merged_df.shape[0] - ss_unmatched_count} out of the {smalling_df.shape[0]} samples is Smalling's study 
-    (`{(ss_merged_df.shape[0] - ss_unmatched_count)/smalling_df.shape[0] * 100:.2f}%`)
+    After joining the features and the PFAS concentration sets we get minimal data loss. 
+    The only concentration measurement without landscape attributes is `{ss_unmatched_df.iloc[0, 0]}`
     """)
+    return mac_unmatched_count, ss_unmatched_count
+
+
+@app.cell
+def _(
+    mac_merged_df,
+    mac_unmatched_count,
+    mo,
+    ss_merged_df,
+    ss_unmatched_count,
+):
+    mo.accordion({"Click for more details": mo.ui.table([
+        {
+            "source": "ss_merged_df", 
+            "unmatched_count": ss_unmatched_count,
+            "kept": ss_merged_df.shape[0] - ss_unmatched_count,
+
+        },
+        {
+            "source": "mac_merged_df", 
+            "unmatched_count": mac_unmatched_count,
+            "kept": mac_merged_df.shape[0] - mac_unmatched_count,
+        },
+    ])})
     return
 
 
@@ -303,10 +347,7 @@ def _(mo):
     ### Preliminary data explorations
 
     ```
-    TBD. Suggested plan:
-    1. Integrate @gulshanrajshetty metrics
-    2. Go over literature and try to identify at least 2-3 high-signal predictors
-    3. Do a whisker/box for them and confirm
+    TBD. Check Teams note. Thanks @emirbeg2017 for putting that together!
     ```
     """)
     return
