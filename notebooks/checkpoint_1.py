@@ -309,6 +309,55 @@ def _(mo):
 
 
 @app.cell
+def _(mac_merged_df, mo, np, pd, ss_merged_df):
+    def make_numeric_summary_table(df, dataset_name):
+        numeric_df = df.select_dtypes(include="number")
+        if numeric_df.empty:
+            return pd.DataFrame({
+                "Dataset": [dataset_name],
+                "Variable": ["No numeric columns"],
+                "Mean": [np.nan],
+                "Median": [np.nan],
+                "Std Dev": [np.nan],
+                "Min": [np.nan],
+                "Q1": [np.nan],
+                "Q3": [np.nan],
+                "Max": [np.nan],
+            })
+
+        summary = (
+            numeric_df.describe(percentiles=[0.25, 0.5, 0.75]).T
+            .rename(columns={
+                "mean": "Mean",
+                "std": "Std Dev",
+                "min": "Min",
+                "25%": "Q1",
+                "50%": "Median",
+                "75%": "Q3",
+                "max": "Max",
+            })
+            .reset_index()
+            .rename(columns={"index": "Variable"})
+        )
+        summary.insert(0, "Dataset", dataset_name)
+        return summary.round(3)
+
+    combined_summary = pd.concat(
+        [
+            make_numeric_summary_table(ss_merged_df, "Smalling + Seawolf"),
+            make_numeric_summary_table(mac_merged_df, "McMahon"),
+        ],
+        ignore_index=True,
+    )
+
+    mo.vstack([
+        mo.md("### Numeric summary statistics for the merged datasets"),
+        mo.ui.table(combined_summary),
+    ])
+    return
+
+
+@app.cell
 def _(mac_merged_df, mo, ss_merged_df):
     ss_unmatched_df = ss_merged_df[ss_merged_df["_merge"] == "left_only"]
     ss_unmatched_count = ss_unmatched_df.shape[0]
