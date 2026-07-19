@@ -1,6 +1,6 @@
 import marimo
 
-__generated_with = "0.23.9"
+__generated_with = "0.23.14"
 app = marimo.App(width="medium")
 
 
@@ -358,7 +358,7 @@ def _(mac_merged_df, mo, np, pd, ss_merged_df):
 
 
 @app.cell
-def _(mo, np, pd, ss_merged_df):
+def _(mo, pd, ss_merged_df):
     import matplotlib.pyplot as plt
 
     ss_viz_columns = [
@@ -433,7 +433,7 @@ def _(mo, np, pd, ss_merged_df):
 
 
 @app.cell
-def _(mac_merged_df, mo, np, pd):
+def _(mac_merged_df, mo, pd):
     import matplotlib.pyplot as plt_mac
 
     mac_viz_columns = [
