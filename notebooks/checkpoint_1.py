@@ -1,6 +1,6 @@
 import marimo
 
-__generated_with = "0.23.14"
+__generated_with = "0.23.9"
 app = marimo.App(width="medium")
 
 
@@ -21,7 +21,8 @@ async def _(data_dictionary_app):
     data_dictionary_result = await data_dictionary_app.embed()
     all_compound_dict_df = data_dictionary_result.defs["all_compound_dict_df"]
     mcmahon_env_df = data_dictionary_result.defs["mcmahon_env_df"]
-    return all_compound_dict_df, mcmahon_env_df
+    seawolf_dict_df = data_dictionary_result.defs["seawolf_dict_df"]
+    return all_compound_dict_df, mcmahon_env_df, seawolf_dict_df
 
 
 @app.cell
@@ -420,17 +421,49 @@ def _(mo):
     mo.md(r"""
     #### results
 
-    McMahon data does not require any further cleanups. However, we would want to impute for landscape indicators based on max values under the included metadata file.
+    McMahon data does not require any further cleanups. The Seawolf landscape columns with missing
+    values (`number_pfas_sites_proximal`, `mean_dist_to_pfas_site`, and the four burn-area fractions)
+    are structural: a `NaN` there means no PFAS facility or burned area was detected within the
+    buffer, not that a value went unmeasured. We checked against the metadata's documented `rdommax`
+    per attribute first, but for most of these columns 17-99% of rows are missing, so filling with the
+    attribute max would have pulled most of the column toward the single worst observed site instead
+    of reflecting "nothing found." We impute the facility count and burn fractions with `0`, since
+    each has a natural zero. `mean_dist_to_pfas_site` has no natural zero (distance to a facility is
+    undefined when there is no facility), so we impute it with its `rdommax` (~4997m) instead — that
+    value is ~5km, the same buffer radius the field is computed over, so "no facility found within the
+    5km search radius" maps to "the nearest one is at least ~5km away" rather than an arbitrary
+    outlier.
     """)
     return
 
 
 @app.cell
-def _(mc_merged_df):
-    mac_clean = mc_merged_df
+def _(mc_merged_df, seawolf_dict_df, ss_merged_clean_df):
+    mc_clean_df = mc_merged_df
 
-    # TODO: Impute ss_merged_df based on ../data/usgs/NationalPFASReconLandscapeMetadata.xml values
-    return
+    # NaN in these columns means "nothing detected in the buffer," so 0 is the correct
+    # fill: each has a natural zero (no facilities, no area burned).
+    seawolf_structural_zero_columns = [
+        "number_pfas_sites_proximal",
+        "Burn_Area_5k_frac", "Burn_area_50k_frac",
+        "Urbn_burn_5k_frac", "Urbn_burn_50k_frac",
+    ]
+
+    ss_clean_df = ss_merged_clean_df.copy()
+    ss_clean_df[seawolf_structural_zero_columns] = ss_clean_df[
+        seawolf_structural_zero_columns
+    ].fillna(0)
+
+    # mean_dist_to_pfas_site has no natural zero (undefined without a facility), so
+    # fill with the attribute's rdommax (~5km) instead: that's the buffer radius the
+    # field is computed over, i.e. "no facility within 5km" -> "at least ~5km away."
+    mean_dist_rdom_max = seawolf_dict_df.set_index("attribute").loc[
+        "mean_dist_to_pfas_site", "rdom_max"
+    ]
+    ss_clean_df["mean_dist_to_pfas_site"] = ss_clean_df["mean_dist_to_pfas_site"].fillna(
+        mean_dist_rdom_max
+    )
+    return mc_clean_df, ss_clean_df
 
 
 @app.cell(hide_code=True)
@@ -440,7 +473,8 @@ def _(mo):
 
     The following subsections evaluate the structure, completeness, consistency, and modeling
     suitability of the Smalling, Seawolf, and McMahon datasets. We check for: dataset dimensions, key fields, missing values, duplicate
-    identifiers, numeric ranges, and integration readiness.
+    identifiers, and numeric ranges. Integration readiness was already assessed in the join-ability
+    sections above. *`ss_clean_df` and `mc_clean_df` will be used from now on.*
     """)
     return
 
@@ -456,34 +490,34 @@ def _(mo):
 
 
 @app.cell
-def _(all_compound_dict_df, mo, pd, ss_merged_df):
+def _(all_compound_dict_df, mo, pd, ss_clean_df):
     smalling_quality_pfas_columns = all_compound_dict_df.loc[
         all_compound_dict_df["smalling"], "compound"
     ].tolist()
 
-    smalling_quality_total_pfas = ss_merged_df["∑PFAS"]
-    smalling_quality_detected_count = ss_merged_df["Count Detected PFAS"]
+    smalling_quality_total_pfas = ss_clean_df["∑PFAS"]
+    smalling_quality_detected_count = ss_clean_df["Count Detected PFAS"]
 
     smalling_exploration_summary = pd.DataFrame([
         {
-            "Measure": "Dataset shape (`ss_merged_df`)",
-            "Result": f"{ss_merged_df.shape[0]} rows × {ss_merged_df.shape[1]} columns",
+            "Measure": "Dataset shape (`ss_clean_df`)",
+            "Result": f"{ss_clean_df.shape[0]} rows × {ss_clean_df.shape[1]} columns",
         },
         {
             "Measure": "Unique sampling sites",
-            "Result": ss_merged_df["Site Code"].nunique(),
+            "Result": ss_clean_df["Site Code"].nunique(),
         },
         {
             "Measure": "States represented",
-            "Result": ss_merged_df["State"].nunique(),
+            "Result": ss_clean_df["State"].nunique(),
         },
         {
             "Measure": "Public-water sites",
-            "Result": int(ss_merged_df["Site Type"].eq("Public").sum()),
+            "Result": int(ss_clean_df["Site Type"].eq("Public").sum()),
         },
         {
             "Measure": "Private-well sites",
-            "Result": int(ss_merged_df["Site Type"].eq("Private").sum()),
+            "Result": int(ss_clean_df["Site Type"].eq("Private").sum()),
         },
         {
             "Measure": "PFAS compounds evaluated",
@@ -506,10 +540,11 @@ def _(all_compound_dict_df, mo, pd, ss_merged_df):
     mo.vstack([
         mo.ui.table(smalling_exploration_summary),
         mo.md(f"""
-        The Smalling portion of `ss_merged_df` contains measured PFAS results for **{len(ss_merged_df)}
+        The Smalling portion of `ss_clean_df` contains measured PFAS results for **{len(ss_clean_df)}
         sampling sites**. Cumulative PFAS concentrations are right-skewed because the maximum is much larger
         than the median. Public-water sites are more common than private-well sites in this table. The PFAS
-        columns and `∑EAR` were already cleaned (`nd` → 0, coerced to numeric) while building `ss_merged_df`.
+        columns and `∑EAR` were already cleaned (`nd` → 0, coerced to numeric) while building `ss_merged_df`,
+        and the unmatched site plus structural Seawolf `NaN`s were resolved while building `ss_clean_df`.
         """),
     ])
     return
@@ -524,14 +559,14 @@ def _(mo):
 
 
 @app.cell
-def _(all_compound_dict_df, mo, pd, ss_merged_df):
+def _(all_compound_dict_df, mo, pd, ss_clean_df):
     smalling_assessment_pfas_columns = all_compound_dict_df.loc[
         all_compound_dict_df["smalling"], "compound"
     ].tolist()
 
-    smalling_assessment_numeric_pfas = ss_merged_df[smalling_assessment_pfas_columns]
-    smalling_assessment_published_count = ss_merged_df["Count Detected PFAS"]
-    smalling_assessment_published_total = ss_merged_df["∑PFAS"]
+    smalling_assessment_numeric_pfas = ss_clean_df[smalling_assessment_pfas_columns]
+    smalling_assessment_published_count = ss_clean_df["Count Detected PFAS"]
+    smalling_assessment_published_total = ss_clean_df["∑PFAS"]
     smalling_assessment_calculated_count = smalling_assessment_numeric_pfas.gt(0).sum(axis=1)
     smalling_assessment_calculated_total = smalling_assessment_numeric_pfas.fillna(0).sum(axis=1)
 
@@ -541,7 +576,7 @@ def _(all_compound_dict_df, mo, pd, ss_merged_df):
         + ["Count Detected PFAS", "∑PFAS", "∑EAR"]
     )
     smalling_missing_summary = (
-        ss_merged_df[smalling_assessment_columns]
+        ss_clean_df[smalling_assessment_columns]
         .isna()
         .sum()
         .sort_values(ascending=False)
@@ -551,18 +586,18 @@ def _(all_compound_dict_df, mo, pd, ss_merged_df):
         .reset_index()
     )
     smalling_missing_summary["Missing (%)"] = (
-        100 * smalling_missing_summary["Missing values"] / len(ss_merged_df)
+        100 * smalling_missing_summary["Missing values"] / len(ss_clean_df)
     ).round(1)
 
     smalling_quality_checks = pd.DataFrame([
         {
             "Quality check": "Missing site identifiers",
-            "Result": int(ss_merged_df["Site Code"].isna().sum()),
+            "Result": int(ss_clean_df["Site Code"].isna().sum()),
             "Assessment": "Pass",
         },
         {
             "Quality check": "Duplicate site identifiers",
-            "Result": int(ss_merged_df["Site Code"].duplicated().sum()),
+            "Result": int(ss_clean_df["Site Code"].duplicated().sum()),
             "Assessment": "Pass",
         },
         {
@@ -611,7 +646,7 @@ def _(all_compound_dict_df, mo, pd, ss_merged_df):
             "Columns with the most missing values": mo.ui.table(smalling_missing_summary),
         }),
         mo.md("""
-        **Suitability assessment:** The Smalling portion of `ss_merged_df` is suitable as a measured
+        **Suitability assessment:** The Smalling portion of `ss_clean_df` is suitable as a measured
         PFAS outcome table, but it requires careful treatment of non-detect and not-analyzed values.
         The supplied table contains detected sites only, so the Low/no-detection class must be obtained
         from a complete sampling frame rather than inferred from this table alone.
@@ -631,7 +666,7 @@ def _(mo):
 
 
 @app.cell
-def _(mo, pd, ss_merged_df):
+def _(mo, pd, ss_clean_df):
     seawolf_quality_landcover_columns = [
         "OpenWater", "PerennialIceSnow", "DevelopedOpenSpace",
         "DevelopedLowIntensity", "DevelopedMediumIntensity",
@@ -645,22 +680,22 @@ def _(mo, pd, ss_merged_df):
         "Burn_Area_5k_frac", "Burn_area_50k_frac", "Urbn_burn_5k_frac",
         "Urbn_burn_50k_frac",
     ] + seawolf_quality_landcover_columns
-    seawolf_quality_landcover_total = ss_merged_df[
+    seawolf_quality_landcover_total = ss_clean_df[
         seawolf_quality_landcover_columns
     ].sum(axis=1)
 
     seawolf_exploration_summary = pd.DataFrame([
         {
-            "Measure": "Dataset shape (`ss_merged_df`)",
-            "Result": f"{ss_merged_df.shape[0]} rows × {ss_merged_df.shape[1]} columns",
+            "Measure": "Dataset shape (`ss_clean_df`)",
+            "Result": f"{ss_clean_df.shape[0]} rows × {ss_clean_df.shape[1]} columns",
         },
         {
             "Measure": "Unique sampling sites (Seawolf-matched)",
-            "Result": ss_merged_df["SiteCode"].nunique(),
+            "Result": ss_clean_df["SiteCode"].nunique(),
         },
         {
             "Measure": "Studies represented",
-            "Result": ss_merged_df["Study_seawolf"].nunique(),
+            "Result": ss_clean_df["Study_seawolf"].nunique(),
         },
         {
             "Measure": "Landscape predictor columns",
@@ -668,7 +703,7 @@ def _(mo, pd, ss_merged_df):
         },
         {
             "Measure": "Sites with a recorded proximal-facility count",
-            "Result": int(ss_merged_df["number_pfas_sites_proximal"].notna().sum()),
+            "Result": int(ss_clean_df["number_pfas_sites_proximal"].notna().sum()),
         },
         {
             "Measure": "Mean land-cover fraction sum",
@@ -681,7 +716,7 @@ def _(mo, pd, ss_merged_df):
     ])
 
     seawolf_study_summary = (
-        ss_merged_df["Study_seawolf"]
+        ss_clean_df["Study_seawolf"]
         .value_counts()
         .rename_axis("Study")
         .reset_index(name="Sites")
@@ -693,11 +728,12 @@ def _(mo, pd, ss_merged_df):
             "Sites by contributing study": mo.ui.table(seawolf_study_summary),
         }),
         mo.md(f"""
-        The Seawolf portion of `ss_merged_df` contains landscape characteristics joined onto
-        **{len(ss_merged_df)} Smalling sites**. It includes potential PFAS-source facilities,
+        The Seawolf portion of `ss_clean_df` contains landscape characteristics joined onto
+        **{len(ss_clean_df)} Smalling sites**. It includes potential PFAS-source facilities,
         burn-area measures, and land-cover fractions calculated around each sampling location.
-        Rows without a matching Seawolf `SiteCode` (left-only join results) show up as missing
-        values in the predictor columns below.
+        The unmatched Smalling site was already dropped and structural Seawolf `NaN`s
+        (no facility or burned area found within the buffer) were already imputed while
+        building `ss_clean_df`.
         """),
     ])
     return
@@ -712,7 +748,7 @@ def _(mo):
 
 
 @app.cell
-def _(mo, pd, ss_merged_df):
+def _(mo, pd, ss_clean_df):
     seawolf_assessment_landcover_columns = [
         "OpenWater", "PerennialIceSnow", "DevelopedOpenSpace",
         "DevelopedLowIntensity", "DevelopedMediumIntensity",
@@ -726,23 +762,22 @@ def _(mo, pd, ss_merged_df):
         "Urbn_burn_50k_frac",
     ] + seawolf_assessment_landcover_columns
 
-    seawolf_assessment_landcover_total = ss_merged_df[
+    seawolf_assessment_landcover_total = ss_clean_df[
         seawolf_assessment_landcover_columns
     ].sum(axis=1)
     seawolf_assessment_invalid_fraction_count = int(
         (
-            ss_merged_df[seawolf_assessment_fraction_columns].lt(0)
-            | ss_merged_df[seawolf_assessment_fraction_columns].gt(1)
+            ss_clean_df[seawolf_assessment_fraction_columns].lt(0)
+            | ss_clean_df[seawolf_assessment_fraction_columns].gt(1)
         ).sum().sum()
     )
-    seawolf_assessment_unmatched_count = int(ss_merged_df["_merge"].eq("left_only").sum())
 
     seawolf_assessment_columns = (
         ["SiteCode", "Study_seawolf", "number_pfas_sites_proximal", "mean_dist_to_pfas_site"]
         + seawolf_assessment_fraction_columns
     )
     seawolf_missing_summary = (
-        ss_merged_df[seawolf_assessment_columns]
+        ss_clean_df[seawolf_assessment_columns]
         .isna()
         .sum()
         .sort_values(ascending=False)
@@ -752,21 +787,18 @@ def _(mo, pd, ss_merged_df):
         .reset_index()
     )
     seawolf_missing_summary["Missing (%)"] = (
-        100 * seawolf_missing_summary["Missing values"] / len(ss_merged_df)
+        100 * seawolf_missing_summary["Missing values"] / len(ss_clean_df)
     ).round(1)
 
     seawolf_quality_checks = pd.DataFrame([
         {
             "Quality check": "Missing site identifiers",
-            "Result": int(ss_merged_df["SiteCode"].isna().sum()),
-            "Assessment": (
-                "Pass" if seawolf_assessment_unmatched_count == 0
-                else f"Review; {seawolf_assessment_unmatched_count} Smalling site(s) had no Seawolf match"
-            ),
+            "Result": int(ss_clean_df["SiteCode"].isna().sum()),
+            "Assessment": "Pass; the unmatched Smalling site was already dropped while building `ss_clean_df`",
         },
         {
             "Quality check": "Duplicate site identifiers",
-            "Result": int(ss_merged_df["SiteCode"].dropna().duplicated().sum()),
+            "Result": int(ss_clean_df["SiteCode"].dropna().duplicated().sum()),
             "Assessment": "Pass",
         },
         {
@@ -777,21 +809,21 @@ def _(mo, pd, ss_merged_df):
         {
             "Quality check": "Land-cover totals substantially below 1.0",
             "Result": int(seawolf_assessment_landcover_total.lt(0.95).sum()),
-            "Assessment": "Review; some locations may have incomplete coverage or no Seawolf match",
+            "Assessment": "Review; some locations may have incomplete land-cover coverage",
         },
         {
             "Quality check": "Missing proximal-facility count",
-            "Result": int(ss_merged_df["number_pfas_sites_proximal"].isna().sum()),
-            "Assessment": "Structural missingness may mean no known facility within 5 km",
+            "Result": int(ss_clean_df["number_pfas_sites_proximal"].isna().sum()),
+            "Assessment": "Pass; structural missingness (no facility within buffer) was already imputed to 0",
         },
         {
             "Quality check": "Missing mean facility distance",
-            "Result": int(ss_merged_df["mean_dist_to_pfas_site"].isna().sum()),
-            "Assessment": "Expected when no proximal facility is recorded",
+            "Result": int(ss_clean_df["mean_dist_to_pfas_site"].isna().sum()),
+            "Assessment": "Pass; already imputed with the ~5 km buffer radius (`rdom_max`)",
         },
         {
             "Quality check": "Negative facility distances",
-            "Result": int(ss_merged_df["mean_dist_to_pfas_site"].lt(0).sum()),
+            "Result": int(ss_clean_df["mean_dist_to_pfas_site"].lt(0).sum()),
             "Assessment": "Pass",
         },
     ])
@@ -801,13 +833,16 @@ def _(mo, pd, ss_merged_df):
         mo.accordion({
             "Columns with the most missing values": mo.ui.table(seawolf_missing_summary),
         }),
-        mo.md(f"""
-        **Suitability assessment:** The Seawolf portion of `ss_merged_df` is suitable for use as a
+        mo.md("""
+        **Suitability assessment:** The Seawolf portion of `ss_clean_df` is suitable for use as a
         predictor table. Site identifiers are unique and fraction values are within valid bounds.
-        {seawolf_assessment_unmatched_count} of {len(ss_merged_df)} Smalling sites did not match a
-        Seawolf record and should be reviewed before modeling. Missing facility and burn-area values
-        should be interpreted using the metadata because many are structural zeros or not-applicable
-        values rather than ordinary missing observations.
+        The unmatched Smalling site was dropped, and the structural facility/burn-area `NaN`s were
+        imputed (0 for facility count and burn fractions, `rdom_max` ≈ 5 km for mean facility
+        distance) while building `ss_clean_df` (see the join-ability and `NaN` clean-up sections
+        above); no unresolved missing or unmatched records remain, though rows with these imputed
+        values should be treated as assumption-driven rather than directly measured. Some sites
+        still show land-cover fraction totals well below 1.0, which reflects incomplete land-cover
+        coverage rather than a missingness issue and remains a separate item for review.
         """),
     ])
     return
@@ -824,28 +859,28 @@ def _(mo):
 
 
 @app.cell
-def _(mc_merged_df, mo, pd):
+def _(mc_clean_df, mo, pd):
     mcmahon_quality_clean_columns = [
-        column for column in mc_merged_df.columns if column.endswith("-VA_clean")
+        column for column in mc_clean_df.columns if column.endswith("-VA_clean")
     ]
     mcmahon_quality_estimated_columns = [
-        column for column in mc_merged_df.columns if column.endswith("-estimated")
+        column for column in mc_clean_df.columns if column.endswith("-estimated")
     ]
-    mcmahon_quality_total_concentration = mc_merged_df[
+    mcmahon_quality_total_concentration = mc_clean_df[
         mcmahon_quality_clean_columns
     ].sum(axis=1, min_count=1)
-    mcmahon_quality_land_use_total = mc_merged_df[
+    mcmahon_quality_land_use_total = mc_clean_df[
         ["AGRI_12", "NATU_12", "URBA_12"]
     ].sum(axis=1)
 
     mcmahon_exploration_summary = pd.DataFrame([
         {
-            "Measure": "Merged dataset shape",
-            "Result": f"{mc_merged_df.shape[0]} rows × {mc_merged_df.shape[1]} columns",
+            "Measure": "Cleaned dataset shape (`mc_clean_df`)",
+            "Result": f"{mc_clean_df.shape[0]} rows × {mc_clean_df.shape[1]} columns",
         },
         {
             "Measure": "Unique environmental site IDs",
-            "Result": mc_merged_df["NAWQA_ID_mc_env"].nunique(),
+            "Result": mc_clean_df["NAWQA_ID_mc_env"].nunique(),
         },
         {
             "Measure": "PFAS compounds evaluated",
@@ -853,7 +888,7 @@ def _(mc_merged_df, mo, pd):
         },
         {
             "Measure": "Estimated or trace-result flags",
-            "Result": int(mc_merged_df[mcmahon_quality_estimated_columns].sum().sum()),
+            "Result": int(mc_clean_df[mcmahon_quality_estimated_columns].sum().sum()),
         },
         {
             "Measure": "Cleaned concentration-total range (ng/L)",
@@ -870,7 +905,7 @@ def _(mc_merged_df, mo, pd):
     ])
 
     mcmahon_land_use_summary = (
-        mc_merged_df[["AGRI_12", "NATU_12", "URBA_12"]]
+        mc_clean_df[["AGRI_12", "NATU_12", "URBA_12"]]
         .describe()
         .T
         .reset_index(names="Land-use variable")
@@ -884,7 +919,7 @@ def _(mc_merged_df, mo, pd):
         }),
         mo.md(f"""
         The McMahon analytical table contains groundwater PFAS measurements and landscape
-        predictors for **{len(mc_merged_df)} sites**. Concentration totals are strongly
+        predictors for **{len(mc_clean_df)} sites**. Concentration totals are strongly
         right-skewed, and the agricultural, natural, and urban percentages collectively cover
         approximately 100% of the surrounding land area.
         """),
@@ -901,16 +936,16 @@ def _(mo):
 
 
 @app.cell
-def _(mc_merged_df, mo, pd):
+def _(mc_clean_df, mo, pd):
     mcmahon_assessment_clean_columns = [
-        column for column in mc_merged_df.columns if column.endswith("-VA_clean")
+        column for column in mc_clean_df.columns if column.endswith("-VA_clean")
     ]
     mcmahon_assessment_estimated_columns = [
-        column for column in mc_merged_df.columns if column.endswith("-estimated")
+        column for column in mc_clean_df.columns if column.endswith("-estimated")
     ]
     mcmahon_assessment_geospatial_columns = [
         column
-        for column in mc_merged_df.columns
+        for column in mc_clean_df.columns
         if column not in [
             "key_0", "NAWQA_ID_mc_env", "DATE", "TIME", "NAWQA_ID_mc_geo", "_merge"
         ]
@@ -918,47 +953,47 @@ def _(mc_merged_df, mo, pd):
         and column not in mcmahon_assessment_estimated_columns
     ]
     mcmahon_assessment_land_use_columns = ["AGRI_12", "NATU_12", "URBA_12"]
-    mcmahon_assessment_land_use_total = mc_merged_df[
+    mcmahon_assessment_land_use_total = mc_clean_df[
         mcmahon_assessment_land_use_columns
     ].sum(axis=1)
 
     mcmahon_quality_checks = pd.DataFrame([
         {
             "Quality check": "Missing environmental site IDs",
-            "Result": int(mc_merged_df["NAWQA_ID_mc_env"].isna().sum()),
+            "Result": int(mc_clean_df["NAWQA_ID_mc_env"].isna().sum()),
             "Assessment": "Pass",
         },
         {
             "Quality check": "Duplicate environmental site IDs",
-            "Result": int(mc_merged_df["NAWQA_ID_mc_env"].duplicated().sum()),
+            "Result": int(mc_clean_df["NAWQA_ID_mc_env"].duplicated().sum()),
             "Assessment": "Pass",
         },
         {
             "Quality check": "Environmental-to-geospatial matches",
-            "Result": f"{int(mc_merged_df['_merge'].eq('both').sum())} of {len(mc_merged_df)}",
-            "Assessment": "Pass" if mc_merged_df["_merge"].eq("both").all() else "Review",
+            "Result": f"{int(mc_clean_df['_merge'].eq('both').sum())} of {len(mc_clean_df)}",
+            "Assessment": "Pass" if mc_clean_df["_merge"].eq("both").all() else "Review",
         },
         {
             "Quality check": "Missing cleaned PFAS values",
-            "Result": int(mc_merged_df[mcmahon_assessment_clean_columns].isna().sum().sum()),
+            "Result": int(mc_clean_df[mcmahon_assessment_clean_columns].isna().sum().sum()),
             "Assessment": "Pass",
         },
         {
             "Quality check": "Missing geospatial predictor values",
-            "Result": int(mc_merged_df[mcmahon_assessment_geospatial_columns].isna().sum().sum()),
+            "Result": int(mc_clean_df[mcmahon_assessment_geospatial_columns].isna().sum().sum()),
             "Assessment": "Pass",
         },
         {
             "Quality check": "Negative geospatial values",
-            "Result": int(mc_merged_df[mcmahon_assessment_geospatial_columns].lt(0).sum().sum()),
+            "Result": int(mc_clean_df[mcmahon_assessment_geospatial_columns].lt(0).sum().sum()),
             "Assessment": "Pass",
         },
         {
             "Quality check": "Land-use values outside 0-100%",
             "Result": int(
                 (
-                    mc_merged_df[mcmahon_assessment_land_use_columns].lt(0)
-                    | mc_merged_df[mcmahon_assessment_land_use_columns].gt(100)
+                    mc_clean_df[mcmahon_assessment_land_use_columns].lt(0)
+                    | mc_clean_df[mcmahon_assessment_land_use_columns].gt(100)
                 ).sum().sum()
             ),
             "Assessment": "Pass",
@@ -972,13 +1007,13 @@ def _(mc_merged_df, mo, pd):
         },
         {
             "Quality check": "Estimated or trace-result flags",
-            "Result": int(mc_merged_df[mcmahon_assessment_estimated_columns].sum().sum()),
+            "Result": int(mc_clean_df[mcmahon_assessment_estimated_columns].sum().sum()),
             "Assessment": "Retain as a data-quality indicator",
         },
     ])
 
     mcmahon_missing_summary = (
-        mc_merged_df.isna()
+        mc_clean_df.isna()
         .sum()
         .sort_values(ascending=False)
         .head(10)
@@ -987,7 +1022,7 @@ def _(mc_merged_df, mo, pd):
         .rename(columns={"index": "Column"})
     )
     mcmahon_missing_summary["Missing (%)"] = (
-        100 * mcmahon_missing_summary["Missing values"] / len(mc_merged_df)
+        100 * mcmahon_missing_summary["Missing values"] / len(mc_clean_df)
     ).round(1)
 
     mo.vstack([
