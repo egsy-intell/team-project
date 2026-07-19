@@ -36,33 +36,39 @@ def _(mo):
     * Emir Beg
     * Somyaranjan Sahu
 
-    ## Step one: problem definition
+    ## Step 1: problem definition
 
     ### Problem statement
     Per- and polyfluoroalkyl substances, commonly known as PFAS, are persistent environmental
     contaminants that may enter drinking-water sources through industrial activities, waste
     disposal, firefighting foam use, urban development, and other landscape-level sources. This
     project aims to develop a predictive model for the occurrence of PFAS in tap water,
-    using USGS summary data on potential landscape sources (Seawolf et al., 2023),
+    using U.S. Geological Survey (USGS) summary data on potential landscape sources (Seawolf et al., 2023),
     and reported concentration at the point-of-use (Smalling et al., 2023). We will also attempt
     the same modeling for groundwater, based on the data used in a similar exercise by McMahon et
     al. (2022).
 
-    The question we aim to answer is: Can we predict low, medium, and high levels of PFAS
-    concentration in tap and groundwater sources across the United States based on key geographic and
-    land-use indicators? In addition, how do our findings compare to those offered by researchers
-    in the domain?
+    The question we aim to answer is: Can we predict a site's PFAS risk tier in tap and groundwater
+    sources across the United States based on key geographic and land-use indicators? In addition,
+    how do our findings compare to those offered by researchers in the domain?
 
     #### Proposed classification
-    A provisional classification approach is:
-    * Low: No PFAS compounds detected above the applicable laboratory reporting limits.
-    * Medium: At least one PFAS detected, with cumulative concentration at or below the median
-      concentration among detected samples.
-    * High: At least one PFAS detected, with cumulative concentration above the median
-      concentration among detected samples.
+    Our original provisional classification split sites into low/medium/high using raw cumulative
+    PFAS concentration relative to the sample median. We have since moved away from that approach:
+    weighting every detected compound equally per ng/L doesn't reflect how differently PFAS
+    compounds are actually regulated, and a median-based cutoff tracks our own sample rather than
+    any fixed, external reference point.
 
-    The cutoff between medium and high will be established using the model-development data and
-    frozen before final evaluation.
+    The classification is now based on a toxicity quotient (∑TQ), computed only from the six PFAS
+    compounds EPA regulates under its 2024 rule, and named after EPA's own compliance vocabulary
+    rather than generic low/medium/high labels:
+    * **`within_reduced_monitoring`:** ∑TQ (or HI) < 0.5, below EPA's reduced-monitoring trigger.
+    * **`above_trigger`:** 0.5 ≤ ∑TQ < 1.0, past the trigger but not yet an MCL-equivalent
+      exceedance.
+    * **`mcl_exceedance`:** ∑TQ ≥ 1.0, at or above an MCL-equivalent exceedance.
+
+    See Preparing for modeling, below, for the full derivation, benchmark sourcing, and the
+    remaining open items before ∑TQ can be computed against the full sample set.
 
     #### Why this problem matters
     1. **Public health relevance:** PFAS contamination in drinking water is a concern in many
@@ -84,7 +90,7 @@ def _(mo):
        datasets explicitly integrate private-well and public-supply exposures, positioning our model
        to speak to a population the new federal rule does not cover.
 
-    #### Intended Application
+    #### Intended application
     The proposed model is intended to function as a screening and sampling-prioritization tool.
     It will not replace laboratory testing and will not be used to declare a tap or groundwater
     source safe, unsafe, compliant, or noncompliant.
@@ -96,9 +102,9 @@ def _(mo):
     * Community organizations identifying locations where testing resources may be most useful
 
     ### Application feasibility of the model
-    The project is feasible because researchers at the EPA and USGS (U.S. Geological Survey)
-    provides resources and data such as measured PFAS concentration data and landscape summaries
-    for sites included in its national PFAS tap water reconnaissance.
+    The project is feasible because the EPA and USGS provide the data it depends on: measured PFAS
+    concentrations and landscape summaries for sites in USGS's national PFAS tap-water
+    reconnaissance.
 
     #### Scope
     * Publicly supplied and privately sourced tap and groundwater
@@ -112,7 +118,7 @@ def _(mo):
     The model will not...
     * Make causal claims about individual PFAS sources
     * Determine regulatory compliance
-    * replace laboratory sampling
+    * Replace laboratory sampling
     * Estimate the exact PFAS exposure of individual residents
     * Publish or attempt to reconstruct exact residential locations
     * Use repeated temporal samples as independent observations
@@ -120,8 +126,8 @@ def _(mo):
     * Use previously generated PFAS predictions as predictor variables
 
     ### Data source
-    #### USGS Data Source 1: Smalling et al., 2023 (Dependent Variable)
-    It supplies one of the project’s dependent variables, i.e., the outcome the model is trying to
+    #### USGS data source 1: Smalling et al., 2023 (dependent variable)
+    It supplies one of the project's dependent variables, i.e., the outcome the model is trying to
     predict. It will be used to train our model in the categorization of tap water sites based
     on site controls. It includes:
 
@@ -132,7 +138,7 @@ def _(mo):
     * Whether results were below the laboratory reporting limit
     * Type of service point: private v. public
 
-    #### USGS Data Source 2: Seawolf et al., 2023 (Predictors)
+    #### USGS data source 2: Seawolf et al., 2023 (predictors)
     This dataset provides predictors associated with Smalling et al.'s data. It
     describes the environmental and geographic characteristics surrounding each sampling
     location that may be associated with PFAS contamination, including:
@@ -146,7 +152,7 @@ def _(mo):
     * Public versus private water source
     * Other geographic or landscape summaries around the sampling location
 
-    #### USGS Data Source 3: McMahon et al., 2022 (Predictors + Dependent Variables)
+    #### USGS data source 3: McMahon et al., 2022 (predictors + dependent variables)
     This comprehensive dataset provides environmental and geographic characteristics,
     as well as PFAS concentrations, associated with various private and public wells
     drawing from aquifers along the Eastern United States. It includes:
@@ -177,11 +183,11 @@ def _(mo):
 @app.cell
 def _(mo):
     mo.md("""
-    ## Step 2: Data exploration and quality assesssment
+    ## Step 2: Data exploration and quality assessment
 
     Before assessing the quality of our data, we take the following steps:
 
-    ### Smalling et al. (2023) and Seawolf et. al. (2023) load and join-ability (`ss_merged_df`)
+    ### Smalling et al. (2023) and Seawolf et al. (2023) load and join-ability (`ss_merged_df`)
 
     1. Load Seawolf and Smalling via `pandas`
     2. Clean Smalling: the dataset uses `-` and `nd` for two specific purposes (not analyzed, and non-detected
@@ -207,6 +213,11 @@ def _(all_compound_dict_df, mo, pd):
     seawolf_df = pd.read_csv(
         data_dir / "seawolf" / "PFAS_DataSummaries_5k_50k_SummaryData.csv"
     )
+
+    # Smalling's raw header spells this compound "HFPO-DA; GenX" (with a space);
+    # normalize to "HFPO-DA;GenX" so it matches all_compound_dict_df and the
+    # TQ benchmark table (pfas_tq_benchmarks_epa_aligned.csv) everywhere downstream.
+    smalling_df = smalling_df.rename(columns={"HFPO-DA; GenX": "HFPO-DA;GenX"})
 
     # Individual PFAS compound columns mix numeric concentrations (ng/L) with
     # two non-numeric sentinels: "nd" (tested, not detected above the lab
@@ -242,7 +253,7 @@ def _(all_compound_dict_df, mo, pd):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ### McMahon et. al. (2022) load and join-ability (`mc_merged_df`)
+    ### McMahon et al. (2022) load and join-ability (`mc_merged_df`)
 
     In this case, we perform similar operations
 
@@ -298,7 +309,7 @@ def _(all_compound_dict_df, data_dir, mcmahon_env_df, np, pd):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    `ss_merged_df` and `mc_merged_df` now contains all data to be considered in our model design
+    `ss_merged_df` and `mc_merged_df` now contain all data to be considered in our model design
 
     ### Unmatched rows and `NaN` clean up
     """)
@@ -419,7 +430,7 @@ def _(mc_merged_df, mo, ss_merged_clean_df):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    #### results
+    #### Results
 
     McMahon data does not require any further cleanups. The Seawolf landscape columns with missing
     values (`number_pfas_sites_proximal`, `mean_dist_to_pfas_site`, and the four burn-area fractions)
@@ -469,7 +480,7 @@ def _(mc_merged_df, seawolf_dict_df, ss_merged_clean_df):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ## Data Exploration and Quality Assessment
+    ## Dataset-by-dataset review
 
     The following subsections evaluate the structure, completeness, consistency, and modeling
     suitability of the Smalling, Seawolf, and McMahon datasets. We check for: dataset dimensions, key fields, missing values, duplicate
@@ -711,7 +722,7 @@ def _(mo):
     mo.md(r"""
     ### Smalling et al. (2023)
 
-    #### Data Exploration
+    #### Data exploration
     """)
     return
 
@@ -780,7 +791,7 @@ def _(all_compound_dict_df, mo, pd, ss_clean_df):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    #### Quality Assessment
+    #### Quality assessment
     """)
     return
 
@@ -887,7 +898,7 @@ def _(mo):
     mo.md(r"""
     ### Seawolf et al. (2023)
 
-    #### Data Exploration
+    #### Data exploration
     """)
     return
 
@@ -969,7 +980,7 @@ def _(mo, pd, ss_clean_df):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    #### Quality Assessment
+    #### Quality assessment
     """)
     return
 
@@ -1080,7 +1091,7 @@ def _(mo):
     mo.md(r"""
     ### McMahon et al. (2022)
 
-    #### Data Exploration
+    #### Data exploration
     """)
     return
 
@@ -1157,7 +1168,7 @@ def _(mc_clean_df, mo, pd):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    #### Quality Assessment
+    #### Quality assessment
     """)
     return
 
@@ -1270,7 +1281,7 @@ def _(mc_clean_df, mo, pd):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ### Categorical Variable Evaluation
+    ### Categorical variable evaluation
 
     This section evaluates the categorical variables already available in `ss_clean_df` and
     `mc_clean_df`. The checks focus on category completeness, cardinality, class imbalance,
@@ -1524,11 +1535,72 @@ def _(mc_clean_df, mo, pd, ss_clean_df):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ## Next Steps: Proposed task assignments
+    ## Step 2.3: Preparing for modeling
+
+    ### Scaling
+    Several geospatial and land-use predictors, and cumulative PFAS concentration itself, are
+    right-skewed (see skewness/IQR summary above) and span very different units. We will consider this
+    in our modeling since this might alter the training effectiveness.
+
+    ### Categorical encoding
+    Per the Categorical Variable Evaluation above: binary-encode two-level fields (`Site Type`),
+    one-hot encode low-cardinality nominal fields (`State`, McMahon land-use categories), drop
+    single-level fields, and combine rare levels. Encoders will be fit on training data only. Study
+    identifiers (`Study_seawolf`, `Study_smalling`) are retained as controls, not predictors.
+
+    ### Feature engineering and selection: from concentration cutoffs to toxicity quotients
+    The original median-based low/medium/high classification treated every PFAS compound as
+    equally toxic per ng/L, even though compounds differ substantially in their health-based
+    benchmarks. We're replacing it with a toxicity quotient (TQ) target scored only on the six
+    compounds EPA regulates under its 2024 rule: **PFOA, PFOS, PFHxS, PFNA, PFBS, and HFPO-DA
+    (GenX)**, all present as columns in the Smalling data. Benchmarks are now merged into
+    `all_compound_dict_df` from `data/factors/pfas_tq_benchmarks_epa_aligned.csv`: EPA values from
+    the final-rule fact sheet (CDM Smith, 2024) for the six regulated compounds
+    (`epa_ratio_eligible`), state-only values from Table S5 of Smalling et al. (2023) for the rest.
+
+    * **Per-compound TQ** = concentration divided by that compound's EPA benchmark.
+    * **∑TQ (Hazard Index)** = sum of TQ across only the six regulated compounds, not the full
+      panel, a deliberate narrowing from the earlier `∑EAR`/cumulative-concentration approach.
+    * The other 11 compounds (PFBA, PFPeA, PFHxA, PFHpA, PFDA, PFPeS, PFHpS, PFDS, PFPrS, 6:2 FTS,
+      FOSA) stay in the dataset as a descriptive slice, not part of the target, since EPA hasn't
+      set enforceable benchmarks for them.
+
+    Tiers are unchanged from the Proposed classification above (`within_reduced_monitoring`,
+    `above_trigger`, `mcl_exceedance`).
+
+    Restricting ∑TQ to regulated compounds keeps each cutoff tied to a real compliance action point,
+    matches the phased-compliance motivation, and keeps the classifier legible in the terms
+    operators already track (trigger vs. MCL), without the model itself determining compliance, per Constraints.
+    The dependent variable is this ∑TQ class; predictors are landscape/land-use features only, never concentration data, so the model tests whether land use alone can flag risk before a site is ever sampled.
+
+    **Pre-modeling task list** (not yet implemented): computing ∑TQ means reshaping `ss_clean_df`
+    to one row per site per compound, joining `all_compound_dict_df`'s benchmark columns, dividing
+    to get per-compound TQ, splitting by `epa_ratio_eligible`, and summing within each group. That
+    yields two scores per site: the classified EPA-anchored ∑TQ, and a supplementary state-only
+    ∑TQ reported as context but never classified. Remaining open questions:
+    * Treat non-detects as 0 per compound (not dropped), so an absent compound contributes zero
+      rather than excluding the sample.
+    * Summing PFOA/PFOS's individual-MCL ratios with the 4-compound Hazard Index (PFNA + PFHxS +
+      GenX + PFBS) into one ∑TQ is our own design choice, not an EPA-prescribed method; state it
+      as an assumption.
+    * Decide whether to exclude PFPeS/PFPrS (no benchmark in either source) from ∑TQ entirely, or
+      flag affected samples as partially unassessed.
+    * Run the pipeline against the full sample dataset to see how the reclassification shifts the
+      distribution away from the old median-based cutoffs.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ## Next steps: proposed task assignments
 
     ## Conclusion
 
     ## References
+    * CDM Smith. (2024). EPA's final regulations: What do you
+      need to know? https://oldcolonyplanning.org/wp-content/uploads/2024/04/EPAs-Final-PFAS-Regulations-Fact-Sheet.pdf
     * McMahon, P. B., Tokranov, A. K., Bexfield, L. M., Lindsey, B. D., Johnson, T. D., Lombard,
       M. A., & Watson, E. (2022). Perfluoroalkyl and polyfluoroalkyl substances in groundwater
       used as a source of drinking water in the Eastern United States. *Environmental Science &

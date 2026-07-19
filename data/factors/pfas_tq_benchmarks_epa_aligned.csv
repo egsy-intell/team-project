@@ -1,0 +1,18 @@
+compound,benchmark_ng_L,regulatory_basis,trigger_ng_L,epa_ratio_eligible,source,notes
+PFOA,4.0,EPA_MCL,2.0,True,EPA Final PFAS NPDWR (2024),TQ=0.5 at trigger; TQ=1.0 at MCL; individual limit
+PFOS,4.0,EPA_MCL,2.0,True,EPA Final PFAS NPDWR (2024),TQ=0.5 at trigger; TQ=1.0 at MCL; individual limit
+PFNA,10.0,EPA_HI_denominator,5.0,True,EPA Final PFAS NPDWR (2024),TQ=0.5 at trigger; TQ=1.0 at MCL; also a term in the 4-compound Hazard Index
+PFHxS,10.0,EPA_HI_denominator,5.0,True,EPA Final PFAS NPDWR (2024),TQ=0.5 at trigger; TQ=1.0 at MCL; also a term in the 4-compound Hazard Index
+HFPO-DA;GenX,10.0,EPA_HI_denominator,5.0,True,EPA Final PFAS NPDWR (2024),TQ=0.5 at trigger; TQ=1.0 at MCL; also a term in the 4-compound Hazard Index
+PFBS,2000.0,EPA_HI_denominator,,True,EPA Final PFAS NPDWR (2024),No individual trigger/MCL; only regulated as part of the 4-compound Hazard Index (HI trigger 0.5 / MCL 1.0 applies to the summed HI itself)
+PFBA,2000.0,state_only,,False,Wisconsin DHS preventative standard,No EPA trigger/MCL pair; single state benchmark only -- TQ=1.0 does not mean EPA exceedance
+PFPeA,93.0,state_only,,False,Texas CEQ Tier 1 PCL,No EPA trigger/MCL pair; single state benchmark only -- TQ=1.0 does not mean EPA exceedance
+PFHxA,93.0,state_only,,False,Texas CEQ Tier 1 PCL,No EPA trigger/MCL pair; single state benchmark only -- TQ=1.0 does not mean EPA exceedance
+PFHpA,2.0,state_only_sum,,False,Vermont DEC PAL,Applies only to a 5-compound sum per source footnote; do not use standalone
+PFDA,4.0,state_only,,False,Hawaii DOH EAL,No EPA trigger/MCL pair; single state benchmark only -- TQ=1.0 does not mean EPA exceedance
+PFPeS,,none,,False,No benchmark identified,Not covered by any source in project files
+PFHpS,20.0,state_only,,False,Hawaii DOH EAL,No EPA trigger/MCL pair; single state benchmark only -- TQ=1.0 does not mean EPA exceedance
+PFDS,20.0,state_only,,False,Hawaii DOH EAL,No EPA trigger/MCL pair; single state benchmark only -- TQ=1.0 does not mean EPA exceedance
+PFPrS,,none,,False,No benchmark identified,Not covered by any source in project files
+6:2 FTS,100.0,state_only,,False,Denmark EPA health-based,No EPA trigger/MCL pair; single state benchmark only -- TQ=1.0 does not mean EPA exceedance
+FOSA,2.0,state_only,,False,Wisconsin DHS preventative standard,No EPA trigger/MCL pair; single state benchmark only -- TQ=1.0 does not mean EPA exceedance
