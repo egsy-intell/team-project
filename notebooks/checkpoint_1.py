@@ -1241,6 +1241,260 @@ def _(mc_clean_df, mo, pd):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
+    ### Categorical Variable Evaluation
+
+    This section evaluates the categorical variables already available in `ss_clean_df` and
+    `mc_clean_df`. The checks focus on category completeness, cardinality, class imbalance,
+    rare levels, inconsistent labels, and the encoding treatment that may be appropriate before
+    modeling. Site identifiers and laboratory quality flags are excluded because they are keys or
+    data-quality indicators rather than explanatory categories.
+    """)
+    return
+
+
+@app.cell
+def _(mc_clean_df, mo, pd, ss_clean_df):
+    def categorical_profile(dataset_name, dataframe, columns):
+        profile_rows = []
+        value_count_tables = {}
+
+        for column_name in columns:
+            categorical_series = dataframe[column_name].astype("string").str.strip()
+            blank_count = int(categorical_series.eq("").sum())
+            categorical_series = categorical_series.mask(categorical_series.eq(""), pd.NA)
+            non_missing_series = categorical_series.dropna()
+            category_counts = non_missing_series.value_counts(dropna=False)
+
+            distinct_count = int(category_counts.shape[0])
+            missing_count = int(categorical_series.isna().sum())
+            missing_pct = round(100 * missing_count / len(dataframe), 1) if len(dataframe) else 0.0
+
+            if category_counts.empty:
+                dominant_category = None
+                dominant_count = 0
+                dominant_pct = 0.0
+            else:
+                dominant_category = str(category_counts.index[0])
+                dominant_count = int(category_counts.iloc[0])
+                dominant_pct = round(
+                    100 * dominant_count / len(non_missing_series), 1
+                ) if len(non_missing_series) else 0.0
+
+            rare_category_count = int(category_counts.lt(5).sum())
+
+            normalized_series = (
+                non_missing_series
+                .str.casefold()
+                .str.replace(r"\s+", " ", regex=True)
+            )
+            label_variant_table = pd.DataFrame({
+                "original": non_missing_series,
+                "normalized": normalized_series,
+            }).drop_duplicates()
+            label_variant_groups = int(
+                label_variant_table.groupby("normalized")["original"]
+                .nunique()
+                .gt(1)
+                .sum()
+            ) if not label_variant_table.empty else 0
+
+            if distinct_count <= 1:
+                recommended_treatment = "Drop from modeling; no useful variation"
+            elif distinct_count == 2:
+                recommended_treatment = "Binary encode or one-hot encode"
+            elif distinct_count <= 10:
+                recommended_treatment = "One-hot encode"
+            elif distinct_count <= 50:
+                recommended_treatment = "One-hot encode; combine very rare levels if needed"
+            else:
+                recommended_treatment = (
+                    "High cardinality; group levels or use leakage-safe frequency encoding"
+                )
+
+            assessment_flags = []
+            if missing_count > 0:
+                assessment_flags.append("missing values")
+            if blank_count > 0:
+                assessment_flags.append("blank labels")
+            if distinct_count <= 1:
+                assessment_flags.append("no variation")
+            if dominant_pct >= 90 and distinct_count > 1:
+                assessment_flags.append("high imbalance")
+            if rare_category_count > 0:
+                assessment_flags.append("rare levels")
+            if label_variant_groups > 0:
+                assessment_flags.append("inconsistent label formatting")
+
+            quality_assessment = (
+                "Pass"
+                if not assessment_flags
+                else "Review: " + ", ".join(assessment_flags)
+            )
+
+            profile_rows.append({
+                "Dataset": dataset_name,
+                "Variable": column_name,
+                "Rows": len(dataframe),
+                "Non-missing": int(non_missing_series.shape[0]),
+                "Missing": missing_count,
+                "Missing (%)": missing_pct,
+                "Distinct categories": distinct_count,
+                "Dominant category": dominant_category,
+                "Dominant count": dominant_count,
+                "Dominant (%)": dominant_pct,
+                "Rare categories (<5 rows)": rare_category_count,
+                "Label-variant groups": label_variant_groups,
+                "Recommended treatment": recommended_treatment,
+                "Quality assessment": quality_assessment,
+            })
+
+            category_table = (
+                category_counts
+                .rename("Count")
+                .rename_axis("Category")
+                .reset_index()
+            )
+            category_table["Percent of non-missing"] = (
+                100 * category_table["Count"] / len(non_missing_series)
+            ).round(1) if len(non_missing_series) else 0.0
+
+            value_count_tables[f"{dataset_name}: {column_name}"] = mo.ui.table(
+                category_table.head(25)
+            )
+
+        profile_columns = [
+            "Dataset", "Variable", "Rows", "Non-missing", "Missing", "Missing (%)",
+            "Distinct categories", "Dominant category", "Dominant count", "Dominant (%)",
+            "Rare categories (<5 rows)", "Label-variant groups",
+            "Recommended treatment", "Quality assessment",
+        ]
+        return pd.DataFrame(profile_rows, columns=profile_columns), value_count_tables
+
+    # Smalling categorical variables: geographic and water-source groupings.
+    smalling_categorical_columns = [
+        column_name
+        for column_name in ["State", "Site Type", "Study_smalling"]
+        if column_name in ss_clean_df.columns
+    ]
+
+    # Seawolf categorical variables: contributing study. SiteCode and station names are
+    # identifiers and are intentionally excluded.
+    seawolf_categorical_columns = [
+        column_name
+        for column_name in ["Study_seawolf"]
+        if column_name in ss_clean_df.columns
+    ]
+
+    # McMahon categorical variables are detected from the already merged dataframe.
+    # Identifiers, dates/times, merge indicators, and estimated-result flags are excluded.
+    mcmahon_categorical_exclusions = {
+        "key_0", "NAWQA_ID_mc_env", "NAWQA_ID_mc_geo",
+        "DATE", "TIME", "_merge",
+    }
+    mcmahon_categorical_columns = [
+        column_name
+        for column_name in mc_clean_df.select_dtypes(
+            include=["object", "string", "category", "bool"]
+        ).columns
+        if column_name not in mcmahon_categorical_exclusions
+        and not column_name.endswith("-estimated")
+    ]
+
+    smalling_categorical_profile, smalling_category_tables = categorical_profile(
+        "Smalling", ss_clean_df, smalling_categorical_columns
+    )
+    seawolf_categorical_profile, seawolf_category_tables = categorical_profile(
+        "Seawolf", ss_clean_df, seawolf_categorical_columns
+    )
+    mcmahon_categorical_profile, mcmahon_category_tables = categorical_profile(
+        "McMahon", mc_clean_df, mcmahon_categorical_columns
+    )
+
+    categorical_profiles = {
+        "Smalling": smalling_categorical_profile,
+        "Seawolf": seawolf_categorical_profile,
+        "McMahon": mcmahon_categorical_profile,
+    }
+
+    categorical_overall_rows = []
+    for dataset_name, profile_df in categorical_profiles.items():
+        categorical_overall_rows.append({
+            "Dataset": dataset_name,
+            "Categorical variables evaluated": len(profile_df),
+            "Variables with missing values": int(profile_df["Missing"].gt(0).sum()),
+            "Single-level variables": int(
+                profile_df["Distinct categories"].le(1).sum()
+            ),
+            "Highly imbalanced variables (≥90%)": int(
+                profile_df["Dominant (%)"].ge(90).sum()
+            ),
+            "Variables with rare levels": int(
+                profile_df["Rare categories (<5 rows)"].gt(0).sum()
+            ),
+            "Variables with label variants": int(
+                profile_df["Label-variant groups"].gt(0).sum()
+            ),
+        })
+
+    categorical_overall_summary = pd.DataFrame(categorical_overall_rows)
+
+    def categorical_panel(profile_df, category_tables, dataset_note):
+        panel_items = [mo.ui.table(profile_df)]
+        if category_tables:
+            panel_items.append(mo.accordion(category_tables))
+        panel_items.append(mo.md(dataset_note))
+        return mo.vstack(panel_items)
+
+    mo.vstack([
+        mo.ui.table(categorical_overall_summary),
+        mo.ui.tabs({
+            "Smalling": categorical_panel(
+                smalling_categorical_profile,
+                smalling_category_tables,
+                """
+                **Interpretation:** `Site Type` can be binary encoded. `State` is a nominal
+                geographic variable and should be one-hot encoded or grouped into broader regions
+                if rare states create unstable estimates. A study field with only one observed
+                level should be removed because it does not help distinguish observations.
+                """,
+            ),
+            "Seawolf": categorical_panel(
+                seawolf_categorical_profile,
+                seawolf_category_tables,
+                """
+                **Interpretation:** `Study_seawolf` may capture differences in sampling design,
+                geography, or time period. It can be retained as a control variable, but it should
+                not become a shortcut for predicting PFAS outcomes. Use grouped cross-validation
+                by study to test whether model performance generalizes beyond the contributing
+                studies.
+                """,
+            ),
+            "McMahon": categorical_panel(
+                mcmahon_categorical_profile,
+                mcmahon_category_tables,
+                """
+                **Interpretation:** Low-cardinality McMahon categories can be one-hot encoded.
+                Variables with one level should be dropped, while rare levels should be combined
+                only when the grouping is scientifically meaningful. Site identifiers, dates,
+                merge indicators, and estimated-result flags are intentionally excluded from this
+                categorical predictor review.
+                """,
+            ),
+        }),
+        mo.md("""
+        **Overall modeling recommendation:** Standardize whitespace and capitalization before
+        encoding, preserve missingness as an explicit category only when it has a defensible
+        meaning, combine rare categories before train/test splitting rules are finalized, and fit
+        all encoders using training data only. High-cardinality identifiers should not be used as
+        predictors because they can cause memorization and poor generalization.
+        """),
+    ])
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
     ## Next Steps: Proposed task assignments
 
     ## Conclusion
