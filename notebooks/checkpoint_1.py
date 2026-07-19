@@ -358,6 +358,77 @@ def _(mac_merged_df, mo, np, pd, ss_merged_df):
 
 
 @app.cell
+def _(mac_merged_df, mo, np, pd, ss_merged_df):
+    def describe_distribution(df, columns, dataset_name):
+        rows = []
+        for col in columns:
+            values = pd.to_numeric(df[col], errors="coerce").dropna()
+            if values.empty:
+                continue
+
+            q1 = values.quantile(0.25)
+            q3 = values.quantile(0.75)
+            iqr = q3 - q1
+            lower = q1 - 1.5 * iqr
+            upper = q3 + 1.5 * iqr
+            outlier_count = int(((values < lower) | (values > upper)).sum())
+            skew = values.skew()
+
+            if skew > 1:
+                skew_assessment = "Right-skewed"
+            elif skew < -1:
+                skew_assessment = "Left-skewed"
+            else:
+                skew_assessment = "Approximately symmetric"
+
+            rows.append({
+                "Dataset": dataset_name,
+                "Variable": col,
+                "Skewness": round(skew, 3),
+                "Assessment": skew_assessment,
+                "Q1": round(q1, 3),
+                "Q3": round(q3, 3),
+                "IQR": round(iqr, 3),
+                "Lower bound": round(lower, 3),
+                "Upper bound": round(upper, 3),
+                "Potential outliers": outlier_count,
+            })
+
+        return pd.DataFrame(rows)
+
+    ss_analysis_columns = [
+        "∑PFAS",
+        "Count Detected PFAS",
+        "∑EAR",
+        "number_pfas_sites_proximal",
+        "mean_dist_to_pfas_site",
+        "Burn_Area_5k_frac",
+        "Burn_area_50k_frac",
+        "Urbn_burn_5k_frac",
+        "Urbn_burn_50k_frac",
+    ]
+    ss_analysis_columns = [col for col in ss_analysis_columns if col in ss_merged_df.columns]
+
+    mac_analysis_columns = [
+        col for col in mac_merged_df.columns if col.endswith("-VA_clean")
+    ][:6] + ["AGRI_12", "NATU_12", "URBA_12"]
+
+    distribution_summary = pd.concat(
+        [
+            describe_distribution(ss_merged_df, ss_analysis_columns, "Smalling + Seawolf"),
+            describe_distribution(mac_merged_df, mac_analysis_columns, "McMahon"),
+        ],
+        ignore_index=True,
+    )
+
+    mo.vstack([
+        mo.md("### Skewness and IQR outlier summary"),
+        mo.ui.table(distribution_summary),
+    ])
+    return
+
+
+@app.cell
 def _(mo, pd, ss_merged_df):
     import matplotlib.pyplot as plt
 
