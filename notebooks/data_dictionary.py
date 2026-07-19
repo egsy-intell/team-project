@@ -33,6 +33,34 @@ def _(ET, mo, pd):
     )
 
     mcmahon_dict_df = pd.read_csv(data_dir / "mcmahon" / "PFAS_Data_Dictionary.csv", encoding="latin1")
+    mcmahon_env_df = pd.read_csv(data_dir / "mcmahon" / "PFAS_ENV.csv")
+
+    # Data quirk: All values are labeled with <<compound>>-VA
+    # except for `"PFBS-V"`. This is a correction
+    mcmahon_env_df = mcmahon_env_df.rename(columns={"PFBS-V": "PFBS-VA"})
+
+    # McMahon spells some compounds differently than Smalling despite
+    # referring to the same substance; normalize to Smalling's spelling so
+    # shared compounds line up as a single row.
+    mcmahon_alias = {
+        "4_2 FTS": "4:2 FTS",
+        "6_2 FTS": "6:2 FTS",
+        "8_2 FTS": "8:2 FTS",
+        "PFOSA": "FOSA",
+        "PFOS ": "PFOS",
+    }
+
+    # mcmahon_env_df's "-VA"/"-RMK" columns use McMahon's original spelling;
+    # align them here so downstream notebooks receive a dataframe that's
+    # already consistent with all_compound_dict_df, without needing
+    # mcmahon_alias itself.
+    mcmahon_env_df = mcmahon_env_df.rename(
+        columns={
+            f"{old}-{suffix}": f"{new}-{suffix}"
+            for old, new in mcmahon_alias.items()
+            for suffix in ("VA", "RMK")
+        }
+    )
 
     def _to_float(value):
         return float(value) if value is not None else None
@@ -59,7 +87,7 @@ def _(ET, mo, pd):
         "Seawolf": seawolf_dict_df,
         "McMahon": filter_mcmahon("PFAS_ENV")
     })
-    return (filter_mcmahon,)
+    return filter_mcmahon, mcmahon_alias, mcmahon_env_df
 
 
 @app.cell
@@ -71,7 +99,7 @@ def _(mo):
 
 
 @app.cell
-def _(filter_mcmahon, pd):
+def _(filter_mcmahon, mcmahon_alias, pd):
     # McMahon's PFAS_ENV table mixes non-compound fields (NAWQA_ID, DATE, TIME)
     # and remark-code boilerplate rows in with the actual PFAS compounds, so
     # filter down to rows whose PARAMETER is an actual compound abbreviation.
@@ -79,17 +107,6 @@ def _(filter_mcmahon, pd):
         "", "NAWQA_ID", "DATE", "TIME",
         "<parameter name>-RMK", "<parameter name>-VA",
         "<", "E", "n",
-    }
-
-    # McMahon spells some compounds differently than Smalling despite
-    # referring to the same substance; normalize to Smalling's spelling so
-    # shared compounds line up as a single row.
-    mcmahon_alias = {
-        "4_2 FTS": "4:2 FTS",
-        "6_2 FTS": "6:2 FTS",
-        "8_2 FTS": "8:2 FTS",
-        "PFOSA": "FOSA",
-        "PFOS ": "PFOS",
     }
 
     _mcmahon_compound_df = (
@@ -142,7 +159,7 @@ def _(filter_mcmahon, pd):
         .sort_values("compound")
         .reset_index(drop=True)
     )
-    return
+    return (all_compound_dict_df,)
 
 
 if __name__ == "__main__":
