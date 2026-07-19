@@ -99,7 +99,7 @@ def _(mo):
 
 
 @app.cell
-def _(filter_mcmahon, mcmahon_alias, pd):
+def _(filter_mcmahon, mcmahon_alias, mo, pd):
     # McMahon's PFAS_ENV table mixes non-compound fields (NAWQA_ID, DATE, TIME)
     # and remark-code boilerplate rows in with the actual PFAS compounds, so
     # filter down to rows whose PARAMETER is an actual compound abbreviation.
