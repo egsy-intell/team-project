@@ -27,7 +27,23 @@ uv run marimo edit
 
 This opens the marimo notebook editor in your browser. Pick a notebook file (e.g. `checkpoint_1.py`) to open it, or create a new one with `uv run marimo edit new_notebook.py`.
 
-## 4. (Optional) VS Code extension
+## 4. (Optional) Run a notebook without cloning the repo
+
+Every notebook under `notebooks/` declares its own dependencies via a [PEP 723](https://peps.python.org/pep-0723/) inline script header, and `scripts/export_notebooks.py` publishes each notebook's raw `.py` source to `gh-pages` alongside its HTML export. That means `uvx` can download and run a notebook directly from its published URL, with `uv` installing exactly the packages it declares into an isolated environment — no local checkout, no `uv sync`:
+
+```bash
+uvx marimo edit --sandbox https://egsy-intell.github.io/team-project/notebooks/checkpoint_1.py
+```
+
+or, as a read-only app:
+
+```bash
+uvx marimo run --sandbox https://egsy-intell.github.io/team-project/notebooks/checkpoint_1.py
+```
+
+`scripts/run_notebook.sh [notebook-name] [edit|run]` wraps this for convenience (defaults to `checkpoint_1` in `edit` mode). The notebooks fetch `data/usgs/` and any sibling notebook modules (e.g. `data_dictionary.py`) straight from GitHub the first time they're needed when running this way, so no extra setup is required.
+
+## 5. (Optional) VS Code extension
 
 Install the [marimo extension](https://marketplace.visualstudio.com/items?itemName=marimo-team.vscode-marimo) for syntax support and running notebooks directly from the editor. It's already listed under recommended extensions for this workspace — VS Code should prompt you to install it when you open the project.
 
@@ -52,7 +68,7 @@ GitHub Actions runs two workflows (see `.github/workflows/`):
   - spell-checks the text in every notebook under `notebooks/` with [`codespell`](https://github.com/codespell-project/codespell)
   - confirms every notebook executes cleanly via `marimo export html`
 - **`autofix-typos.yml`** — on every PR into `main` (from a branch in this repo, not a fork), runs `codespell -w` on `notebooks/` and pushes a `Fix typos (autofix)` commit back to the PR branch if it finds anything to fix, so `ci.yml`'s spelling check turns green without manual effort.
-- **`publish.yml`** — on push to `main` (i.e. after a merge), re-runs the tests, exports each notebook in `notebooks/` to a standalone HTML file (`docs/notebooks/<notebook_name>.html`) via `scripts/export_notebooks.py`, and publishes that directory to the `gh-pages` branch under `docs/notebooks/` using [`peaceiris/actions-gh-pages`](https://github.com/peaceiris/actions-gh-pages) — matching this repo's GitHub Pages source (`gh-pages` branch, `/docs` folder), so the exported notebooks show up at `https://egsy-intell.github.io/team-project/notebooks/<notebook_name>.html`.
+- **`publish.yml`** — on push to `main` (i.e. after a merge), re-runs the tests, exports each notebook in `notebooks/` to a standalone HTML file (`docs/notebooks/<notebook_name>.html`) plus a copy of its raw `.py` source (`docs/notebooks/<notebook_name>.py`) via `scripts/export_notebooks.py`, and publishes that directory to the `gh-pages` branch under `docs/notebooks/` using [`peaceiris/actions-gh-pages`](https://github.com/peaceiris/actions-gh-pages) — matching this repo's GitHub Pages source (`gh-pages` branch, `/docs` folder), so the exported notebooks show up at `https://egsy-intell.github.io/team-project/notebooks/<notebook_name>.html` and the raw source at `https://egsy-intell.github.io/team-project/notebooks/<notebook_name>.py` (runnable directly with `uvx`, see step 4 above).
 
 To reproduce the export locally:
 

@@ -1,3 +1,11 @@
+# /// script
+# requires-python = ">=3.14"
+# dependencies = [
+#     "marimo>=0.23.14",
+#     "pandas>=3.0.3",
+# ]
+# ///
+
 import marimo
 
 __generated_with = "0.23.14"
@@ -27,6 +35,28 @@ def _(mo):
 @app.cell
 def _(ET, mo, pd):
     data_dir = mo.notebook_dir() / ".." / "data" / "usgs"
+
+    if not data_dir.exists():
+        # Notebook was opened standalone (e.g. `uvx marimo edit --sandbox
+        # <gh-pages-url>`), so there's no sibling data/ checkout. Download the
+        # same files from the repo into a local cache and use that instead.
+        import tempfile
+        import urllib.request
+        from pathlib import Path
+
+        data_dir = Path(tempfile.gettempdir()) / "egsy-pfas-data" / "usgs"
+        _RAW_BASE = "https://raw.githubusercontent.com/egsy-intell/team-project/main/data/usgs"
+        _files = [
+            "seawolf/NationalPFASReconLandscapeMetadata.xml",
+            "mcmahon/PFAS_Data_Dictionary.csv",
+            "mcmahon/PFAS_ENV.csv",
+        ]
+        for _rel in _files:
+            _dest = data_dir / _rel
+            if _dest.exists():
+                continue
+            _dest.parent.mkdir(parents=True, exist_ok=True)
+            urllib.request.urlretrieve(f"{_RAW_BASE}/{_rel}", _dest)
 
     seawolf_meta_tree = ET.parse(
         data_dir / "seawolf" / "NationalPFASReconLandscapeMetadata.xml"
