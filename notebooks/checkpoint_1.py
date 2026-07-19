@@ -376,25 +376,27 @@ def _(mo, np, pd, ss_merged_df):
 
     def make_boxplot(df, columns, title):
         n_cols = max(1, len(columns))
-        fig, axes = plt.subplots(n_cols, 1, figsize=(8, 2.4 * n_cols), squeeze=False)
+        fig, axes = plt.subplots(n_cols, 1, figsize=(9, 2.8 * n_cols), squeeze=False)
         for ax, col in zip(axes.flatten(), columns):
             df[col].dropna().plot.box(ax=ax)
-            ax.set_title(col)
+            ax.set_title(col, pad=8, fontsize=10)
             ax.set_ylabel("")
-        fig.suptitle(title, fontsize=14)
-        fig.tight_layout()
+            ax.grid(True, alpha=0.2)
+        fig.suptitle(title, fontsize=15, fontweight="bold", y=0.98)
+        fig.subplots_adjust(top=0.94, hspace=0.6, left=0.12, right=0.98, bottom=0.08)
         return fig
 
     def make_histogram(df, columns, title):
         n_cols = max(1, len(columns))
-        fig, axes = plt.subplots(n_cols, 1, figsize=(8, 2.4 * n_cols), squeeze=False)
+        fig, axes = plt.subplots(n_cols, 1, figsize=(9, 2.8 * n_cols), squeeze=False)
         for ax, col in zip(axes.flatten(), columns):
             df[col].dropna().hist(ax=ax, bins=20, edgecolor="black")
-            ax.set_title(f"{col} histogram")
+            ax.set_title(f"{col} histogram", pad=8, fontsize=10)
             ax.set_xlabel(col)
             ax.set_ylabel("Count")
-        fig.suptitle(title, fontsize=14)
-        fig.tight_layout()
+            ax.grid(True, alpha=0.2)
+        fig.suptitle(title, fontsize=15, fontweight="bold", y=0.98)
+        fig.subplots_adjust(top=0.94, hspace=0.6, left=0.12, right=0.98, bottom=0.08)
         return fig
 
     def skewness_table(df, columns):
@@ -420,9 +422,11 @@ def _(mo, np, pd, ss_merged_df):
     ss_skewness = skewness_table(ss_merged_df, ss_viz_columns)
 
     mo.vstack([
-        mo.md("### Exploratory plots for Smalling + Seawolf"),
+        mo.md("### Exploratory plots for Smalling + Seawolf<br><br>"),
         mo.ui.table(ss_skewness),
+        mo.md("<br>"),
         ss_boxplot,
+        mo.md("<br>"),
         ss_histogram,
     ])
     return
@@ -430,36 +434,38 @@ def _(mo, np, pd, ss_merged_df):
 
 @app.cell
 def _(mac_merged_df, mo, np, pd):
-    import matplotlib.pyplot as plt
+    import matplotlib.pyplot as plt_mac
 
     mac_viz_columns = [
         col for col in mac_merged_df.columns if col.endswith("-VA_clean")
     ][:6] + ["AGRI_12", "NATU_12", "URBA_12"]
 
-    def make_boxplot(df, columns, title):
+    def make_boxplot_mac(df, columns, title):
         n_cols = max(1, len(columns))
-        fig, axes = plt.subplots(n_cols, 1, figsize=(8, 2.4 * n_cols), squeeze=False)
+        fig, axes = plt_mac.subplots(n_cols, 1, figsize=(9, 2.8 * n_cols), squeeze=False)
         for ax, col in zip(axes.flatten(), columns):
             df[col].dropna().plot.box(ax=ax)
-            ax.set_title(col)
+            ax.set_title(col, pad=8, fontsize=10)
             ax.set_ylabel("")
-        fig.suptitle(title, fontsize=14)
-        fig.tight_layout()
+            ax.grid(True, alpha=0.2)
+        fig.suptitle(title, fontsize=15, fontweight="bold", y=0.98)
+        fig.subplots_adjust(top=0.94, hspace=0.6, left=0.12, right=0.98, bottom=0.08)
         return fig
 
-    def make_histogram(df, columns, title):
+    def make_histogram_mac(df, columns, title):
         n_cols = max(1, len(columns))
-        fig, axes = plt.subplots(n_cols, 1, figsize=(8, 2.4 * n_cols), squeeze=False)
+        fig, axes = plt_mac.subplots(n_cols, 1, figsize=(9, 2.8 * n_cols), squeeze=False)
         for ax, col in zip(axes.flatten(), columns):
             df[col].dropna().hist(ax=ax, bins=20, edgecolor="black")
-            ax.set_title(f"{col} histogram")
+            ax.set_title(f"{col} histogram", pad=8, fontsize=10)
             ax.set_xlabel(col)
             ax.set_ylabel("Count")
-        fig.suptitle(title, fontsize=14)
-        fig.tight_layout()
+            ax.grid(True, alpha=0.2)
+        fig.suptitle(title, fontsize=15, fontweight="bold", y=0.98)
+        fig.subplots_adjust(top=0.94, hspace=0.6, left=0.12, right=0.98, bottom=0.08)
         return fig
 
-    def skewness_table(df, columns):
+    def skewness_table_mac(df, columns):
         rows = []
         for col in columns:
             values = df[col].dropna()
@@ -477,14 +483,16 @@ def _(mac_merged_df, mo, np, pd):
             })
         return pd.DataFrame(rows)
 
-    mac_boxplot = make_boxplot(mac_merged_df, mac_viz_columns, "McMahon: box plots")
-    mac_histogram = make_histogram(mac_merged_df, mac_viz_columns, "McMahon: histograms")
-    mac_skewness = skewness_table(mac_merged_df, mac_viz_columns)
+    mac_boxplot = make_boxplot_mac(mac_merged_df, mac_viz_columns, "McMahon: box plots")
+    mac_histogram = make_histogram_mac(mac_merged_df, mac_viz_columns, "McMahon: histograms")
+    mac_skewness = skewness_table_mac(mac_merged_df, mac_viz_columns)
 
     mo.vstack([
-        mo.md("### Exploratory plots for McMahon"),
+        mo.md("### Exploratory plots for McMahon<br><br>"),
         mo.ui.table(mac_skewness),
+        mo.md("<br>"),
         mac_boxplot,
+        mo.md("<br>"),
         mac_histogram,
     ])
     return
