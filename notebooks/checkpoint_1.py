@@ -608,7 +608,7 @@ def _(mc_clean_df, mo, pd, ss_clean_df):
 
 
 @app.cell
-def _(mo, pd, ss_clean_df):
+def _(mo, ss_clean_df):
     import matplotlib.pyplot as plt
 
     ss_viz_columns = [
@@ -649,32 +649,11 @@ def _(mo, pd, ss_clean_df):
         fig.subplots_adjust(top=0.92, hspace=0.55, left=0.12, right=0.97, bottom=0.08)
         return fig
 
-    def skewness_table(df, columns):
-        rows = []
-        for col in columns:
-            values = df[col].dropna()
-            skew = values.skew()
-            if skew > 1:
-                assessment = "Right-skewed"
-            elif skew < -1:
-                assessment = "Left-skewed"
-            else:
-                assessment = "Approximately symmetric"
-            rows.append({
-                "Variable": col,
-                "Skewness": round(skew, 3),
-                "Assessment": assessment,
-            })
-        return pd.DataFrame(rows)
-
     ss_boxplot = make_boxplot(ss_clean_df, ss_viz_columns, "Smalling + Seawolf: box plots")
     ss_histogram = make_histogram(ss_clean_df, ss_viz_columns, "Smalling + Seawolf: histograms")
-    ss_skewness = skewness_table(ss_clean_df, ss_viz_columns)
 
     mo.vstack([
         mo.md("#### Exploratory plots for Smalling + Seawolf\n\n"),
-        mo.ui.table(ss_skewness),
-        mo.md(""),
         ss_boxplot,
         mo.md(""),
         ss_histogram,
@@ -683,7 +662,7 @@ def _(mo, pd, ss_clean_df):
 
 
 @app.cell
-def _(mc_clean_df, mo, pd):
+def _(mc_clean_df, mo):
     import matplotlib.pyplot as plt_mac
 
     mc_viz_columns = [
@@ -715,32 +694,11 @@ def _(mc_clean_df, mo, pd):
         fig.subplots_adjust(top=0.92, hspace=0.55, left=0.12, right=0.97, bottom=0.08)
         return fig
 
-    def skewness_table_mac(df, columns):
-        rows = []
-        for col in columns:
-            values = df[col].dropna()
-            skew = values.skew()
-            if skew > 1:
-                assessment = "Right-skewed"
-            elif skew < -1:
-                assessment = "Left-skewed"
-            else:
-                assessment = "Approximately symmetric"
-            rows.append({
-                "Variable": col,
-                "Skewness": round(skew, 3),
-                "Assessment": assessment,
-            })
-        return pd.DataFrame(rows)
-
     mac_boxplot = make_boxplot_mac(mc_clean_df, mc_viz_columns, "McMahon: box plots")
     mac_histogram = make_histogram_mac(mc_clean_df, mc_viz_columns, "McMahon: histograms")
-    mac_skewness = skewness_table_mac(mc_clean_df, mc_viz_columns)
 
     mo.vstack([
         mo.md("#### Exploratory plots for McMahon\n\n"),
-        mo.ui.table(mac_skewness),
-        mo.md(""),
         mac_boxplot,
         mo.md(""),
         mac_histogram,
