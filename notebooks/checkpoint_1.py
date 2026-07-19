@@ -48,21 +48,27 @@ def _(mo):
     the same modeling for groundwater, based on the data used in a similar exercise by McMahon et
     al. (2022).
 
-    The question we aim to answer is: Can we predict low, medium, and high levels of PFAS
-    concentration in tap and groundwater sources across the United States based on key geographic and
-    land-use indicators? In addition, how do our findings compare to those offered by researchers
-    in the domain?
+    The question we aim to answer is: Can we predict a site's PFAS risk tier in tap and groundwater
+    sources across the United States based on key geographic and land-use indicators? In addition,
+    how do our findings compare to those offered by researchers in the domain?
 
     #### Proposed classification
-    A provisional classification approach is:
-    * Low: No PFAS compounds detected above the applicable laboratory reporting limits.
-    * Medium: At least one PFAS detected, with cumulative concentration at or below the median
-      concentration among detected samples.
-    * High: At least one PFAS detected, with cumulative concentration above the median
-      concentration among detected samples.
+    Our original provisional classification split sites into low/medium/high using raw cumulative
+    PFAS concentration relative to the sample median. We have since moved away from that approach:
+    weighting every detected compound equally per ng/L doesn't reflect how differently PFAS
+    compounds are actually regulated, and a median-based cutoff tracks our own sample rather than
+    any fixed, external reference point.
 
-    The cutoff between medium and high will be established using the model-development data and
-    frozen before final evaluation.
+    The classification is now based on a toxicity quotient (∑TQ), computed only from the six PFAS
+    compounds EPA regulates under its 2024 rule, and named after EPA's own compliance vocabulary
+    rather than generic low/medium/high labels:
+    * **`within_reduced_monitoring`:** ∑TQ (or HI) < 0.5, below EPA's reduced-monitoring trigger.
+    * **`above_trigger`:** 0.5 ≤ ∑TQ < 1.0, past the trigger but not yet an MCL-equivalent
+      exceedance.
+    * **`mcl_exceedance`:** ∑TQ ≥ 1.0, at or above an MCL-equivalent exceedance.
+
+    See Preparing for modeling, below, for the full derivation, benchmark sourcing, and the
+    remaining open items before ∑TQ can be computed against the full sample set.
 
     #### Why this problem matters
     1. **Public health relevance:** PFAS contamination in drinking water is a concern in many
