@@ -19,7 +19,7 @@ def _(mo):
     mo.md(r"""
     # Predicting PFAS occurrence risk based on land use features
 
-    ## Team .egsy intelligence (Group #14)
+    ## Team .egsy intelligence (Group 14)
     * Yaisiel (Yai) Torres
     * Gulshan Raj Shetty (Raj)
     * Emir Beg
