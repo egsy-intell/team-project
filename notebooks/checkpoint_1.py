@@ -1,6 +1,6 @@
 import marimo
 
-__generated_with = "0.23.9"
+__generated_with = "0.23.14"
 app = marimo.App(width="medium")
 
 
@@ -1518,6 +1518,337 @@ def _(mc_clean_df, mo, pd, ss_clean_df):
         predictors because they can cause memorization and poor generalization.
         """),
     ])
+    return
+
+
+@app.cell
+def _(mc_clean_df, mo, np, pd, ss_clean_df):
+    # Create explicit new variables as your designated task outputs using the t8_ prefix
+    import matplotlib.pyplot as plt_t8
+
+    t8_heatmap_fig_ss = None
+    t8_heatmap_fig_mc = None
+    t8_redundant_summary_table = None
+
+    # Define feature groups for analysis matching your specific predictors
+    seawolf_predictors = [
+        "number_pfas_sites_proximal",
+        "mean_dist_to_pfas_site",
+        "Burn_Area_5k_frac",
+        "Burn_area_50k_frac",
+        "Urbn_burn_5k_frac",
+        "Urbn_burn_50k_frac",
+    ]
+
+    mcmahon_predictors = ["AGRI_12", "NATU_12", "URBA_12"]
+
+
+    def make_correlation_heatmap_t8(df, columns, title):
+        valid_cols = [c for c in columns if c in df.columns]
+        if not valid_cols:
+            return None
+
+        # Compute correlation matrix (Spearman handles skewed environmental data perfectly)
+        corr_matrix = df[valid_cols].corr(method="spearman")
+
+        # Mirror your teammate's subplots layout pattern
+        fig, ax = plt_t8.subplots(figsize=(8, 6.5))
+
+        # Mask upper triangle to show unique pairs cleanly
+        mask = np.triu(np.ones_like(corr_matrix, dtype=bool))
+        masked_corr = corr_matrix.where(~mask)
+
+        # Plot using matplotlib's matshow or imshow for dependency-free heatmaps
+        cax = ax.matshow(masked_corr, cmap="coolwarm", vmin=-1, vmax=1)
+        fig.colorbar(cax, shrink=0.75, pad=0.05)
+
+        # Format ticks and labels to replicate your teammate's padding adjustments
+        ax.set_xticks(range(len(valid_cols)))
+        ax.set_yticks(range(len(valid_cols)))
+        ax.set_xticklabels(valid_cols, rotation=45, ha="left", fontsize=9)
+        ax.set_yticklabels(valid_cols, fontsize=9)
+
+        # Add numeric annotations inside cells
+        for i in range(len(valid_cols)):
+            for j in range(len(valid_cols)):
+                if i > j:  # Only annotate unmasked lower triangle cells
+                    val = corr_matrix.iloc[i, j]
+                    ax.text(
+                        j,
+                        i,
+                        f"{val:.2f}",
+                        ha="center",
+                        va="center",
+                        color="black" if abs(val) < 0.7 else "white",
+                        fontsize=9,
+                    )
+
+        ax.set_title(title, pad=30, fontsize=13, weight="bold")
+        plt_t8.tight_layout()
+        return fig
+
+
+    def identify_redundancy_table_t8(df, columns, dataset_name):
+        valid_cols = [c for c in columns if c in df.columns]
+        if not valid_cols:
+            return pd.DataFrame()
+
+        corr_matrix = df[valid_cols].corr(method="spearman")
+        upper_mask = corr_matrix.where(
+            np.triu(np.ones(corr_matrix.shape), k=1).astype(bool)
+        )
+
+        rows = []
+        for col in upper_mask.columns:
+            for row in upper_mask.index:
+                coef = upper_mask[col][row]
+                if abs(coef) > 0.80:  # Threshold identifying multicollinearity
+                    rows.append(
+                        {
+                            "Dataset": dataset_name,
+                            "Variable 1": row,
+                            "Variable 2": col,
+                            "Spearman r": round(coef, 3),
+                            "Status": "🚨 Redundant Variable Flagged",
+                        }
+                    )
+
+        return pd.DataFrame(rows)
+
+
+    # Generate the heatmaps and identify multicollinearity mirroring your teammate's assignments
+    t8_heatmap_fig_ss = make_correlation_heatmap_t8(
+        ss_clean_df, seawolf_predictors, "Smalling + Seawolf Heatmap"
+    )
+    t8_heatmap_fig_mc = make_correlation_heatmap_t8(
+        mc_clean_df, mcmahon_predictors, "McMahon Groundwater Heatmap"
+    )
+
+    # Run redundancy evaluations to isolate and flag structural redundancies
+    ss_redundant_df = identify_redundancy_table_t8(
+        ss_clean_df, seawolf_predictors, "Smalling + Seawolf"
+    )
+    mc_redundant_df = identify_redundancy_table_t8(
+        mc_clean_df, mcmahon_predictors, "McMahon"
+    )
+
+    # Combine using pd.concat exactly how your teammate structured summary reports
+    t8_combined_redundancy = pd.concat(
+        [ss_redundant_df, mc_redundant_df], ignore_index=True
+    )
+
+    if t8_combined_redundancy.empty:
+        t8_combined_redundancy = pd.DataFrame(
+            {
+                "Dataset": ["All Checked"],
+                "Variable 1": ["None"],
+                "Variable 2": ["None"],
+                "Spearman r": [np.nan],
+                "Status": ["✅ No extreme multicollinearity detected (|r| > 0.80)"],
+            }
+        )
+
+    t8_redundant_summary_table = t8_combined_redundancy
+
+    # Display variables via a single native marimo stack pipeline
+    mo.vstack(
+        [
+            mo.md("## Task 8: Feature Relationship & Multicollinearity Assessment"),
+            mo.ui.table(t8_redundant_summary_table),
+            mo.md(""),
+            t8_heatmap_fig_ss if t8_heatmap_fig_ss else mo.md(""),
+            mo.md(""),
+            t8_heatmap_fig_mc if t8_heatmap_fig_mc else mo.md(""),
+        ]
+    )
+    return
+
+
+@app.cell
+def _(mc_clean_df, mo, np, pd, ss_clean_df):
+    # Create explicit new variables as your designated task outputs using the t9_ prefix
+    import matplotlib.pyplot as plt_t9
+
+    t9_boxplot_fig_ss = None
+    t9_boxplot_fig_mc = None
+    t9_relationship_summary_table = None
+
+    # Renamed with t9_ prefix to resolve marimo redefinition errors
+    t9_seawolf_predictors = [
+        "number_pfas_sites_proximal",
+        "mean_dist_to_pfas_site",
+        "Burn_Area_5k_frac",
+        "Burn_area_50k_frac",
+        "Urbn_burn_5k_frac",
+        "Urbn_burn_50k_frac",
+    ]
+
+    t9_mcmahon_predictors = ["AGRI_12", "NATU_12", "URBA_12"]
+
+
+    # --- Target Variable Engineering Helper ---
+    def _engineer_provisional_target_t9(df, total_col):
+        """Creates a temporary target class column following project guidelines."""
+        if total_col not in df.columns:
+            return df.copy(), None
+
+        df_copy = df.copy()
+        # Isolate true detects (> 0) to compute the frozen median threshold
+        detects = df_copy[df_copy[total_col] > 0][total_col]
+
+        if detects.empty:
+            df_copy["t9_target_class"] = "Low"
+            return df_copy, "Low"
+
+        median_val = detects.median()
+
+        # Assign categories based on proposal constraints
+        conditions = [
+            (df_copy[total_col] == 0) | (df_copy[total_col].isna()),
+            (df_copy[total_col] > 0) & (df_copy[total_col] <= median_val),
+            (df_copy[total_col] > median_val),
+        ]
+        choices = ["Low", "Medium", "High"]
+
+        df_copy["t9_target_class"] = np.select(conditions, choices, default="Low")
+        return df_copy, choices
+
+
+    # Engineer classes on local working variables to ensure original dfs remain unaltered
+    t9_ss_working_df, t9_ss_classes = _engineer_provisional_target_t9(
+        ss_clean_df, "ΣPFAS"
+    )
+    t9_mc_working_df, t9_mc_classes = _engineer_provisional_target_t9(
+        mc_clean_df, "PFBS-VA_clean"
+    )
+
+
+    # --- Core Visualizer Function ---
+    def make_grouped_boxplots_t9(df, columns, title):
+        """Generates boxplots grouped by the target class using teammate's subplot distribution mechanics."""
+        valid_cols = [c for c in columns if c in df.columns]
+        if not valid_cols or "t9_target_class" not in df.columns:
+            return None
+
+        n_cols = max(1, len(valid_cols))
+
+        # Replicate your teammate's sizing parameters (10 x 3.0 per row)
+        fig, axes = plt_t9.subplots(
+            n_cols, 1, figsize=(10, 3.0 * n_cols), squeeze=False
+        )
+
+        # Enforce standard categorical ordering for predictable alignment
+        class_order = ["Low", "Medium", "High"]
+        available_order = [
+            c for c in class_order if c in df["t9_target_class"].unique()
+        ]
+
+        for ax, col in zip(axes.flatten(), valid_cols):
+            # Create grouped boxplot distributions split by the target variable
+            data_groups = [
+                df[df["t9_target_class"] == cls][col].dropna()
+                for cls in available_order
+            ]
+
+            # Using tick_labels to support the updated Matplotlib API syntax
+            ax.boxplot(data_groups, tick_labels=available_order, patch_artist=True)
+            ax.set_title(
+                f"{col} Distribution Grouped by Target Class", pad=8, fontsize=11
+            )
+            ax.set_ylabel(col)
+            ax.grid(True, axis="y", linestyle="--", alpha=0.35)
+
+        fig.suptitle(title, fontsize=15, y=0.99)
+        plt_t9.tight_layout(rect=[0, 0, 1, 0.97])
+        return fig
+
+
+    # --- Analytical Profiling Engine ---
+    def compute_predictive_relationship_table_t9(df, columns, dataset_name):
+        """Calculates directional mean deviations across target classes as proxy predictive metrics."""
+        valid_cols = [c for c in columns if c in df.columns]
+        if not valid_cols or "t9_target_class" not in df.columns:
+            return pd.DataFrame()
+
+        rows = []
+        for col in valid_cols:
+            # Evaluate feature distributions by extracting class-stratified means
+            means = df.groupby("t9_target_class")[col].mean()
+
+            low_mean = means.get("Low", np.nan)
+            med_mean = means.get("Medium", np.nan)
+            high_mean = means.get("High", np.nan)
+
+            # Document notable relationships via programmatic text summaries
+            if not np.isnan(high_mean) and not np.isnan(low_mean):
+                if high_mean > low_mean * 1.2:
+                    assessment = "📈 Positive correlation: Feature values climb notably in High-risk sites."
+                elif high_mean < low_mean * 0.8:
+                    assessment = "📉 Inverse correlation: Feature values diminish in High-risk sites."
+                else:
+                    assessment = "⚖️ Neutral distribution across risk classifications."
+            else:
+                assessment = (
+                    "⚠️ Insufficient class baseline coverage for structural inference."
+                )
+
+            rows.append(
+                {
+                    "Dataset": dataset_name,
+                    "Predictor Variable": col,
+                    "Low Class Mean": (
+                        round(low_mean, 3) if not np.isnan(low_mean) else "N/A"
+                    ),
+                    "Medium Class Mean": (
+                        round(med_mean, 3) if not np.isnan(med_mean) else "N/A"
+                    ),
+                    "High Class Mean": (
+                        round(high_mean, 3) if not np.isnan(high_mean) else "N/A"
+                    ),
+                    "Notable Relationship Profile": assessment,
+                }
+            )
+
+        return pd.DataFrame(rows)
+
+
+    # --- Execution and Aggregation ---
+    t9_boxplot_fig_ss = make_grouped_boxplots_t9(
+        t9_ss_working_df,
+        t9_seawolf_predictors,
+        "Smalling + Seawolf: Feature Grouped Box Plots",
+    )
+    t9_boxplot_fig_mc = make_grouped_boxplots_t9(
+        t9_mc_working_df,
+        t9_mcmahon_predictors,
+        "McMahon: Feature Grouped Box Plots",
+    )
+
+    t9_ss_rel_df = compute_predictive_relationship_table_t9(
+        t9_ss_working_df, t9_seawolf_predictors, "Smalling + Seawolf (Tap Water)"
+    )
+    t9_mc_rel_df = compute_predictive_relationship_table_t9(
+        t9_mc_working_df, t9_mcmahon_predictors, "McMahon (Groundwater)"
+    )
+
+    # Combine datasets matching your teammate's summary table design pattern
+    t9_combined_relationships = pd.concat(
+        [t9_ss_rel_df, t9_mc_rel_df], ignore_index=True
+    )
+    t9_relationship_summary_table = t9_combined_relationships
+
+    # Display everything via a single native marimo stack layout pipeline
+    mo.vstack(
+        [
+            mo.md("## Task 9: Evaluate Predictive Relationships"),
+            mo.md("### 📋 Predictor vs. Target Class Analysis Report"),
+            mo.ui.table(t9_relationship_summary_table),
+            mo.md(""),
+            t9_boxplot_fig_ss if t9_boxplot_fig_ss else mo.md(""),
+            mo.md(""),
+            t9_boxplot_fig_mc if t9_boxplot_fig_mc else mo.md(""),
+        ]
+    )
     return
 
 
