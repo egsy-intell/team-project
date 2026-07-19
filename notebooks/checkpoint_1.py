@@ -10,7 +10,7 @@
 
 import marimo
 
-__generated_with = "0.23.9"
+__generated_with = "0.23.14"
 app = marimo.App(width="medium", css_file="print.css")
 
 
@@ -40,7 +40,6 @@ def _():
         _sys.path.insert(0, _tmp_dir)
 
         from data_dictionary import app as data_dictionary_app
-
     return data_dictionary_app, mo, np, pd
 
 
