@@ -8,6 +8,7 @@ dependencies = [
     "marimo>=0.23.14",
     "numpy>=2.5.1",
     "pandas>=3.0.3",
+    "matplotlib>=3.9",
 ]
 
 [dependency-groups]

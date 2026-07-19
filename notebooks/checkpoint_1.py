@@ -358,6 +358,139 @@ def _(mac_merged_df, mo, np, pd, ss_merged_df):
 
 
 @app.cell
+def _(mo, np, pd, ss_merged_df):
+    import matplotlib.pyplot as plt
+
+    ss_viz_columns = [
+        "∑PFAS",
+        "Count Detected PFAS",
+        "∑EAR",
+        "number_pfas_sites_proximal",
+        "mean_dist_to_pfas_site",
+        "Burn_Area_5k_frac",
+        "Burn_area_50k_frac",
+        "Urbn_burn_5k_frac",
+        "Urbn_burn_50k_frac",
+    ]
+    ss_viz_columns = [col for col in ss_viz_columns if col in ss_merged_df.columns]
+
+    def make_boxplot(df, columns, title):
+        n_cols = max(1, len(columns))
+        fig, axes = plt.subplots(n_cols, 1, figsize=(8, 2.4 * n_cols), squeeze=False)
+        for ax, col in zip(axes.flatten(), columns):
+            df[col].dropna().plot.box(ax=ax)
+            ax.set_title(col)
+            ax.set_ylabel("")
+        fig.suptitle(title, fontsize=14)
+        fig.tight_layout()
+        return fig
+
+    def make_histogram(df, columns, title):
+        n_cols = max(1, len(columns))
+        fig, axes = plt.subplots(n_cols, 1, figsize=(8, 2.4 * n_cols), squeeze=False)
+        for ax, col in zip(axes.flatten(), columns):
+            df[col].dropna().hist(ax=ax, bins=20, edgecolor="black")
+            ax.set_title(f"{col} histogram")
+            ax.set_xlabel(col)
+            ax.set_ylabel("Count")
+        fig.suptitle(title, fontsize=14)
+        fig.tight_layout()
+        return fig
+
+    def skewness_table(df, columns):
+        rows = []
+        for col in columns:
+            values = df[col].dropna()
+            skew = values.skew()
+            if skew > 1:
+                assessment = "Right-skewed"
+            elif skew < -1:
+                assessment = "Left-skewed"
+            else:
+                assessment = "Approximately symmetric"
+            rows.append({
+                "Variable": col,
+                "Skewness": round(skew, 3),
+                "Assessment": assessment,
+            })
+        return pd.DataFrame(rows)
+
+    ss_boxplot = make_boxplot(ss_merged_df, ss_viz_columns, "Smalling + Seawolf: box plots")
+    ss_histogram = make_histogram(ss_merged_df, ss_viz_columns, "Smalling + Seawolf: histograms")
+    ss_skewness = skewness_table(ss_merged_df, ss_viz_columns)
+
+    mo.vstack([
+        mo.md("### Exploratory plots for Smalling + Seawolf"),
+        mo.ui.table(ss_skewness),
+        ss_boxplot,
+        ss_histogram,
+    ])
+    return
+
+
+@app.cell
+def _(mac_merged_df, mo, np, pd):
+    import matplotlib.pyplot as plt
+
+    mac_viz_columns = [
+        col for col in mac_merged_df.columns if col.endswith("-VA_clean")
+    ][:6] + ["AGRI_12", "NATU_12", "URBA_12"]
+
+    def make_boxplot(df, columns, title):
+        n_cols = max(1, len(columns))
+        fig, axes = plt.subplots(n_cols, 1, figsize=(8, 2.4 * n_cols), squeeze=False)
+        for ax, col in zip(axes.flatten(), columns):
+            df[col].dropna().plot.box(ax=ax)
+            ax.set_title(col)
+            ax.set_ylabel("")
+        fig.suptitle(title, fontsize=14)
+        fig.tight_layout()
+        return fig
+
+    def make_histogram(df, columns, title):
+        n_cols = max(1, len(columns))
+        fig, axes = plt.subplots(n_cols, 1, figsize=(8, 2.4 * n_cols), squeeze=False)
+        for ax, col in zip(axes.flatten(), columns):
+            df[col].dropna().hist(ax=ax, bins=20, edgecolor="black")
+            ax.set_title(f"{col} histogram")
+            ax.set_xlabel(col)
+            ax.set_ylabel("Count")
+        fig.suptitle(title, fontsize=14)
+        fig.tight_layout()
+        return fig
+
+    def skewness_table(df, columns):
+        rows = []
+        for col in columns:
+            values = df[col].dropna()
+            skew = values.skew()
+            if skew > 1:
+                assessment = "Right-skewed"
+            elif skew < -1:
+                assessment = "Left-skewed"
+            else:
+                assessment = "Approximately symmetric"
+            rows.append({
+                "Variable": col,
+                "Skewness": round(skew, 3),
+                "Assessment": assessment,
+            })
+        return pd.DataFrame(rows)
+
+    mac_boxplot = make_boxplot(mac_merged_df, mac_viz_columns, "McMahon: box plots")
+    mac_histogram = make_histogram(mac_merged_df, mac_viz_columns, "McMahon: histograms")
+    mac_skewness = skewness_table(mac_merged_df, mac_viz_columns)
+
+    mo.vstack([
+        mo.md("### Exploratory plots for McMahon"),
+        mo.ui.table(mac_skewness),
+        mac_boxplot,
+        mac_histogram,
+    ])
+    return
+
+
+@app.cell
 def _(mac_merged_df, mo, ss_merged_df):
     ss_unmatched_df = ss_merged_df[ss_merged_df["_merge"] == "left_only"]
     ss_unmatched_count = ss_unmatched_df.shape[0]
