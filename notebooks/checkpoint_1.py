@@ -358,7 +358,7 @@ def _(mac_merged_df, mo, np, pd, ss_merged_df):
 
 
 @app.cell
-def _(mac_merged_df, mo, np, pd, ss_merged_df):
+def _(mac_merged_df, mo, pd, ss_merged_df):
     def describe_distribution(df, columns, dataset_name):
         rows = []
         for col in columns:
