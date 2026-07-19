@@ -482,6 +482,204 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
+    ### Combined summary statistics and distributions
+    """)
+    return
+
+
+@app.cell
+def _(mc_clean_df, mo, np, pd, ss_clean_df):
+    def make_numeric_summary_table(df, dataset_name):
+        numeric_df = df.select_dtypes(include="number")
+        if numeric_df.empty:
+            return pd.DataFrame({
+                "Dataset": [dataset_name],
+                "Variable": ["No numeric columns"],
+                "Mean": [np.nan],
+                "Median": [np.nan],
+                "Std Dev": [np.nan],
+                "Min": [np.nan],
+                "Q1": [np.nan],
+                "Q3": [np.nan],
+                "Max": [np.nan],
+            })
+
+        summary = (
+            numeric_df.describe(percentiles=[0.25, 0.5, 0.75]).T
+            .rename(columns={
+                "mean": "Mean",
+                "std": "Std Dev",
+                "min": "Min",
+                "25%": "Q1",
+                "50%": "Median",
+                "75%": "Q3",
+                "max": "Max",
+            })
+            .reset_index()
+            .rename(columns={"index": "Variable"})
+        )
+        summary.insert(0, "Dataset", dataset_name)
+        return summary.round(3)
+
+    combined_summary = pd.concat(
+        [
+            make_numeric_summary_table(ss_clean_df, "Smalling + Seawolf"),
+            make_numeric_summary_table(mc_clean_df, "McMahon"),
+        ],
+        ignore_index=True,
+    )
+
+    mo.vstack([
+        mo.md("#### Numeric summary statistics for the cleaned datasets"),
+        mo.ui.table(combined_summary),
+    ])
+    return
+
+
+@app.cell
+def _(mo, pd, ss_clean_df):
+    import matplotlib.pyplot as plt
+
+    ss_viz_columns = [
+        "∑PFAS",
+        "Count Detected PFAS",
+        "∑EAR",
+        "number_pfas_sites_proximal",
+        "mean_dist_to_pfas_site",
+        "Burn_Area_5k_frac",
+        "Burn_area_50k_frac",
+        "Urbn_burn_5k_frac",
+        "Urbn_burn_50k_frac",
+    ]
+    ss_viz_columns = [col for col in ss_viz_columns if col in ss_clean_df.columns]
+
+    def make_boxplot(df, columns, title):
+        n_cols = max(1, len(columns))
+        fig, axes = plt.subplots(n_cols, 1, figsize=(10, 2.8 * n_cols), squeeze=False)
+        for ax, col in zip(axes.flatten(), columns):
+            df[col].dropna().plot.box(ax=ax, patch_artist=True)
+            ax.set_title(col, pad=8, fontsize=11)
+            ax.set_ylabel("")
+            ax.grid(True, axis="y", linestyle="--", alpha=0.35)
+        fig.suptitle(title, fontsize=15, y=0.98)
+        fig.subplots_adjust(top=0.92, hspace=0.55, left=0.12, right=0.97, bottom=0.08)
+        return fig
+
+    def make_histogram(df, columns, title):
+        n_cols = max(1, len(columns))
+        fig, axes = plt.subplots(n_cols, 1, figsize=(10, 2.8 * n_cols), squeeze=False)
+        for ax, col in zip(axes.flatten(), columns):
+            df[col].dropna().hist(ax=ax, bins=20, edgecolor="black", color="#7fb3d5")
+            ax.set_title(f"{col} histogram", pad=8, fontsize=11)
+            ax.set_xlabel(col, labelpad=6)
+            ax.set_ylabel("Count", labelpad=6)
+            ax.grid(True, axis="y", linestyle="--", alpha=0.35)
+        fig.suptitle(title, fontsize=15, y=0.98)
+        fig.subplots_adjust(top=0.92, hspace=0.55, left=0.12, right=0.97, bottom=0.08)
+        return fig
+
+    def skewness_table(df, columns):
+        rows = []
+        for col in columns:
+            values = df[col].dropna()
+            skew = values.skew()
+            if skew > 1:
+                assessment = "Right-skewed"
+            elif skew < -1:
+                assessment = "Left-skewed"
+            else:
+                assessment = "Approximately symmetric"
+            rows.append({
+                "Variable": col,
+                "Skewness": round(skew, 3),
+                "Assessment": assessment,
+            })
+        return pd.DataFrame(rows)
+
+    ss_boxplot = make_boxplot(ss_clean_df, ss_viz_columns, "Smalling + Seawolf: box plots")
+    ss_histogram = make_histogram(ss_clean_df, ss_viz_columns, "Smalling + Seawolf: histograms")
+    ss_skewness = skewness_table(ss_clean_df, ss_viz_columns)
+
+    mo.vstack([
+        mo.md("#### Exploratory plots for Smalling + Seawolf\n\n"),
+        mo.ui.table(ss_skewness),
+        mo.md(""),
+        ss_boxplot,
+        mo.md(""),
+        ss_histogram,
+    ])
+    return
+
+
+@app.cell
+def _(mc_clean_df, mo, pd):
+    import matplotlib.pyplot as plt_mac
+
+    mc_viz_columns = [
+        col for col in mc_clean_df.columns if col.endswith("-VA_clean")
+    ][:6] + ["AGRI_12", "NATU_12", "URBA_12"]
+
+    def make_boxplot_mac(df, columns, title):
+        n_cols = max(1, len(columns))
+        fig, axes = plt_mac.subplots(n_cols, 1, figsize=(10, 2.8 * n_cols), squeeze=False)
+        for ax, col in zip(axes.flatten(), columns):
+            df[col].dropna().plot.box(ax=ax, patch_artist=True)
+            ax.set_title(col, pad=8, fontsize=11)
+            ax.set_ylabel("")
+            ax.grid(True, axis="y", linestyle="--", alpha=0.35)
+        fig.suptitle(title, fontsize=15, y=0.98)
+        fig.subplots_adjust(top=0.92, hspace=0.55, left=0.12, right=0.97, bottom=0.08)
+        return fig
+
+    def make_histogram_mac(df, columns, title):
+        n_cols = max(1, len(columns))
+        fig, axes = plt_mac.subplots(n_cols, 1, figsize=(10, 2.8 * n_cols), squeeze=False)
+        for ax, col in zip(axes.flatten(), columns):
+            df[col].dropna().hist(ax=ax, bins=20, edgecolor="black", color="#7fb3d5")
+            ax.set_title(f"{col} histogram", pad=8, fontsize=11)
+            ax.set_xlabel(col, labelpad=6)
+            ax.set_ylabel("Count", labelpad=6)
+            ax.grid(True, axis="y", linestyle="--", alpha=0.35)
+        fig.suptitle(title, fontsize=15, y=0.98)
+        fig.subplots_adjust(top=0.92, hspace=0.55, left=0.12, right=0.97, bottom=0.08)
+        return fig
+
+    def skewness_table_mac(df, columns):
+        rows = []
+        for col in columns:
+            values = df[col].dropna()
+            skew = values.skew()
+            if skew > 1:
+                assessment = "Right-skewed"
+            elif skew < -1:
+                assessment = "Left-skewed"
+            else:
+                assessment = "Approximately symmetric"
+            rows.append({
+                "Variable": col,
+                "Skewness": round(skew, 3),
+                "Assessment": assessment,
+            })
+        return pd.DataFrame(rows)
+
+    mac_boxplot = make_boxplot_mac(mc_clean_df, mc_viz_columns, "McMahon: box plots")
+    mac_histogram = make_histogram_mac(mc_clean_df, mc_viz_columns, "McMahon: histograms")
+    mac_skewness = skewness_table_mac(mc_clean_df, mc_viz_columns)
+
+    mo.vstack([
+        mo.md("#### Exploratory plots for McMahon\n\n"),
+        mo.ui.table(mac_skewness),
+        mo.md(""),
+        mac_boxplot,
+        mo.md(""),
+        mac_histogram,
+    ])
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
     ### Smalling et al. (2023)
 
     #### Data Exploration
