@@ -11,7 +11,17 @@ def _():
     import pandas as pd
     import numpy as np
 
-    return mo, np, pd
+    from data_dictionary import app as data_dictionary_app
+
+    return data_dictionary_app, mo, np, pd
+
+
+@app.cell
+async def _(data_dictionary_app):
+    data_dictionary_result = await data_dictionary_app.embed()
+    mcmahon_dict_df = data_dictionary_result.defs["mcmahon_dict_df"]
+    mcmahon_alias = data_dictionary_result.defs["mcmahon_alias"]
+    return (mcmahon_dict_df,)
 
 
 @app.cell
@@ -68,7 +78,7 @@ def _(mo):
        equally uncertain. Predicting PFAS levels from traceable, highly correlated geographic and
        land-use features would let operators focus monitoring and remediation efforts on the sites
        most likely to need it, ahead of whichever compliance window ultimately applies.
-     3. **Private-well coverage gap:** EPA's 2024 rule applies only to public water systems, leaving
+    3. **Private-well coverage gap:** EPA's 2024 rule applies only to public water systems, leaving
        millions of Americans who rely on private wells outside its enforceable scope. Our selected
        datasets explicitly integrate private-well and public-supply exposures, positioning our model
        to speak to a population the new federal rule does not cover.
@@ -221,8 +231,6 @@ def _(mo, pd):
         suffixes=("_smalling", "_seawolf"),
         indicator=True,
     )
-
-    mo.show_code()
     return data_dir, ss_merged_df
 
 
@@ -244,8 +252,7 @@ def _(mo):
 
 
 @app.cell
-def _(data_dir, mo, np, pd):
-    mcmahon_dict_df = pd.read_csv(data_dir / "mcmahon" / "PFAS_Data_Dictionary.csv", encoding="latin1")
+def _(data_dir, mcmahon_dict_df, np, pd):
     mcmahon_env_df= pd.read_csv(data_dir / "mcmahon" / "PFAS_ENV.csv")
 
     # Data quirk: All values are labeled with <<compound>>-VA
@@ -287,8 +294,6 @@ def _(data_dir, mo, np, pd):
         suffixes=("_mac_env", "_mac_geo"),
         indicator=True,
     )
-
-    mo.show_code()
     return (mac_merged_df,)
 
 
