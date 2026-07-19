@@ -1067,7 +1067,7 @@ def _(mc_clean_df, mo, pd, ss_clean_df):
             non_missing_series = categorical_series.dropna()
             category_counts = non_missing_series.value_counts(dropna=False)
 
-            distinct_count = int(non_missing_series.nunique())
+            distinct_count = int(category_counts.shape[0])
             missing_count = int(categorical_series.isna().sum())
             missing_pct = round(100 * missing_count / len(dataframe), 1) if len(dataframe) else 0.0
 
