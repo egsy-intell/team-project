@@ -1,6 +1,6 @@
 import marimo
 
-__generated_with = "0.23.9"
+__generated_with = "0.23.14"
 app = marimo.App(width="medium")
 
 
@@ -326,7 +326,7 @@ def _(mac_merged_df, mo, ss_merged_df):
     The only concentration measurement without landscape attributes is `{ss_unmatched_df.iloc[0, 0]}`.
     It will be dropped.
     """)
-    return
+    return mac_unmatched_count, ss_unmatched_count
 
 
 @app.cell
