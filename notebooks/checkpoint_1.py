@@ -1524,11 +1524,72 @@ def _(mc_clean_df, mo, pd, ss_clean_df):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ## Next Steps: Proposed task assignments
+    ## Step 2.3: Preparing for modeling
+
+    ### Scaling
+    Several geospatial and land-use predictors, and cumulative PFAS concentration itself, are
+    right-skewed (see skewness/IQR summary above) and span very different units. We will consider this
+    in our modeling since this might alter the training effectiveness.
+
+    ### Categorical encoding
+    Per the Categorical Variable Evaluation above: binary-encode two-level fields (`Site Type`),
+    one-hot encode low-cardinality nominal fields (`State`, McMahon land-use categories), drop
+    single-level fields, and combine rare levels. Encoders will be fit on training data only. Study
+    identifiers (`Study_seawolf`, `Study_smalling`) are retained as controls, not predictors.
+
+    ### Feature engineering and selection: from concentration cutoffs to toxicity quotients
+    The original median-based low/medium/high classification treated every PFAS compound as
+    equally toxic per ng/L, even though compounds differ substantially in their health-based
+    benchmarks. We're replacing it with a toxicity quotient (TQ) target scored only on the six
+    compounds EPA regulates under its 2024 rule: **PFOA, PFOS, PFHxS, PFNA, PFBS, and HFPO-DA
+    (GenX)**, all present as columns in the Smalling data. Benchmarks are now merged into
+    `all_compound_dict_df` from `data/factors/pfas_tq_benchmarks_epa_aligned.csv`: EPA values from
+    the final-rule fact sheet (CDM Smith, 2024) for the six regulated compounds
+    (`epa_ratio_eligible`), state-only values from Table S5 of Smalling et al. (2023) for the rest.
+
+    * **Per-compound TQ** = concentration divided by that compound's EPA benchmark.
+    * **∑TQ (Hazard Index)** = sum of TQ across only the six regulated compounds, not the full
+      panel, a deliberate narrowing from the earlier `∑EAR`/cumulative-concentration approach.
+    * The other 11 compounds (PFBA, PFPeA, PFHxA, PFHpA, PFDA, PFPeS, PFHpS, PFDS, PFPrS, 6:2 FTS,
+      FOSA) stay in the dataset as a descriptive slice, not part of the target, since EPA hasn't
+      set enforceable benchmarks for them.
+
+    Tiers are unchanged from the Proposed classification above (`within_reduced_monitoring`,
+    `above_trigger`, `mcl_exceedance`).
+
+    Restricting ∑TQ to regulated compounds keeps each cutoff tied to a real compliance action point,
+    matches the phased-compliance motivation, and keeps the classifier legible in the terms
+    operators already track (trigger vs. MCL), without the model itself determining compliance, per Constraints.
+    The dependent variable is this ∑TQ class; predictors are landscape/land-use features only, never concentration data, so the model tests whether land use alone can flag risk before a site is ever sampled.
+
+    **Pre-modeling task list** (not yet implemented): computing ∑TQ means reshaping `ss_clean_df`
+    to one row per site per compound, joining `all_compound_dict_df`'s benchmark columns, dividing
+    to get per-compound TQ, splitting by `epa_ratio_eligible`, and summing within each group. That
+    yields two scores per site: the classified EPA-anchored ∑TQ, and a supplementary state-only
+    ∑TQ reported as context but never classified. Remaining open questions:
+    * Treat non-detects as 0 per compound (not dropped), so an absent compound contributes zero
+      rather than excluding the sample.
+    * Summing PFOA/PFOS's individual-MCL ratios with the 4-compound Hazard Index (PFNA + PFHxS +
+      GenX + PFBS) into one ∑TQ is our own design choice, not an EPA-prescribed method; state it
+      as an assumption.
+    * Decide whether to exclude PFPeS/PFPrS (no benchmark in either source) from ∑TQ entirely, or
+      flag affected samples as partially unassessed.
+    * Run the pipeline against the full sample dataset to see how the reclassification shifts the
+      distribution away from the old median-based cutoffs.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ## Next steps: proposed task assignments
 
     ## Conclusion
 
     ## References
+    * CDM Smith. (2024). EPA's final regulations: What do you
+      need to know? https://oldcolonyplanning.org/wp-content/uploads/2024/04/EPAs-Final-PFAS-Regulations-Fact-Sheet.pdf
     * McMahon, P. B., Tokranov, A. K., Bexfield, L. M., Lindsey, B. D., Johnson, T. D., Lombard,
       M. A., & Watson, E. (2022). Perfluoroalkyl and polyfluoroalkyl substances in groundwater
       used as a source of drinking water in the Eastern United States. *Environmental Science &
