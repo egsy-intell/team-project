@@ -18,5 +18,5 @@ dev = [
 ]
 
 [tool.codespell]
-skip = ".git,*.lock,.venv"
+skip = ".git,*.lock,.venv,__marimo__"
 ignore-words-list = "nd,egsy,IST,Sampe"

@@ -29,7 +29,7 @@ jobs:
         run: uv sync --all-groups
 
       - name: Fix typos
-        run: uv run codespell -w notebooks/
+        run: uv run codespell -w notebooks/*.py
 
       - name: Commit fixes
         uses: stefanzweifel/git-auto-commit-action@v7
