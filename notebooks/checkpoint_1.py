@@ -1523,6 +1523,178 @@ def _(mc_clean_df, mo, pd, ss_clean_df):
 
 @app.cell
 def _(mc_clean_df, mo, np, pd, ss_clean_df):
+    # Create explicit new variables as your designated task outputs using the t4_ prefix
+    import matplotlib.pyplot as plt_t4
+
+    t4_distribution_fig = None
+    t4_target_summary_table = None
+
+
+    def analyze_target_variable_t4(
+        ss_df, mc_df, ss_total_col, mc_total_col, frozen_ss_median=None
+    ):
+        """Calculates cumulative distributions, engineers target classes, and computes class imbalance."""
+        summary_rows = []
+        processed_dfs = {}
+
+        datasets_to_process = [
+            (ss_df, "Smalling + Seawolf (Tap Water)", ss_total_col),
+            (mc_df, "McMahon (Groundwater)", mc_total_col),
+        ]
+
+        for df, name, total_col in datasets_to_process:
+            if total_col not in df.columns:
+                continue
+
+            df_copy = df.copy()
+
+            # 1. Isolate detected samples to find the median threshold among detected samples
+            # For Smalling, if true zeros are missing from this slice, detects represent the pool
+            detects = df_copy[df_copy[total_col] > 0][total_col]
+
+            # Use frozen median threshold if provided (useful for model development consistency)
+            median_val = (
+                frozen_ss_median
+                if (frozen_ss_median and "Smalling" in name)
+                else detects.median()
+            )
+
+            # 2. Define provisional Low/Medium/High labels based on cumulative concentration rules
+            conditions = [
+                (df_copy[total_col] == 0) | (df_copy[total_col].isna()),
+                (df_copy[total_col] > 0) & (df_copy[total_col] <= median_val),
+                (df_copy[total_col] > median_val),
+            ]
+            choices = ["Low", "Medium", "High"]
+            df_copy["t4_target_class"] = np.select(conditions, choices, default="Low")
+
+            # 3. Compute class counts and measure proportions
+            counts = (
+                df_copy["t4_target_class"]
+                .value_counts()
+                .reindex(choices, fill_value=0)
+            )
+            total_samples = len(df_copy)
+
+            for cls in choices:
+                cls_count = int(counts[cls])
+                cls_pct = (cls_count / total_samples) * 100 if total_samples > 0 else 0
+
+                # Measure class imbalance notes dynamically
+                if cls_pct < 15.0:
+                    imbalance_status = "⚠️ Minor Class (Imbalanced)"
+                elif cls_pct > 50.0:
+                    imbalance_status = "🐋 Dominant Class (Imbalanced)"
+                else:
+                    imbalance_status = "⚖️ Well Balanced"
+
+                summary_rows.append(
+                    {
+                        "Dataset": name,
+                        "Target Class Label": cls,
+                        "Class Count": cls_count,
+                        "Percentage (%)": round(cls_pct, 2),
+                        "Class Balance Evaluation": imbalance_status,
+                        "Threshold Used (ng/L)": (
+                            "0.00"
+                            if cls == "Low"
+                            else f"<= {median_val:.3f}"
+                            if cls == "Medium"
+                            else f"> {median_val:.3f}"
+                        ),
+                    }
+                )
+
+            processed_dfs[name] = df_copy
+
+        return pd.DataFrame(summary_rows), processed_dfs
+
+
+    def make_target_distribution_plot_t4(summary_df, title):
+        """Generates a clean bar chart visualization matching your teammate's design parameters."""
+        # Filter out empty datasets or placeholders
+        valid_data = summary_df[summary_df["Class Count"] > 0]
+        if valid_data.empty:
+            return None
+
+        datasets = valid_data["Dataset"].unique()
+        n_plots = len(datasets)
+
+        fig, axes = plt_t4.subplots(
+            n_plots, 1, figsize=(10, 3.5 * n_plots), squeeze=False
+        )
+
+        for ax, dataset_name in zip(axes.flatten(), datasets):
+            sub_df = valid_data[valid_data["Dataset"] == dataset_name]
+
+            # Plot bar distribution using matching project hex color rules
+            bars = ax.bar(
+                sub_df["Target Class Label"],
+                sub_df["Class Count"],
+                edgecolor="black",
+                color=["#d9534f" if x == "High" else "#f0ad4e" if x == "Medium" else "#5cb85c" for x in sub_df["Target Class Label"]],
+                alpha=0.85,
+                width=0.5,
+            )
+
+            # Add counts above the bars for clear scannability
+            for bar in bars:
+                height = bar.get_height()
+                ax.annotate(
+                    f"{int(height)}",
+                    xy=(bar.get_x() + bar.get_width() / 2, height),
+                    xytext=(0, 3),
+                    textcoords="offset points",
+                    ha="center",
+                    va="bottom",
+                    fontsize=10,
+                    weight="bold",
+                )
+
+            ax.set_title(f"{dataset_name}: Target Distribution", pad=10, fontsize=12)
+            ax.set_ylabel("Sample Count", labelpad=6)
+            ax.grid(True, axis="y", linestyle="--", alpha=0.35)
+
+            # Adjust layout parameters to mirror upstream notebook structure
+            ax.set_ylim(0, max(sub_df["Class Count"]) * 1.15)
+
+        fig.suptitle(title, fontsize=15, y=0.99)
+        plt_t4.tight_layout(rect=[0, 0, 1, 0.96])
+        return fig
+
+
+    # --- Execution and Ingestion ---
+    # Note: We pass your team's cleaned inputs ('ss_clean_df' and 'mc_clean_df') directly.
+    # For Smalling + Seawolf, the cumulative column is 'ΣPFAS'.
+    # For McMahon, the cleaned target concentration proxy column is evaluated.
+    t4_summary_data, t4_split_dfs = analyze_target_variable_t4(
+        ss_df=ss_clean_df,
+        mc_df=mc_clean_df,
+        ss_total_col="ΣPFAS",
+        mc_total_col="PFBS-VA_clean",  # Swap with cumulative proxy if unified total column renames alter this upstream
+        frozen_ss_median=7.110,  # Uses your notebook's published median cumulative PFAS value (pg 22)
+    )
+
+    t4_target_summary_table = t4_summary_data
+    t4_distribution_fig = make_target_distribution_plot_t4(
+        t4_summary_data, "Provisional PFAS Target Label Distributions"
+    )
+
+    # Render the layout sequentially directly into your notebook workspace
+    mo.vstack(
+        [
+            mo.md("## Task 4: Explore Target Variable"),
+            mo.md("### 📊 Target Class Proportions and Imbalance Metrics"),
+            mo.ui.table(t4_target_summary_table),
+            mo.md(""),
+            t4_distribution_fig if t4_distribution_fig else mo.md(""),
+        ]
+    )
+    return
+
+
+@app.cell
+def _(mc_clean_df, mo, np, pd, ss_clean_df):
     # Create explicit new variables as your designated task outputs using the t8_ prefix
     import matplotlib.pyplot as plt_t8
 
