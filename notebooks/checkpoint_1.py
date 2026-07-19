@@ -170,7 +170,7 @@ def _(mo):
 
     Before assessing the quality of our data, we take the following steps:
 
-    ### Smalling et al. (2023) and Sewolf et. al. (2023) load and join-ability (`ss_merged_df`)
+    ### Smalling et al. (2023) and Seawolf et. al. (2023) load and join-ability (`ss_merged_df`)
 
     1. Load Seawolf and Smalling via `pandas`
     2. Clean Smalling: the dataset uses `-` and `nd` for two specific purposes (not analyzed, and non-detected
@@ -317,7 +317,7 @@ def _(mac_merged_df, mo, ss_merged_df):
     mac_unmatched_count = mac_unmatched_df.shape[0]
 
     mo.md(f"""
-    After joining the features and the PFAS concentration sets we get minimal data loss. 
+    After joining the features and the PFAS concentration sets we get minimal data loss.
     The only concentration measurement without landscape attributes is `{ss_unmatched_df.iloc[0, 0]}`
     """)
     return mac_unmatched_count, ss_unmatched_count
@@ -328,22 +328,58 @@ def _(
     mac_merged_df,
     mac_unmatched_count,
     mo,
+    pd,
     ss_merged_df,
     ss_unmatched_count,
 ):
-    mo.accordion({"Click for more details": mo.ui.table([
+    integration_feasibility_summary = pd.DataFrame([
         {
-            "source": "ss_merged_df", 
-            "unmatched_count": ss_unmatched_count,
-            "kept": ss_merged_df.shape[0] - ss_unmatched_count,
+            "Datasets": "Smalling PFAS outcomes + Seawolf landscape predictors",
+            "Left key": "Site Code",
+            "Right key": "SiteCode",
+            "Left records": ss_merged_df.shape[0],
+            "Matched": ss_merged_df.shape[0] - ss_unmatched_count,
+            "Unmatched": ss_unmatched_count,
+            "Match rate (%)": round(
+                100 * (ss_merged_df.shape[0] - ss_unmatched_count) / ss_merged_df.shape[0], 1
+            ),
+        },
+        {
+            "Datasets": "McMahon PFAS outcomes + McMahon geospatial predictors",
+            "Left key": "NAWQA_ID",
+            "Right key": "NAWQA_ID",
+            "Left records": mac_merged_df.shape[0],
+            "Matched": mac_merged_df.shape[0] - mac_unmatched_count,
+            "Unmatched": mac_unmatched_count,
+            "Match rate (%)": round(
+                100 * (mac_merged_df.shape[0] - mac_unmatched_count) / mac_merged_df.shape[0], 1
+            ),
+        },
+    ])
 
-        },
-        {
-            "source": "mac_merged_df", 
-            "unmatched_count": mac_unmatched_count,
-            "kept": mac_merged_df.shape[0] - mac_unmatched_count,
-        },
-    ])})
+    integration_identifier_samples = pd.DataFrame({
+        "Smalling Site Code sample": (
+            ss_merged_df["Site Code"].dropna().astype(str).head(5).reset_index(drop=True)
+        ),
+        "Seawolf SiteCode sample": (
+            ss_merged_df["SiteCode"].dropna().astype(str).head(5).reset_index(drop=True)
+        ),
+        "McMahon environmental ID sample": (
+            mac_merged_df["NAWQA_ID_mac_env"].dropna().astype(str).head(5).reset_index(drop=True)
+        ),
+        "McMahon geospatial ID sample": (
+            mac_merged_df["NAWQA_ID_mac_geo"].dropna().astype(str).head(5).reset_index(drop=True)
+        ),
+    })
+
+    mo.vstack([
+        mo.ui.table(integration_feasibility_summary),
+        mo.accordion({
+            "Sample identifiers for consistency review": mo.ui.table(
+                integration_identifier_samples
+            ),
+        }),
+    ])
     return
 
 
@@ -918,82 +954,6 @@ def _(mac_merged_df, mo, pd):
         uniquely keyed, and fully matched. The cleaned concentration values are usable for
         exploratory modeling, but totals that include half-reporting-limit substitutions should not
         be interpreted as detected-only concentration without retaining the original censoring logic.
-        """),
-    ])
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md(r"""
-    ### Dataset Integration Feasibility Check
-
-    This check verifies that the outcome and predictor tables use compatible site identifiers and
-    quantifies the number of records retained after each join.
-    """)
-    return
-
-
-@app.cell
-def _(mac_merged_df, mo, pd, ss_merged_df):
-    integration_smalling_records = len(ss_merged_df)
-    integration_smalling_matches = int(ss_merged_df["_merge"].eq("both").sum())
-    integration_mcmahon_records = len(mac_merged_df)
-    integration_mcmahon_matches = int(mac_merged_df["_merge"].eq("both").sum())
-
-    integration_feasibility_summary = pd.DataFrame([
-        {
-            "Datasets": "Smalling PFAS outcomes + Seawolf landscape predictors",
-            "Left key": "Site Code",
-            "Right key": "SiteCode",
-            "Left records": integration_smalling_records,
-            "Matched": integration_smalling_matches,
-            "Unmatched": integration_smalling_records - integration_smalling_matches,
-            "Match rate (%)": round(
-                100 * integration_smalling_matches / integration_smalling_records, 1
-            ),
-            "Assessment": "Feasible with minimal loss",
-        },
-        {
-            "Datasets": "McMahon PFAS outcomes + McMahon geospatial predictors",
-            "Left key": "NAWQA_ID",
-            "Right key": "NAWQA_ID",
-            "Left records": integration_mcmahon_records,
-            "Matched": integration_mcmahon_matches,
-            "Unmatched": integration_mcmahon_records - integration_mcmahon_matches,
-            "Match rate (%)": round(
-                100 * integration_mcmahon_matches / integration_mcmahon_records, 1
-            ),
-            "Assessment": "Feasible; complete one-to-one coverage",
-        },
-    ])
-
-    integration_identifier_samples = pd.DataFrame({
-        "Smalling Site Code sample": (
-            ss_merged_df["Site Code"].dropna().astype(str).head(5).reset_index(drop=True)
-        ),
-        "Seawolf SiteCode sample": (
-            ss_merged_df["SiteCode"].dropna().astype(str).head(5).reset_index(drop=True)
-        ),
-        "McMahon environmental ID sample": (
-            mac_merged_df["NAWQA_ID_mac_env"].dropna().astype(str).head(5).reset_index(drop=True)
-        ),
-        "McMahon geospatial ID sample": (
-            mac_merged_df["NAWQA_ID_mac_geo"].dropna().astype(str).head(5).reset_index(drop=True)
-        ),
-    })
-
-    mo.vstack([
-        mo.ui.table(integration_feasibility_summary),
-        mo.accordion({
-            "Sample identifiers for consistency review": mo.ui.table(
-                integration_identifier_samples
-            ),
-        }),
-        mo.md("""
-        **Integration assessment:** Both dataset pairs can be joined using stable site identifiers.
-        The Smalling-to-Seawolf join loses only a minimal number of records, while the McMahon
-        environmental and geospatial tables have complete coverage.
         """),
     ])
     return
