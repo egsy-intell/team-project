@@ -36,14 +36,14 @@ def _(mo):
     * Emir Beg
     * Somyaranjan Sahu
 
-    ## Step one: problem definition
+    ## Step 1: problem definition
 
     ### Problem statement
     Per- and polyfluoroalkyl substances, commonly known as PFAS, are persistent environmental
     contaminants that may enter drinking-water sources through industrial activities, waste
     disposal, firefighting foam use, urban development, and other landscape-level sources. This
     project aims to develop a predictive model for the occurrence of PFAS in tap water,
-    using USGS summary data on potential landscape sources (Seawolf et al., 2023),
+    using U.S. Geological Survey (USGS) summary data on potential landscape sources (Seawolf et al., 2023),
     and reported concentration at the point-of-use (Smalling et al., 2023). We will also attempt
     the same modeling for groundwater, based on the data used in a similar exercise by McMahon et
     al. (2022).
@@ -90,7 +90,7 @@ def _(mo):
        datasets explicitly integrate private-well and public-supply exposures, positioning our model
        to speak to a population the new federal rule does not cover.
 
-    #### Intended Application
+    #### Intended application
     The proposed model is intended to function as a screening and sampling-prioritization tool.
     It will not replace laboratory testing and will not be used to declare a tap or groundwater
     source safe, unsafe, compliant, or noncompliant.
@@ -102,9 +102,9 @@ def _(mo):
     * Community organizations identifying locations where testing resources may be most useful
 
     ### Application feasibility of the model
-    The project is feasible because researchers at the EPA and USGS (U.S. Geological Survey)
-    provides resources and data such as measured PFAS concentration data and landscape summaries
-    for sites included in its national PFAS tap water reconnaissance.
+    The project is feasible because the EPA and USGS provide the data it depends on: measured PFAS
+    concentrations and landscape summaries for sites in USGS's national PFAS tap-water
+    reconnaissance.
 
     #### Scope
     * Publicly supplied and privately sourced tap and groundwater
@@ -118,7 +118,7 @@ def _(mo):
     The model will not...
     * Make causal claims about individual PFAS sources
     * Determine regulatory compliance
-    * replace laboratory sampling
+    * Replace laboratory sampling
     * Estimate the exact PFAS exposure of individual residents
     * Publish or attempt to reconstruct exact residential locations
     * Use repeated temporal samples as independent observations
@@ -126,8 +126,8 @@ def _(mo):
     * Use previously generated PFAS predictions as predictor variables
 
     ### Data source
-    #### USGS Data Source 1: Smalling et al., 2023 (Dependent Variable)
-    It supplies one of the project’s dependent variables, i.e., the outcome the model is trying to
+    #### USGS data source 1: Smalling et al., 2023 (dependent variable)
+    It supplies one of the project's dependent variables, i.e., the outcome the model is trying to
     predict. It will be used to train our model in the categorization of tap water sites based
     on site controls. It includes:
 
@@ -138,7 +138,7 @@ def _(mo):
     * Whether results were below the laboratory reporting limit
     * Type of service point: private v. public
 
-    #### USGS Data Source 2: Seawolf et al., 2023 (Predictors)
+    #### USGS data source 2: Seawolf et al., 2023 (predictors)
     This dataset provides predictors associated with Smalling et al.'s data. It
     describes the environmental and geographic characteristics surrounding each sampling
     location that may be associated with PFAS contamination, including:
@@ -152,7 +152,7 @@ def _(mo):
     * Public versus private water source
     * Other geographic or landscape summaries around the sampling location
 
-    #### USGS Data Source 3: McMahon et al., 2022 (Predictors + Dependent Variables)
+    #### USGS data source 3: McMahon et al., 2022 (predictors + dependent variables)
     This comprehensive dataset provides environmental and geographic characteristics,
     as well as PFAS concentrations, associated with various private and public wells
     drawing from aquifers along the Eastern United States. It includes:
@@ -183,11 +183,11 @@ def _(mo):
 @app.cell
 def _(mo):
     mo.md("""
-    ## Step 2: Data exploration and quality assesssment
+    ## Step 2: Data exploration and quality assessment
 
     Before assessing the quality of our data, we take the following steps:
 
-    ### Smalling et al. (2023) and Seawolf et. al. (2023) load and join-ability (`ss_merged_df`)
+    ### Smalling et al. (2023) and Seawolf et al. (2023) load and join-ability (`ss_merged_df`)
 
     1. Load Seawolf and Smalling via `pandas`
     2. Clean Smalling: the dataset uses `-` and `nd` for two specific purposes (not analyzed, and non-detected
@@ -213,6 +213,11 @@ def _(all_compound_dict_df, mo, pd):
     seawolf_df = pd.read_csv(
         data_dir / "seawolf" / "PFAS_DataSummaries_5k_50k_SummaryData.csv"
     )
+
+    # Smalling's raw header spells this compound "HFPO-DA; GenX" (with a space);
+    # normalize to "HFPO-DA;GenX" so it matches all_compound_dict_df and the
+    # TQ benchmark table (pfas_tq_benchmarks_epa_aligned.csv) everywhere downstream.
+    smalling_df = smalling_df.rename(columns={"HFPO-DA; GenX": "HFPO-DA;GenX"})
 
     # Individual PFAS compound columns mix numeric concentrations (ng/L) with
     # two non-numeric sentinels: "nd" (tested, not detected above the lab
@@ -248,7 +253,7 @@ def _(all_compound_dict_df, mo, pd):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ### McMahon et. al. (2022) load and join-ability (`mc_merged_df`)
+    ### McMahon et al. (2022) load and join-ability (`mc_merged_df`)
 
     In this case, we perform similar operations
 
@@ -304,7 +309,7 @@ def _(all_compound_dict_df, data_dir, mcmahon_env_df, np, pd):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    `ss_merged_df` and `mc_merged_df` now contains all data to be considered in our model design
+    `ss_merged_df` and `mc_merged_df` now contain all data to be considered in our model design
 
     ### Unmatched rows and `NaN` clean up
     """)
@@ -425,7 +430,7 @@ def _(mc_merged_df, mo, ss_merged_clean_df):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    #### results
+    #### Results
 
     McMahon data does not require any further cleanups. The Seawolf landscape columns with missing
     values (`number_pfas_sites_proximal`, `mean_dist_to_pfas_site`, and the four burn-area fractions)
@@ -475,7 +480,7 @@ def _(mc_merged_df, seawolf_dict_df, ss_merged_clean_df):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ## Data Exploration and Quality Assessment
+    ## Dataset-by-dataset review
 
     The following subsections evaluate the structure, completeness, consistency, and modeling
     suitability of the Smalling, Seawolf, and McMahon datasets. We check for: dataset dimensions, key fields, missing values, duplicate
@@ -717,7 +722,7 @@ def _(mo):
     mo.md(r"""
     ### Smalling et al. (2023)
 
-    #### Data Exploration
+    #### Data exploration
     """)
     return
 
@@ -786,7 +791,7 @@ def _(all_compound_dict_df, mo, pd, ss_clean_df):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    #### Quality Assessment
+    #### Quality assessment
     """)
     return
 
@@ -893,7 +898,7 @@ def _(mo):
     mo.md(r"""
     ### Seawolf et al. (2023)
 
-    #### Data Exploration
+    #### Data exploration
     """)
     return
 
@@ -975,7 +980,7 @@ def _(mo, pd, ss_clean_df):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    #### Quality Assessment
+    #### Quality assessment
     """)
     return
 
@@ -1086,7 +1091,7 @@ def _(mo):
     mo.md(r"""
     ### McMahon et al. (2022)
 
-    #### Data Exploration
+    #### Data exploration
     """)
     return
 
@@ -1163,7 +1168,7 @@ def _(mc_clean_df, mo, pd):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    #### Quality Assessment
+    #### Quality assessment
     """)
     return
 
@@ -1276,7 +1281,7 @@ def _(mc_clean_df, mo, pd):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ### Categorical Variable Evaluation
+    ### Categorical variable evaluation
 
     This section evaluates the categorical variables already available in `ss_clean_df` and
     `mc_clean_df`. The checks focus on category completeness, cardinality, class imbalance,

@@ -137,7 +137,7 @@ def _(filter_mcmahon, mcmahon_alias, pd):
             {"compound": "PFPrS", "definition": "Perfluoropropane sulfonate (PFPrS), nanograms per liter"},
             {"compound": "6:2 FTS", "definition": "6:2 Fluorotelomer sulfonate (6:2 FTS), nanograms per liter"},
             {"compound": "FOSA", "definition": "Perfluorooctane sulfonamide (FOSA, also called PFOSA), nanograms per liter"},
-            {"compound": "HFPO-DA; GenX", "definition": "Hexafluoropropylene oxide dimer acid (HFPO-DA, trade name GenX), nanograms per liter"},
+            {"compound": "HFPO-DA;GenX", "definition": "Hexafluoropropylene oxide dimer acid (HFPO-DA, trade name GenX), nanograms per liter"},
         ]
     )
 
@@ -158,6 +158,13 @@ def _(filter_mcmahon, mcmahon_alias, pd):
         .loc[:, ["compound", "definition", "mcmahon", "smalling"]]
         .sort_values("compound")
         .reset_index(drop=True)
+    )
+
+    _factors_dir = mo.notebook_dir() / ".." / "data" / "factors"
+    _tq_benchmark_df = pd.read_csv(_factors_dir / "pfas_tq_benchmarks_epa_aligned.csv")
+
+    all_compound_dict_df = all_compound_dict_df.merge(
+        _tq_benchmark_df, on="compound", how="left"
     )
     return
 
