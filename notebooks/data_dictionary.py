@@ -1,6 +1,6 @@
 import marimo
 
-__generated_with = "0.23.9"
+__generated_with = "0.23.14"
 app = marimo.App(width="medium")
 
 
@@ -87,7 +87,7 @@ def _(ET, mo, pd):
         "Seawolf": seawolf_dict_df,
         "McMahon": filter_mcmahon("PFAS_ENV")
     })
-    return filter_mcmahon, mcmahon_alias, mcmahon_env_df
+    return filter_mcmahon, mcmahon_alias
 
 
 @app.cell
@@ -159,7 +159,7 @@ def _(filter_mcmahon, mcmahon_alias, pd):
         .sort_values("compound")
         .reset_index(drop=True)
     )
-    return (all_compound_dict_df,)
+    return
 
 
 if __name__ == "__main__":
