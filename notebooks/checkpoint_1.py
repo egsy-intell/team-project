@@ -19,9 +19,9 @@ def _():
 @app.cell
 async def _(data_dictionary_app):
     data_dictionary_result = await data_dictionary_app.embed()
-    mcmahon_dict_df = data_dictionary_result.defs["mcmahon_dict_df"]
-    mcmahon_alias = data_dictionary_result.defs["mcmahon_alias"]
-    return (mcmahon_dict_df,)
+    all_compound_dict_df = data_dictionary_result.defs["all_compound_dict_df"]
+    mcmahon_env_df = data_dictionary_result.defs["mcmahon_env_df"]
+    return all_compound_dict_df, mcmahon_env_df
 
 
 @app.cell
@@ -192,7 +192,7 @@ def _(mo):
 
 
 @app.cell
-def _(mo, pd):
+def _(all_compound_dict_df, mo, pd):
     from pathlib import Path
 
     notebook_dir = mo.notebook_dir()
@@ -212,11 +212,9 @@ def _(mo, pd):
     # reporting limit) and "NA" (compound not analyzed at that site, already
     # read in as NaN). We treat nd as 0 so it stays distinct from true
     # missingness, then coerce the rest to numeric.
-    pfas_cols = [
-        "PFBA", "PFPeA", "PFHxA", "PFHpA", "PFOA", "PFNA", "PFDA", "PFBS",
-        "PFPeS", "PFHxS", "PFHpS", "PFOS", "PFDS", "PFPrS", "6:2 FTS", "FOSA",
-        "HFPO-DA; GenX",
-    ]
+    pfas_cols = all_compound_dict_df.loc[
+        all_compound_dict_df["smalling"], "compound"
+    ].tolist()
 
     smalling_clean = smalling_df.copy()
     smalling_clean[pfas_cols] = smalling_clean[pfas_cols].replace("nd", 0)
@@ -243,7 +241,7 @@ def _(mo, pd):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ### McMahon et. al. (2022) load and join-ability (`mac_merged_df`)
+    ### McMahon et. al. (2022) load and join-ability (`mc_merged_df`)
 
     In this case, we perform similar operations
 
@@ -258,17 +256,10 @@ def _(mo):
 
 
 @app.cell
-def _(data_dir, mcmahon_dict_df, np, pd):
-    mcmahon_env_df= pd.read_csv(data_dir / "mcmahon" / "PFAS_ENV.csv")
-
-    # Data quirk: All values are labeled with <<compound>>-VA
-    # except for `"PFBS-V"`. This is a correction
-    mcmahon_env_df = mcmahon_env_df.rename(columns={"PFBS-V": "PFBS-VA"})
-
-    is_pfas_env = mcmahon_dict_df["TABLE"] == "PFAS_ENV"
-    is_compound = mcmahon_dict_df["DEFINITION"].str.contains(r"nanograms per liter", regex=True, na=False)
-
-    pfas_codes = mcmahon_dict_df.loc[is_pfas_env & is_compound, "PARAMETER"].str.strip().tolist()
+def _(all_compound_dict_df, data_dir, mcmahon_env_df, np, pd):
+    pfas_codes = all_compound_dict_df.loc[
+        all_compound_dict_df["mcmahon"], "compound"
+    ].tolist()
 
     mcmahon_env_clean = mcmahon_env_df.copy()
 
@@ -292,21 +283,21 @@ def _(data_dir, mcmahon_dict_df, np, pd):
         thousands=",",
     )
 
-    mac_merged_df = mcmahon_env_clean.merge(
+    mc_merged_df = mcmahon_env_clean.merge(
         right=mcmahon_geo_df,
         left_on=mcmahon_env_clean["NAWQA_ID"].str.strip(),
         right_on=mcmahon_geo_df["NAWQA_ID"].str.strip(),
         how="left",
-        suffixes=("_mac_env", "_mac_geo"),
+        suffixes=("_mc_env", "_mc_geo"),
         indicator=True,
     )
-    return (mac_merged_df,)
+    return (mc_merged_df,)
 
 
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    `ss_merged_df` and `mac_merged_df` now contains all data to be considered in our model design
+    `ss_merged_df` and `mc_merged_df` now contains all data to be considered in our model design
 
     ### Unmatched rows and `NaN` clean up
     """)
@@ -314,11 +305,11 @@ def _(mo):
 
 
 @app.cell
-def _(mac_merged_df, mo, ss_merged_df):
+def _(mc_merged_df, mo, ss_merged_df):
     ss_unmatched_df = ss_merged_df[ss_merged_df["_merge"] == "left_only"]
     ss_unmatched_count = ss_unmatched_df.shape[0]
 
-    mac_unmatched_df = mac_merged_df[mac_merged_df["_merge"] == "left_only"]
+    mac_unmatched_df = mc_merged_df[mc_merged_df["_merge"] == "left_only"]
     mac_unmatched_count = mac_unmatched_df.shape[0]
 
     mo.md(f"""
@@ -331,8 +322,8 @@ def _(mac_merged_df, mo, ss_merged_df):
 
 @app.cell
 def _(
-    mac_merged_df,
     mac_unmatched_count,
+    mc_merged_df,
     mo,
     pd,
     ss_merged_df,
@@ -354,11 +345,11 @@ def _(
             "Datasets": "McMahon PFAS outcomes + McMahon geospatial predictors",
             "Left key": "NAWQA_ID",
             "Right key": "NAWQA_ID",
-            "Left records": mac_merged_df.shape[0],
-            "Matched": mac_merged_df.shape[0] - mac_unmatched_count,
+            "Left records": mc_merged_df.shape[0],
+            "Matched": mc_merged_df.shape[0] - mac_unmatched_count,
             "Unmatched": mac_unmatched_count,
             "Match rate (%)": round(
-                100 * (mac_merged_df.shape[0] - mac_unmatched_count) / mac_merged_df.shape[0], 1
+                100 * (mc_merged_df.shape[0] - mac_unmatched_count) / mc_merged_df.shape[0], 1
             ),
         },
     ])
@@ -371,10 +362,10 @@ def _(
             ss_merged_df["SiteCode"].dropna().astype(str).head(5).reset_index(drop=True)
         ),
         "McMahon environmental ID sample": (
-            mac_merged_df["NAWQA_ID_mac_env"].dropna().astype(str).head(5).reset_index(drop=True)
+            mc_merged_df["NAWQA_ID_mc_env"].dropna().astype(str).head(5).reset_index(drop=True)
         ),
         "McMahon geospatial ID sample": (
-            mac_merged_df["NAWQA_ID_mac_geo"].dropna().astype(str).head(5).reset_index(drop=True)
+            mc_merged_df["NAWQA_ID_mc_geo"].dropna().astype(str).head(5).reset_index(drop=True)
         ),
     })
 
@@ -404,7 +395,7 @@ def _(mo):
 
 
 @app.cell
-def _(mac_merged_df, mo, ss_merged_clean_df):
+def _(mc_merged_df, mo, ss_merged_clean_df):
     def get_nan_counts(df, remove_non_matching = True):
         nan_counts = df.isna().sum()
         nan_table = (nan_counts
@@ -419,7 +410,7 @@ def _(mac_merged_df, mo, ss_merged_clean_df):
 
     mo.ui.tabs({
         "Seawolf/Smalling": get_nan_counts(ss_merged_clean_df),
-        "McMahon": get_nan_counts(mac_merged_df)
+        "McMahon": get_nan_counts(mc_merged_df)
     })
     return
 
@@ -435,8 +426,8 @@ def _(mo):
 
 
 @app.cell
-def _(mac_merged_df):
-    mac_clean = mac_merged_df
+def _(mc_merged_df):
+    mac_clean = mc_merged_df
 
     # TODO: Impute ss_merged_df based on ../data/usgs/NationalPFASReconLandscapeMetadata.xml values
     return
@@ -465,12 +456,10 @@ def _(mo):
 
 
 @app.cell
-def _(mo, pd, ss_merged_df):
-    smalling_quality_pfas_columns = [
-        "PFBA", "PFPeA", "PFHxA", "PFHpA", "PFOA", "PFNA", "PFDA", "PFBS",
-        "PFPeS", "PFHxS", "PFHpS", "PFOS", "PFDS", "PFPrS", "6:2 FTS", "FOSA",
-        "HFPO-DA; GenX",
-    ]
+def _(all_compound_dict_df, mo, pd, ss_merged_df):
+    smalling_quality_pfas_columns = all_compound_dict_df.loc[
+        all_compound_dict_df["smalling"], "compound"
+    ].tolist()
 
     smalling_quality_total_pfas = ss_merged_df["∑PFAS"]
     smalling_quality_detected_count = ss_merged_df["Count Detected PFAS"]
@@ -535,12 +524,10 @@ def _(mo):
 
 
 @app.cell
-def _(mo, pd, ss_merged_df):
-    smalling_assessment_pfas_columns = [
-        "PFBA", "PFPeA", "PFHxA", "PFHpA", "PFOA", "PFNA", "PFDA", "PFBS",
-        "PFPeS", "PFHxS", "PFHpS", "PFOS", "PFDS", "PFPrS", "6:2 FTS", "FOSA",
-        "HFPO-DA; GenX",
-    ]
+def _(all_compound_dict_df, mo, pd, ss_merged_df):
+    smalling_assessment_pfas_columns = all_compound_dict_df.loc[
+        all_compound_dict_df["smalling"], "compound"
+    ].tolist()
 
     smalling_assessment_numeric_pfas = ss_merged_df[smalling_assessment_pfas_columns]
     smalling_assessment_published_count = ss_merged_df["Count Detected PFAS"]
@@ -837,28 +824,28 @@ def _(mo):
 
 
 @app.cell
-def _(mac_merged_df, mo, pd):
+def _(mc_merged_df, mo, pd):
     mcmahon_quality_clean_columns = [
-        column for column in mac_merged_df.columns if column.endswith("-VA_clean")
+        column for column in mc_merged_df.columns if column.endswith("-VA_clean")
     ]
     mcmahon_quality_estimated_columns = [
-        column for column in mac_merged_df.columns if column.endswith("-estimated")
+        column for column in mc_merged_df.columns if column.endswith("-estimated")
     ]
-    mcmahon_quality_total_concentration = mac_merged_df[
+    mcmahon_quality_total_concentration = mc_merged_df[
         mcmahon_quality_clean_columns
     ].sum(axis=1, min_count=1)
-    mcmahon_quality_land_use_total = mac_merged_df[
+    mcmahon_quality_land_use_total = mc_merged_df[
         ["AGRI_12", "NATU_12", "URBA_12"]
     ].sum(axis=1)
 
     mcmahon_exploration_summary = pd.DataFrame([
         {
             "Measure": "Merged dataset shape",
-            "Result": f"{mac_merged_df.shape[0]} rows × {mac_merged_df.shape[1]} columns",
+            "Result": f"{mc_merged_df.shape[0]} rows × {mc_merged_df.shape[1]} columns",
         },
         {
             "Measure": "Unique environmental site IDs",
-            "Result": mac_merged_df["NAWQA_ID_mac_env"].nunique(),
+            "Result": mc_merged_df["NAWQA_ID_mc_env"].nunique(),
         },
         {
             "Measure": "PFAS compounds evaluated",
@@ -866,7 +853,7 @@ def _(mac_merged_df, mo, pd):
         },
         {
             "Measure": "Estimated or trace-result flags",
-            "Result": int(mac_merged_df[mcmahon_quality_estimated_columns].sum().sum()),
+            "Result": int(mc_merged_df[mcmahon_quality_estimated_columns].sum().sum()),
         },
         {
             "Measure": "Cleaned concentration-total range (ng/L)",
@@ -883,7 +870,7 @@ def _(mac_merged_df, mo, pd):
     ])
 
     mcmahon_land_use_summary = (
-        mac_merged_df[["AGRI_12", "NATU_12", "URBA_12"]]
+        mc_merged_df[["AGRI_12", "NATU_12", "URBA_12"]]
         .describe()
         .T
         .reset_index(names="Land-use variable")
@@ -897,7 +884,7 @@ def _(mac_merged_df, mo, pd):
         }),
         mo.md(f"""
         The McMahon analytical table contains groundwater PFAS measurements and landscape
-        predictors for **{len(mac_merged_df)} sites**. Concentration totals are strongly
+        predictors for **{len(mc_merged_df)} sites**. Concentration totals are strongly
         right-skewed, and the agricultural, natural, and urban percentages collectively cover
         approximately 100% of the surrounding land area.
         """),
@@ -914,64 +901,64 @@ def _(mo):
 
 
 @app.cell
-def _(mac_merged_df, mo, pd):
+def _(mc_merged_df, mo, pd):
     mcmahon_assessment_clean_columns = [
-        column for column in mac_merged_df.columns if column.endswith("-VA_clean")
+        column for column in mc_merged_df.columns if column.endswith("-VA_clean")
     ]
     mcmahon_assessment_estimated_columns = [
-        column for column in mac_merged_df.columns if column.endswith("-estimated")
+        column for column in mc_merged_df.columns if column.endswith("-estimated")
     ]
     mcmahon_assessment_geospatial_columns = [
         column
-        for column in mac_merged_df.columns
+        for column in mc_merged_df.columns
         if column not in [
-            "key_0", "NAWQA_ID_mac_env", "DATE", "TIME", "NAWQA_ID_mac_geo", "_merge"
+            "key_0", "NAWQA_ID_mc_env", "DATE", "TIME", "NAWQA_ID_mc_geo", "_merge"
         ]
         and column not in mcmahon_assessment_clean_columns
         and column not in mcmahon_assessment_estimated_columns
     ]
     mcmahon_assessment_land_use_columns = ["AGRI_12", "NATU_12", "URBA_12"]
-    mcmahon_assessment_land_use_total = mac_merged_df[
+    mcmahon_assessment_land_use_total = mc_merged_df[
         mcmahon_assessment_land_use_columns
     ].sum(axis=1)
 
     mcmahon_quality_checks = pd.DataFrame([
         {
             "Quality check": "Missing environmental site IDs",
-            "Result": int(mac_merged_df["NAWQA_ID_mac_env"].isna().sum()),
+            "Result": int(mc_merged_df["NAWQA_ID_mc_env"].isna().sum()),
             "Assessment": "Pass",
         },
         {
             "Quality check": "Duplicate environmental site IDs",
-            "Result": int(mac_merged_df["NAWQA_ID_mac_env"].duplicated().sum()),
+            "Result": int(mc_merged_df["NAWQA_ID_mc_env"].duplicated().sum()),
             "Assessment": "Pass",
         },
         {
             "Quality check": "Environmental-to-geospatial matches",
-            "Result": f"{int(mac_merged_df['_merge'].eq('both').sum())} of {len(mac_merged_df)}",
-            "Assessment": "Pass" if mac_merged_df["_merge"].eq("both").all() else "Review",
+            "Result": f"{int(mc_merged_df['_merge'].eq('both').sum())} of {len(mc_merged_df)}",
+            "Assessment": "Pass" if mc_merged_df["_merge"].eq("both").all() else "Review",
         },
         {
             "Quality check": "Missing cleaned PFAS values",
-            "Result": int(mac_merged_df[mcmahon_assessment_clean_columns].isna().sum().sum()),
+            "Result": int(mc_merged_df[mcmahon_assessment_clean_columns].isna().sum().sum()),
             "Assessment": "Pass",
         },
         {
             "Quality check": "Missing geospatial predictor values",
-            "Result": int(mac_merged_df[mcmahon_assessment_geospatial_columns].isna().sum().sum()),
+            "Result": int(mc_merged_df[mcmahon_assessment_geospatial_columns].isna().sum().sum()),
             "Assessment": "Pass",
         },
         {
             "Quality check": "Negative geospatial values",
-            "Result": int(mac_merged_df[mcmahon_assessment_geospatial_columns].lt(0).sum().sum()),
+            "Result": int(mc_merged_df[mcmahon_assessment_geospatial_columns].lt(0).sum().sum()),
             "Assessment": "Pass",
         },
         {
             "Quality check": "Land-use values outside 0-100%",
             "Result": int(
                 (
-                    mac_merged_df[mcmahon_assessment_land_use_columns].lt(0)
-                    | mac_merged_df[mcmahon_assessment_land_use_columns].gt(100)
+                    mc_merged_df[mcmahon_assessment_land_use_columns].lt(0)
+                    | mc_merged_df[mcmahon_assessment_land_use_columns].gt(100)
                 ).sum().sum()
             ),
             "Assessment": "Pass",
@@ -985,13 +972,13 @@ def _(mac_merged_df, mo, pd):
         },
         {
             "Quality check": "Estimated or trace-result flags",
-            "Result": int(mac_merged_df[mcmahon_assessment_estimated_columns].sum().sum()),
+            "Result": int(mc_merged_df[mcmahon_assessment_estimated_columns].sum().sum()),
             "Assessment": "Retain as a data-quality indicator",
         },
     ])
 
     mcmahon_missing_summary = (
-        mac_merged_df.isna()
+        mc_merged_df.isna()
         .sum()
         .sort_values(ascending=False)
         .head(10)
@@ -1000,7 +987,7 @@ def _(mac_merged_df, mo, pd):
         .rename(columns={"index": "Column"})
     )
     mcmahon_missing_summary["Missing (%)"] = (
-        100 * mcmahon_missing_summary["Missing values"] / len(mac_merged_df)
+        100 * mcmahon_missing_summary["Missing values"] / len(mc_merged_df)
     ).round(1)
 
     mo.vstack([
