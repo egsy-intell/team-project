@@ -537,7 +537,78 @@ def _(mc_clean_df, mo, np, pd, ss_clean_df):
 
 
 @app.cell
-def _(mo, pd, ss_clean_df):
+def _(mc_clean_df, mo, pd, ss_clean_df):
+    def describe_distribution(df, columns, dataset_name):
+        rows = []
+        for col in columns:
+            values = pd.to_numeric(df[col], errors="coerce").dropna()
+            if values.empty:
+                continue
+
+            q1 = values.quantile(0.25)
+            q3 = values.quantile(0.75)
+            iqr = q3 - q1
+            lower = q1 - 1.5 * iqr
+            upper = q3 + 1.5 * iqr
+            outlier_count = int(((values < lower) | (values > upper)).sum())
+            skew = values.skew()
+
+            if skew > 1:
+                skew_assessment = "Right-skewed"
+            elif skew < -1:
+                skew_assessment = "Left-skewed"
+            else:
+                skew_assessment = "Approximately symmetric"
+
+            rows.append({
+                "Dataset": dataset_name,
+                "Variable": col,
+                "Skewness": round(skew, 3),
+                "Assessment": skew_assessment,
+                "Q1": round(q1, 3),
+                "Q3": round(q3, 3),
+                "IQR": round(iqr, 3),
+                "Lower bound": round(lower, 3),
+                "Upper bound": round(upper, 3),
+                "Potential outliers": outlier_count,
+            })
+
+        return pd.DataFrame(rows)
+
+    ss_analysis_columns = [
+        "∑PFAS",
+        "Count Detected PFAS",
+        "∑EAR",
+        "number_pfas_sites_proximal",
+        "mean_dist_to_pfas_site",
+        "Burn_Area_5k_frac",
+        "Burn_area_50k_frac",
+        "Urbn_burn_5k_frac",
+        "Urbn_burn_50k_frac",
+    ]
+    ss_analysis_columns = [col for col in ss_analysis_columns if col in ss_clean_df.columns]
+
+    mc_analysis_columns = [
+        col for col in mc_clean_df.columns if col.endswith("-VA_clean")
+    ][:6] + ["AGRI_12", "NATU_12", "URBA_12"]
+
+    distribution_summary = pd.concat(
+        [
+            describe_distribution(ss_clean_df, ss_analysis_columns, "Smalling + Seawolf"),
+            describe_distribution(mc_clean_df, mc_analysis_columns, "McMahon"),
+        ],
+        ignore_index=True,
+    )
+
+    mo.vstack([
+        mo.md("#### Skewness and IQR outlier summary"),
+        mo.ui.table(distribution_summary),
+    ])
+    return
+
+
+@app.cell
+def _(mo, ss_clean_df):
     import matplotlib.pyplot as plt
 
     ss_viz_columns = [
@@ -578,32 +649,11 @@ def _(mo, pd, ss_clean_df):
         fig.subplots_adjust(top=0.92, hspace=0.55, left=0.12, right=0.97, bottom=0.08)
         return fig
 
-    def skewness_table(df, columns):
-        rows = []
-        for col in columns:
-            values = df[col].dropna()
-            skew = values.skew()
-            if skew > 1:
-                assessment = "Right-skewed"
-            elif skew < -1:
-                assessment = "Left-skewed"
-            else:
-                assessment = "Approximately symmetric"
-            rows.append({
-                "Variable": col,
-                "Skewness": round(skew, 3),
-                "Assessment": assessment,
-            })
-        return pd.DataFrame(rows)
-
     ss_boxplot = make_boxplot(ss_clean_df, ss_viz_columns, "Smalling + Seawolf: box plots")
     ss_histogram = make_histogram(ss_clean_df, ss_viz_columns, "Smalling + Seawolf: histograms")
-    ss_skewness = skewness_table(ss_clean_df, ss_viz_columns)
 
     mo.vstack([
         mo.md("#### Exploratory plots for Smalling + Seawolf\n\n"),
-        mo.ui.table(ss_skewness),
-        mo.md(""),
         ss_boxplot,
         mo.md(""),
         ss_histogram,
@@ -612,7 +662,7 @@ def _(mo, pd, ss_clean_df):
 
 
 @app.cell
-def _(mc_clean_df, mo, pd):
+def _(mc_clean_df, mo):
     import matplotlib.pyplot as plt_mac
 
     mc_viz_columns = [
@@ -644,32 +694,11 @@ def _(mc_clean_df, mo, pd):
         fig.subplots_adjust(top=0.92, hspace=0.55, left=0.12, right=0.97, bottom=0.08)
         return fig
 
-    def skewness_table_mac(df, columns):
-        rows = []
-        for col in columns:
-            values = df[col].dropna()
-            skew = values.skew()
-            if skew > 1:
-                assessment = "Right-skewed"
-            elif skew < -1:
-                assessment = "Left-skewed"
-            else:
-                assessment = "Approximately symmetric"
-            rows.append({
-                "Variable": col,
-                "Skewness": round(skew, 3),
-                "Assessment": assessment,
-            })
-        return pd.DataFrame(rows)
-
     mac_boxplot = make_boxplot_mac(mc_clean_df, mc_viz_columns, "McMahon: box plots")
     mac_histogram = make_histogram_mac(mc_clean_df, mc_viz_columns, "McMahon: histograms")
-    mac_skewness = skewness_table_mac(mc_clean_df, mc_viz_columns)
 
     mo.vstack([
         mo.md("#### Exploratory plots for McMahon\n\n"),
-        mo.ui.table(mac_skewness),
-        mo.md(""),
         mac_boxplot,
         mo.md(""),
         mac_histogram,
