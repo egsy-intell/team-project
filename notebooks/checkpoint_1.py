@@ -1536,7 +1536,7 @@ def _(mc_clean_df, mo, pd, ss_clean_df):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ## Step 2.3: Preparing for modeling
+    ## Step 2.5: Preparing for modeling
 
     ### Scaling
     Several geospatial and land-use predictors, and cumulative PFAS concentration itself, are
