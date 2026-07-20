@@ -1,6 +1,16 @@
+# /// script
+# requires-python = ">=3.14"
+# dependencies = [
+#     "marimo>=0.23.14",
+#     "pandas>=3.0.3",
+#     "numpy>=2.5.1",
+#     "matplotlib>=3.9",
+# ]
+# ///
+
 import marimo
 
-__generated_with = "0.23.9"
+__generated_with = "0.23.14"
 app = marimo.App(width="medium", css_file="print.css")
 
 
@@ -11,8 +21,25 @@ def _():
     import pandas as pd
     import numpy as np
 
-    from data_dictionary import app as data_dictionary_app
+    # When this notebook is opened from a local checkout, data_dictionary.py
+    # sits right next to it. When marimo downloads it standalone from a URL
+    # (e.g. `uvx marimo edit --sandbox <gh-pages-url>`), that sibling file
+    # isn't there, so fetch it from the same repo location it was published
+    # from and import it from a temp dir instead.
+    try:
+        from data_dictionary import app as data_dictionary_app
+    except ModuleNotFoundError:
+        import sys as _sys
+        import tempfile as _tempfile
+        import urllib.request as _urllib_request
 
+        _RAW_BASE = "https://raw.githubusercontent.com/egsy-intell/team-project/main/notebooks"
+        _tmp_dir = _tempfile.mkdtemp(prefix="egsy-pfas-")
+        _dest = f"{_tmp_dir}/data_dictionary.py"
+        _urllib_request.urlretrieve(f"{_RAW_BASE}/data_dictionary.py", _dest)
+        _sys.path.insert(0, _tmp_dir)
+
+        from data_dictionary import app as data_dictionary_app
     return data_dictionary_app, mo, np, pd
 
 
@@ -208,6 +235,28 @@ def _(all_compound_dict_df, mo, pd):
         raise RuntimeError("Could not determine notebook directory. Save/open the notebook from disk.")
 
     data_dir = Path(notebook_dir).resolve().parent / "data" / "usgs"
+
+    if not data_dir.exists():
+        # Notebook was opened standalone (e.g. `uvx marimo edit --sandbox
+        # <gh-pages-url>`), so there's no sibling data/ checkout. Download the
+        # same CSVs from the repo into a local cache and use that instead.
+        import tempfile as _tempfile
+        import urllib.request as _urllib_request
+
+        data_dir = Path(_tempfile.gettempdir()) / "egsy-pfas-data" / "usgs"
+        _RAW_BASE = "https://raw.githubusercontent.com/egsy-intell/team-project/main/data/usgs"
+        _files = [
+            "smalling/PFAS_ENV.csv",
+            "seawolf/PFAS_DataSummaries_5k_50k_SummaryData.csv",
+            "mcmahon/PFAS_ENV.csv",
+            "mcmahon/PFAS_GEOSPATIAL.csv",
+        ]
+        for _rel in _files:
+            _dest = data_dir / _rel
+            if _dest.exists():
+                continue
+            _dest.parent.mkdir(parents=True, exist_ok=True)
+            _urllib_request.urlretrieve(f"{_RAW_BASE}/{_rel}", _dest)
 
     # First line of this file is a table caption, not a header row.
     smalling_df = pd.read_csv(data_dir / "smalling" / "PFAS_ENV.csv", skiprows=1)

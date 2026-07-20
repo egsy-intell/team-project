@@ -1,3 +1,11 @@
+# /// script
+# requires-python = ">=3.14"
+# dependencies = [
+#     "marimo>=0.23.14",
+#     "pandas>=3.0.3",
+# ]
+# ///
+
 import marimo
 
 __generated_with = "0.23.14"
@@ -27,6 +35,28 @@ def _(mo):
 @app.cell
 def _(ET, mo, pd):
     data_dir = mo.notebook_dir() / ".." / "data" / "usgs"
+
+    if not data_dir.exists():
+        # Notebook was opened standalone (e.g. `uvx marimo edit --sandbox
+        # <gh-pages-url>`), so there's no sibling data/ checkout. Download the
+        # same files from the repo into a local cache and use that instead.
+        import tempfile
+        import urllib.request
+        from pathlib import Path
+
+        data_dir = Path(tempfile.gettempdir()) / "egsy-pfas-data" / "usgs"
+        _RAW_BASE = "https://raw.githubusercontent.com/egsy-intell/team-project/main/data/usgs"
+        _files = [
+            "seawolf/NationalPFASReconLandscapeMetadata.xml",
+            "mcmahon/PFAS_Data_Dictionary.csv",
+            "mcmahon/PFAS_ENV.csv",
+        ]
+        for _rel in _files:
+            _dest = data_dir / _rel
+            if _dest.exists():
+                continue
+            _dest.parent.mkdir(parents=True, exist_ok=True)
+            urllib.request.urlretrieve(f"{_RAW_BASE}/{_rel}", _dest)
 
     seawolf_meta_tree = ET.parse(
         data_dir / "seawolf" / "NationalPFASReconLandscapeMetadata.xml"
@@ -161,6 +191,24 @@ def _(filter_mcmahon, mcmahon_alias, mo, pd):
     )
 
     _factors_dir = mo.notebook_dir() / ".." / "data" / "factors"
+
+    if not _factors_dir.exists():
+        # Notebook was opened standalone (e.g. `uvx marimo edit --sandbox
+        # <gh-pages-url>`), so there's no sibling data/ checkout. Download the
+        # same file from the repo into a local cache and use that instead.
+        import tempfile as _tempfile
+        import urllib.request as _urllib_request
+        from pathlib import Path as _Path
+
+        _factors_dir = _Path(_tempfile.gettempdir()) / "egsy-pfas-data" / "factors"
+        _factors_dir.mkdir(parents=True, exist_ok=True)
+        _dest = _factors_dir / "pfas_tq_benchmarks_epa_aligned.csv"
+        if not _dest.exists():
+            _urllib_request.urlretrieve(
+                "https://raw.githubusercontent.com/egsy-intell/team-project/main/data/factors/pfas_tq_benchmarks_epa_aligned.csv",
+                _dest,
+            )
+
     _tq_benchmark_df = pd.read_csv(_factors_dir / "pfas_tq_benchmarks_epa_aligned.csv")
 
     all_compound_dict_df = all_compound_dict_df.merge(
