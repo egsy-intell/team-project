@@ -60,8 +60,9 @@ def _(mo):
     any fixed, external reference point.
 
     The classification is now based on a toxicity quotient (∑TQ), computed only from the six PFAS
-    compounds EPA regulates under its 2024 rule, and named after EPA's own compliance vocabulary
-    rather than generic low/medium/high labels:
+    compounds EPA regulates under its 2024 rule, and named after EPA's own compliance vocabulary,
+    anchored on its Maximum Contaminant Levels (MCLs) — the enforceable concentration limits set
+    for each regulated compound — rather than generic low/medium/high labels:
     * **`within_reduced_monitoring`:** ∑TQ (or HI) < 0.5, below EPA's reduced-monitoring trigger.
     * **`above_trigger`:** 0.5 ≤ ∑TQ < 1.0, past the trigger but not yet an MCL-equivalent
       exceedance.
@@ -1594,9 +1595,43 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ## Next steps: proposed task assignments
-
     ## Conclusion
+
+    This checkpoint's biggest lesson was that intuition can mislead once real data is in front of
+    you. We set out to clarify a single variable, cumulative PFAS concentration, expecting a
+    straightforward low/medium/high split. Instead, the data's own properties argued against that
+    plan: non-detected values and not-analyzed values are recorded identically low but mean
+    different things (see Step 2's Smalling load and clean-up above), and several of the variables
+    we care about are right-skewed rather than symmetric (see Skewness and IQR outlier summary
+    above). Weighting every compound equally per ng/L, and cutting at our own sample's median,
+    never reflected how differently PFAS compounds are actually regulated. That combination of
+    findings is what moved us off the original classification and onto the toxicity quotient
+    (∑TQ) target instead.
+
+    The same distribution review also pointed to candidate predictors worth carrying into
+    modeling. Seawolf's `mean_dist_to_pfas_site` and `number_pfas_sites_proximal`, i.e., proximity
+    and exposure to PFAS-associated sites such as fire stations and military facilities, stood out
+    in the box-plot and skewness review as geographically meaningful and were retained through
+    cleaning for that reason. We have not yet tested their relationship to ∑TQ directly; that
+    remains a next step once the toxicity-quotient features described below are built.
+
+    Even though the pivot moved us away from our original plan, it left us better aligned with our
+    underlying goal. We set out to build a tool that could help water-resource operators
+    anticipate compliance with EPA's PFAS drinking-water rule ahead of its phased deadlines.
+    Anchoring the target on ∑TQ, and on the same trigger/MCL vocabulary operators already track,
+    gets us closer to that goal than a sample-relative median cutoff ever could.
+
+    That pivot has a cost: some of the compounds in the original dataset will not be part of the
+    core ∑TQ analysis. Of the 17 PFAS compounds Smalling et al. (2023) report, EPA has set Maximum
+    Contaminant Levels (MCLs) for only six: PFOA, PFOS, PFHxS, PFNA, PFBS, and HFPO-DA (GenX). The
+    remaining 11 compounds have, at best, a state-level benchmark rather than an EPA one, and two
+    (PFPeS, PFPrS) have no benchmark identified in either source. Those compounds stay in the
+    dataset as a descriptive slice rather than feeding the classified ∑TQ target.
+
+    That additional processing, reshaping the data to one row per site per compound, joining
+    benchmarks, computing per-compound and summed TQ, and resolving the open questions listed
+    under Feature engineering and selection above, is still pending. It will be completed and
+    integrated into our processing data frames ahead of modeling.
 
     ## References
     * CDM Smith. (2024). EPA's final regulations: What do you
