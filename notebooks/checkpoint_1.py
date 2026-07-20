@@ -31,12 +31,12 @@ def _(mo):
     # Predicting PFAS occurrence risk based on land use features
 
     ## Team .egsy intelligence (Group #14)
-    * Yaisiel (Yai) Torres
-    * Gulshan Raj Shetty (Raj)
     * Emir Beg
+    * Gulshan Raj Shetty (Raj)
     * Somyaranjan Sahu
+    * Yaisiel (Yai) Torres
 
-    ## Step 1: problem definition
+    ## Step 1: Problem definition
 
     ### Problem statement
     Per- and polyfluoroalkyl substances, commonly known as PFAS, are persistent environmental
