@@ -4,7 +4,7 @@ __generated_with = "0.23.9"
 app = marimo.App(width="medium", css_file="print.css")
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _():
     import marimo as mo
 
@@ -16,7 +16,7 @@ def _():
     return data_dictionary_app, mo, np, pd
 
 
-@app.cell
+@app.cell(hide_code=True)
 async def _(data_dictionary_app):
     data_dictionary_result = await data_dictionary_app.embed()
     all_compound_dict_df = data_dictionary_result.defs["all_compound_dict_df"]
@@ -25,7 +25,7 @@ async def _(data_dictionary_app):
     return all_compound_dict_df, mcmahon_env_df, seawolf_dict_df
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
     # Predicting PFAS occurrence risk based on land use features
@@ -181,7 +181,7 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md("""
     ## Step 2: Data exploration and quality assessment
@@ -199,7 +199,7 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(all_compound_dict_df, mo, pd):
     from pathlib import Path
 
@@ -268,7 +268,7 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(all_compound_dict_df, data_dir, mcmahon_env_df, np, pd):
     pfas_codes = all_compound_dict_df.loc[
         all_compound_dict_df["mcmahon"], "compound"
@@ -317,7 +317,7 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mc_merged_df, mo, ss_merged_df):
     ss_unmatched_df = ss_merged_df[ss_merged_df["_merge"] == "left_only"]
     ss_unmatched_count = ss_unmatched_df.shape[0]
@@ -333,7 +333,7 @@ def _(mc_merged_df, mo, ss_merged_df):
     return mac_unmatched_count, ss_unmatched_count
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(
     mac_unmatched_count,
     mc_merged_df,
@@ -393,7 +393,7 @@ def _(
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(ss_merged_df):
     ss_merged_clean_df = ss_merged_df[ss_merged_df["_merge"] != "left_only"]
     return (ss_merged_clean_df,)
@@ -407,7 +407,7 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mc_merged_df, mo, ss_merged_clean_df):
     def get_nan_counts(df, remove_non_matching = True):
         nan_counts = df.isna().sum()
@@ -499,7 +499,7 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mc_clean_df, mo, np, pd, ss_clean_df):
     def make_numeric_summary_table(df, dataset_name):
         numeric_df = df.select_dtypes(include="number")
@@ -548,7 +548,7 @@ def _(mc_clean_df, mo, np, pd, ss_clean_df):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mc_clean_df, mo, pd, ss_clean_df):
     def describe_distribution(df, columns, dataset_name):
         rows = []
@@ -619,7 +619,7 @@ def _(mc_clean_df, mo, pd, ss_clean_df):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo, ss_clean_df):
     import matplotlib.pyplot as plt
 
@@ -673,7 +673,7 @@ def _(mo, ss_clean_df):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mc_clean_df, mo):
     import matplotlib.pyplot as plt_mac
 
@@ -728,7 +728,7 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(all_compound_dict_df, mo, pd, ss_clean_df):
     smalling_quality_pfas_columns = all_compound_dict_df.loc[
         all_compound_dict_df["smalling"], "compound"
@@ -797,7 +797,7 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(all_compound_dict_df, mo, pd, ss_clean_df):
     smalling_assessment_pfas_columns = all_compound_dict_df.loc[
         all_compound_dict_df["smalling"], "compound"
@@ -904,7 +904,7 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo, pd, ss_clean_df):
     seawolf_quality_landcover_columns = [
         "OpenWater", "PerennialIceSnow", "DevelopedOpenSpace",
@@ -986,7 +986,7 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo, pd, ss_clean_df):
     seawolf_assessment_landcover_columns = [
         "OpenWater", "PerennialIceSnow", "DevelopedOpenSpace",
@@ -1097,7 +1097,7 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mc_clean_df, mo, pd):
     mcmahon_quality_clean_columns = [
         column for column in mc_clean_df.columns if column.endswith("-VA_clean")
@@ -1174,7 +1174,7 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mc_clean_df, mo, pd):
     mcmahon_assessment_clean_columns = [
         column for column in mc_clean_df.columns if column.endswith("-VA_clean")
