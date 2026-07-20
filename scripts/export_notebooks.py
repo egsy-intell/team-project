@@ -77,6 +77,50 @@ def _inject_uvx_banner(html_path: pathlib.Path, notebook_name: str) -> None:
     html_path.write_text(html.replace(marker, banner + marker, 1))
 
 
+# marimo's static export mounts every cell (not just its CodeMirror editor)
+# by measuring the cell wrapper's width during initial layout. That
+# measurement races ahead of the surrounding flex column settling, so a cell
+# can permanently think its container is ~2px wide and wrap every code line
+# character-by-character into a towering column tens of thousands of pixels
+# tall instead of normal text. Confirmed directly on the exported HTML:
+# dispatching a synthetic `resize` event makes every affected cell remeasure
+# and snap back to its real height (~14000px -> ~600px). A user interacting
+# with the page (resizing, zooming) happens to trigger that remeasure, which
+# is why this is easy to miss on screen - but printing captures whatever
+# state the page mounted in, so an affected cell prints as a wall of blank
+# space instead of its code.
+#
+# Cells also mount in a staggered fashion rather than all at once, so a
+# single nudge shortly after `load` can miss cells that mount later - a cell
+# checked 1s after load can still be broken even though the same page is
+# fully correct by 5s. Repeating the nudge at increasing delays covers that
+# staggered mounting; the `beforeprint` nudge is the actual safety net, since
+# a resize dispatched immediately before printing was confirmed to fix every
+# cell regardless of how long the page had been open.
+_RESIZE_NUDGE_SCRIPT = """\
+<script>
+(function () {
+  function nudge() { window.dispatchEvent(new Event("resize")); }
+  window.addEventListener("load", function () {
+    [300, 800, 1500, 3000, 5000].forEach(function (delay) {
+      setTimeout(nudge, delay);
+    });
+  });
+  window.addEventListener("beforeprint", nudge);
+})();
+</script>
+"""
+
+
+def _inject_resize_nudge(html_path: pathlib.Path) -> None:
+    html = html_path.read_text()
+    marker = "</body>"
+    if marker not in html:
+        print(f"Warning: could not find {marker!r} in {html_path}, skipping resize nudge", file=sys.stderr)
+        return
+    html_path.write_text(html.replace(marker, _RESIZE_NUDGE_SCRIPT + marker, 1))
+
+
 def main() -> int:
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -117,6 +161,7 @@ def main() -> int:
             return result.returncode
 
         _inject_uvx_banner(output, notebook.name)
+        _inject_resize_nudge(output)
 
         source_copy = OUTPUT_DIR / notebook.name
         print(f"Copying {notebook.relative_to(REPO_ROOT)} -> {source_copy.relative_to(REPO_ROOT)}")
