@@ -15,10 +15,36 @@
     max-width: 100% !important;
   }
 
+  /* marimo's layout is built from nested flexboxes (the notebook's
+     scrollable content column, cell wrappers, output containers). Flex
+     items default to `min-width: auto`, which means they refuse to
+     shrink below the intrinsic (min-content) width of whatever they
+     contain - a wide table, a wide matplotlib image, an unwrapped code
+     line, etc. That single default is what causes the whole notebook
+     column to stay pinned at its on-screen width and get clipped at
+     the page edge instead of reflowing to the page width. Overriding
+     it everywhere lets every ancestor actually shrink to the page. */
+  #root, #root * {
+    min-width: 0 !important;
+  }
+
   img, svg, canvas, table {
     max-width: 100% !important;
     height: auto !important;
     page-break-inside: avoid;
+  }
+
+  /* mo.ui.table/mo.ui.dataframe render into a <marimo-table> custom
+     element with a closed-off shadow root, so none of the rules above
+     can reach the actual <table> inside it - shadow boundaries block
+     regular selectors and even inherited properties like font-size
+     that its internal stylesheet redeclares. `zoom` is the one CSS
+     property that still scales shadow-rendered content from the
+     outside, so it's the only lever we have to keep wide, many-column
+     tables (e.g. summary-statistics tables) from being clipped at the
+     page edge. */
+  marimo-table {
+    zoom: 0.6;
   }
 
   pre, code {
