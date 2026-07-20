@@ -38,7 +38,7 @@
      element with a closed-off shadow root, so none of the rules above
      can reach the actual <table> inside it - shadow boundaries block
      regular selectors and even inherited properties like font-size
-     that its internal stylesheet re-declares. `zoom` is the one CSS
+     that its internal stylesheet redeclares. `zoom` is the one CSS
      property that still scales shadow-rendered content from the
      outside, so it's the only lever we have to keep wide, many-column
      tables (e.g. summary-statistics tables) from being clipped at the
