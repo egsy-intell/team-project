@@ -1,0 +1,28 @@
+/* Keep the notebook content within the printable page area when
+   exporting to PDF (either via `marimo export pdf` or browser
+   print-to-PDF on the exported HTML). marimo's "medium" app width
+   and matplotlib figures (figsize=10in) are wider than a Letter/A4
+   page once print margins are applied, causing content to be cut
+   off or scaled onto extra pages. */
+@media print {
+  @page {
+    size: auto;
+    margin: 0.5in;
+  }
+
+  html, body, #root, #root > * {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  img, svg, canvas, table {
+    max-width: 100% !important;
+    height: auto !important;
+    page-break-inside: avoid;
+  }
+
+  pre, code {
+    white-space: pre-wrap !important;
+    word-break: break-word !important;
+  }
+}
