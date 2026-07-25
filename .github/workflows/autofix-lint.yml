@@ -28,6 +28,9 @@ jobs:
       - name: Install dependencies
         run: uv sync --all-groups
 
+      - name: Fix notebook ruff issues
+        run: uv run ruff check --fix notebooks/
+
       - name: Fix notebook lint issues
         run: uv run marimo check --fix notebooks/
 

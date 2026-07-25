@@ -48,6 +48,17 @@ def test_notebook_lint(notebook):
 
 
 @pytest.mark.parametrize("notebook", NOTEBOOKS, ids=lambda p: p.name)
+def test_notebook_ruff(notebook):
+    result = subprocess.run(
+        [sys.executable, "-m", "ruff", "check", str(notebook)],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        pytest.fail(f"ruff found issues in {notebook.name}:\n{result.stdout}")
+
+
+@pytest.mark.parametrize("notebook", NOTEBOOKS, ids=lambda p: p.name)
 def test_notebook_executes(notebook, tmp_path):
     output = tmp_path / f"{notebook.stem}.html"
     result = subprocess.run(
