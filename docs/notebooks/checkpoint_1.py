@@ -810,27 +810,50 @@ def _(mo, ss_clean_df):
     ]
 
     def make_boxplot(df, columns, title):
-        n_cols = max(1, len(columns))
+        # A single tall column of subplots (one per variable) produces an
+        # image many pages tall once printed, which some PDF renderers
+        # paginate as several blank pages before the content reappears. A
+        # compact grid keeps the whole figure within a page or two.
+        n_vars = max(1, len(columns))
+        grid_cols = min(3, n_vars)
+        grid_rows = -(-n_vars // grid_cols)
         fig, axes = plt.subplots(
-            n_cols, 1, figsize=(10, 2.8 * n_cols), squeeze=False
+            grid_rows,
+            grid_cols,
+            figsize=(4.2 * grid_cols, 3.2 * grid_rows),
+            squeeze=False,
         )
-        for ax, col in zip(axes.flatten(), columns):
+        flat_axes = axes.flatten()
+        for ax, col in zip(flat_axes, columns):
             df[col].dropna().plot.box(ax=ax, patch_artist=True)
             ax.set_title(col, pad=8, fontsize=11)
             ax.set_ylabel("")
             ax.grid(True, axis="y", linestyle="--", alpha=0.35)
+        for ax in flat_axes[len(columns) :]:
+            ax.axis("off")
         fig.suptitle(title, fontsize=15, y=0.98)
         fig.subplots_adjust(
-            top=0.92, hspace=0.55, left=0.12, right=0.97, bottom=0.08
+            top=0.90,
+            hspace=0.55,
+            wspace=0.35,
+            left=0.08,
+            right=0.97,
+            bottom=0.08,
         )
         return fig
 
     def make_histogram(df, columns, title):
-        n_cols = max(1, len(columns))
+        n_vars = max(1, len(columns))
+        grid_cols = min(3, n_vars)
+        grid_rows = -(-n_vars // grid_cols)
         fig, axes = plt.subplots(
-            n_cols, 1, figsize=(10, 2.8 * n_cols), squeeze=False
+            grid_rows,
+            grid_cols,
+            figsize=(4.2 * grid_cols, 3.2 * grid_rows),
+            squeeze=False,
         )
-        for ax, col in zip(axes.flatten(), columns):
+        flat_axes = axes.flatten()
+        for ax, col in zip(flat_axes, columns):
             df[col].dropna().hist(
                 ax=ax, bins=20, edgecolor="black", color="#7fb3d5"
             )
@@ -838,9 +861,16 @@ def _(mo, ss_clean_df):
             ax.set_xlabel(col, labelpad=6)
             ax.set_ylabel("Count", labelpad=6)
             ax.grid(True, axis="y", linestyle="--", alpha=0.35)
+        for ax in flat_axes[len(columns) :]:
+            ax.axis("off")
         fig.suptitle(title, fontsize=15, y=0.98)
         fig.subplots_adjust(
-            top=0.92, hspace=0.55, left=0.12, right=0.97, bottom=0.08
+            top=0.90,
+            hspace=0.55,
+            wspace=0.35,
+            left=0.08,
+            right=0.97,
+            bottom=0.08,
         )
         return fig
 
@@ -871,27 +901,50 @@ def _(mc_clean_df, mo):
     ][:6] + ["AGRI_12", "NATU_12", "URBA_12"]
 
     def make_boxplot_mac(df, columns, title):
-        n_cols = max(1, len(columns))
+        # A single tall column of subplots (one per variable) produces an
+        # image many pages tall once printed, which some PDF renderers
+        # paginate as several blank pages before the content reappears. A
+        # compact grid keeps the whole figure within a page or two.
+        n_vars = max(1, len(columns))
+        grid_cols = min(3, n_vars)
+        grid_rows = -(-n_vars // grid_cols)
         fig, axes = plt_mac.subplots(
-            n_cols, 1, figsize=(10, 2.8 * n_cols), squeeze=False
+            grid_rows,
+            grid_cols,
+            figsize=(4.2 * grid_cols, 3.2 * grid_rows),
+            squeeze=False,
         )
-        for ax, col in zip(axes.flatten(), columns):
+        flat_axes = axes.flatten()
+        for ax, col in zip(flat_axes, columns):
             df[col].dropna().plot.box(ax=ax, patch_artist=True)
             ax.set_title(col, pad=8, fontsize=11)
             ax.set_ylabel("")
             ax.grid(True, axis="y", linestyle="--", alpha=0.35)
+        for ax in flat_axes[len(columns) :]:
+            ax.axis("off")
         fig.suptitle(title, fontsize=15, y=0.98)
         fig.subplots_adjust(
-            top=0.92, hspace=0.55, left=0.12, right=0.97, bottom=0.08
+            top=0.90,
+            hspace=0.55,
+            wspace=0.35,
+            left=0.08,
+            right=0.97,
+            bottom=0.08,
         )
         return fig
 
     def make_histogram_mac(df, columns, title):
-        n_cols = max(1, len(columns))
+        n_vars = max(1, len(columns))
+        grid_cols = min(3, n_vars)
+        grid_rows = -(-n_vars // grid_cols)
         fig, axes = plt_mac.subplots(
-            n_cols, 1, figsize=(10, 2.8 * n_cols), squeeze=False
+            grid_rows,
+            grid_cols,
+            figsize=(4.2 * grid_cols, 3.2 * grid_rows),
+            squeeze=False,
         )
-        for ax, col in zip(axes.flatten(), columns):
+        flat_axes = axes.flatten()
+        for ax, col in zip(flat_axes, columns):
             df[col].dropna().hist(
                 ax=ax, bins=20, edgecolor="black", color="#7fb3d5"
             )
@@ -899,9 +952,16 @@ def _(mc_clean_df, mo):
             ax.set_xlabel(col, labelpad=6)
             ax.set_ylabel("Count", labelpad=6)
             ax.grid(True, axis="y", linestyle="--", alpha=0.35)
+        for ax in flat_axes[len(columns) :]:
+            ax.axis("off")
         fig.suptitle(title, fontsize=15, y=0.98)
         fig.subplots_adjust(
-            top=0.92, hspace=0.55, left=0.12, right=0.97, bottom=0.08
+            top=0.90,
+            hspace=0.55,
+            wspace=0.35,
+            left=0.08,
+            right=0.97,
+            bottom=0.08,
         )
         return fig
 
@@ -1954,7 +2014,19 @@ def _(mc_clean_df, mo, pd, print_sections, ss_clean_df):
     categorical_overall_summary = pd.DataFrame(categorical_overall_rows)
 
     def categorical_panel(profile_df, category_tables, dataset_note):
-        panel_items = [mo.ui.table(profile_df)]
+        # profile_df has 14 columns; two of them ("Recommended treatment",
+        # "Quality assessment") hold long free-text notes. All 14 together
+        # are too wide to fit a printed page (they get cropped in the PDF
+        # export), so split the free-text columns into their own narrower
+        # table instead of displaying one wide one.
+        text_columns = ["Recommended treatment", "Quality assessment"]
+        measure_columns = [
+            col for col in profile_df.columns if col not in text_columns
+        ]
+        panel_items = [
+            mo.ui.table(profile_df[measure_columns]),
+            mo.ui.table(profile_df[["Dataset", "Variable", *text_columns]]),
+        ]
         if category_tables:
             panel_items.append(print_sections(category_tables))
         panel_items.append(mo.md(dataset_note))
