@@ -791,9 +791,52 @@ def _(mc_clean_df, mo, pd, ss_clean_df):
 
 
 @app.cell(hide_code=True)
-def _(mo, ss_clean_df):
+def _():
     import matplotlib.pyplot as plt
 
+    def make_plot_grid(df, columns, title, kind):
+        # A compact 3x3 grid of small multiples (one subplot per
+        # variable) instead of one plot per row/page - the whole
+        # dataset's box plots (or histograms) at a glance.
+        n_vars = max(1, len(columns))
+        grid_cols = min(3, n_vars)
+        grid_rows = -(-n_vars // grid_cols)
+        fig, axes = plt.subplots(
+            grid_rows,
+            grid_cols,
+            figsize=(3.2 * grid_cols, 2.6 * grid_rows),
+            squeeze=False,
+        )
+        flat_axes = axes.flatten()
+        for ax, col in zip(flat_axes, columns):
+            if kind == "box":
+                df[col].dropna().plot.box(ax=ax, patch_artist=True)
+                ax.set_ylabel("")
+            else:
+                df[col].dropna().hist(
+                    ax=ax, bins=20, edgecolor="black", color="#7fb3d5"
+                )
+                ax.set_ylabel("Count", labelpad=4)
+            ax.set_title(col, pad=6, fontsize=9)
+            ax.grid(True, axis="y", linestyle="--", alpha=0.35)
+        for ax in flat_axes[len(columns) :]:
+            ax.axis("off")
+        fig.suptitle(title, fontsize=13, y=0.99)
+        fig.subplots_adjust(
+            top=0.88,
+            hspace=0.55,
+            wspace=0.4,
+            left=0.1,
+            right=0.97,
+            bottom=0.08,
+        )
+        return fig
+
+    return (make_plot_grid,)
+
+
+@app.cell(hide_code=True)
+def _(make_plot_grid, mo, ss_clean_df):
     ss_viz_columns = [
         "∑PFAS",
         "Count Detected PFAS",
@@ -809,175 +852,46 @@ def _(mo, ss_clean_df):
         col for col in ss_viz_columns if col in ss_clean_df.columns
     ]
 
-    def make_boxplot(df, columns, title):
-        # A single tall column of subplots (one per variable) produces an
-        # image many pages tall once printed, which some PDF renderers
-        # paginate as several blank pages before the content reappears. A
-        # compact grid keeps the whole figure within a page or two.
-        n_vars = max(1, len(columns))
-        grid_cols = min(3, n_vars)
-        grid_rows = -(-n_vars // grid_cols)
-        fig, axes = plt.subplots(
-            grid_rows,
-            grid_cols,
-            figsize=(4.2 * grid_cols, 3.2 * grid_rows),
-            squeeze=False,
-        )
-        flat_axes = axes.flatten()
-        for ax, col in zip(flat_axes, columns):
-            df[col].dropna().plot.box(ax=ax, patch_artist=True)
-            ax.set_title(col, pad=8, fontsize=11)
-            ax.set_ylabel("")
-            ax.grid(True, axis="y", linestyle="--", alpha=0.35)
-        for ax in flat_axes[len(columns) :]:
-            ax.axis("off")
-        fig.suptitle(title, fontsize=15, y=0.98)
-        fig.subplots_adjust(
-            top=0.90,
-            hspace=0.55,
-            wspace=0.35,
-            left=0.08,
-            right=0.97,
-            bottom=0.08,
-        )
-        return fig
-
-    def make_histogram(df, columns, title):
-        n_vars = max(1, len(columns))
-        grid_cols = min(3, n_vars)
-        grid_rows = -(-n_vars // grid_cols)
-        fig, axes = plt.subplots(
-            grid_rows,
-            grid_cols,
-            figsize=(4.2 * grid_cols, 3.2 * grid_rows),
-            squeeze=False,
-        )
-        flat_axes = axes.flatten()
-        for ax, col in zip(flat_axes, columns):
-            df[col].dropna().hist(
-                ax=ax, bins=20, edgecolor="black", color="#7fb3d5"
-            )
-            ax.set_title(f"{col} histogram", pad=8, fontsize=11)
-            ax.set_xlabel(col, labelpad=6)
-            ax.set_ylabel("Count", labelpad=6)
-            ax.grid(True, axis="y", linestyle="--", alpha=0.35)
-        for ax in flat_axes[len(columns) :]:
-            ax.axis("off")
-        fig.suptitle(title, fontsize=15, y=0.98)
-        fig.subplots_adjust(
-            top=0.90,
-            hspace=0.55,
-            wspace=0.35,
-            left=0.08,
-            right=0.97,
-            bottom=0.08,
-        )
-        return fig
-
-    ss_boxplot = make_boxplot(
-        ss_clean_df, ss_viz_columns, "Smalling + Seawolf: box plots"
-    )
-    ss_histogram = make_histogram(
-        ss_clean_df, ss_viz_columns, "Smalling + Seawolf: histograms"
-    )
-
     mo.vstack(
         [
             mo.md("#### Exploratory plots for Smalling + Seawolf\n\n"),
-            ss_boxplot,
+            make_plot_grid(
+                ss_clean_df,
+                ss_viz_columns,
+                "Smalling + Seawolf: box plots",
+                kind="box",
+            ),
             mo.md(""),
-            ss_histogram,
+            make_plot_grid(
+                ss_clean_df,
+                ss_viz_columns,
+                "Smalling + Seawolf: histograms",
+                kind="hist",
+            ),
         ]
     )
     return
 
 
 @app.cell(hide_code=True)
-def _(mc_clean_df, mo):
-    import matplotlib.pyplot as plt_mac
-
+def _(make_plot_grid, mc_clean_df, mo):
     mc_viz_columns = [
         col for col in mc_clean_df.columns if col.endswith("-VA_clean")
     ][:6] + ["AGRI_12", "NATU_12", "URBA_12"]
 
-    def make_boxplot_mac(df, columns, title):
-        # A single tall column of subplots (one per variable) produces an
-        # image many pages tall once printed, which some PDF renderers
-        # paginate as several blank pages before the content reappears. A
-        # compact grid keeps the whole figure within a page or two.
-        n_vars = max(1, len(columns))
-        grid_cols = min(3, n_vars)
-        grid_rows = -(-n_vars // grid_cols)
-        fig, axes = plt_mac.subplots(
-            grid_rows,
-            grid_cols,
-            figsize=(4.2 * grid_cols, 3.2 * grid_rows),
-            squeeze=False,
-        )
-        flat_axes = axes.flatten()
-        for ax, col in zip(flat_axes, columns):
-            df[col].dropna().plot.box(ax=ax, patch_artist=True)
-            ax.set_title(col, pad=8, fontsize=11)
-            ax.set_ylabel("")
-            ax.grid(True, axis="y", linestyle="--", alpha=0.35)
-        for ax in flat_axes[len(columns) :]:
-            ax.axis("off")
-        fig.suptitle(title, fontsize=15, y=0.98)
-        fig.subplots_adjust(
-            top=0.90,
-            hspace=0.55,
-            wspace=0.35,
-            left=0.08,
-            right=0.97,
-            bottom=0.08,
-        )
-        return fig
-
-    def make_histogram_mac(df, columns, title):
-        n_vars = max(1, len(columns))
-        grid_cols = min(3, n_vars)
-        grid_rows = -(-n_vars // grid_cols)
-        fig, axes = plt_mac.subplots(
-            grid_rows,
-            grid_cols,
-            figsize=(4.2 * grid_cols, 3.2 * grid_rows),
-            squeeze=False,
-        )
-        flat_axes = axes.flatten()
-        for ax, col in zip(flat_axes, columns):
-            df[col].dropna().hist(
-                ax=ax, bins=20, edgecolor="black", color="#7fb3d5"
-            )
-            ax.set_title(f"{col} histogram", pad=8, fontsize=11)
-            ax.set_xlabel(col, labelpad=6)
-            ax.set_ylabel("Count", labelpad=6)
-            ax.grid(True, axis="y", linestyle="--", alpha=0.35)
-        for ax in flat_axes[len(columns) :]:
-            ax.axis("off")
-        fig.suptitle(title, fontsize=15, y=0.98)
-        fig.subplots_adjust(
-            top=0.90,
-            hspace=0.55,
-            wspace=0.35,
-            left=0.08,
-            right=0.97,
-            bottom=0.08,
-        )
-        return fig
-
-    mac_boxplot = make_boxplot_mac(
-        mc_clean_df, mc_viz_columns, "McMahon: box plots"
-    )
-    mac_histogram = make_histogram_mac(
-        mc_clean_df, mc_viz_columns, "McMahon: histograms"
-    )
-
     mo.vstack(
         [
             mo.md("#### Exploratory plots for McMahon\n\n"),
-            mac_boxplot,
+            make_plot_grid(
+                mc_clean_df, mc_viz_columns, "McMahon: box plots", kind="box"
+            ),
             mo.md(""),
-            mac_histogram,
+            make_plot_grid(
+                mc_clean_df,
+                mc_viz_columns,
+                "McMahon: histograms",
+                kind="hist",
+            ),
         ]
     )
     return
