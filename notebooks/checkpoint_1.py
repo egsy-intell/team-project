@@ -2014,7 +2014,19 @@ def _(mc_clean_df, mo, pd, print_sections, ss_clean_df):
     categorical_overall_summary = pd.DataFrame(categorical_overall_rows)
 
     def categorical_panel(profile_df, category_tables, dataset_note):
-        panel_items = [mo.ui.table(profile_df)]
+        # profile_df has 14 columns; two of them ("Recommended treatment",
+        # "Quality assessment") hold long free-text notes. All 14 together
+        # are too wide to fit a printed page (they get cropped in the PDF
+        # export), so split the free-text columns into their own narrower
+        # table instead of displaying one wide one.
+        text_columns = ["Recommended treatment", "Quality assessment"]
+        measure_columns = [
+            col for col in profile_df.columns if col not in text_columns
+        ]
+        panel_items = [
+            mo.ui.table(profile_df[measure_columns]),
+            mo.ui.table(profile_df[["Dataset", "Variable", *text_columns]]),
+        ]
         if category_tables:
             panel_items.append(print_sections(category_tables))
         panel_items.append(mo.md(dataset_note))
