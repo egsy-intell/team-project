@@ -1,6 +1,7 @@
 # Scoped to notebooks/ only (ruff resolves the nearest config file walking
 # up from each linted file, so this doesn't affect scripts/ or tests/).
-# 79 columns keeps notebook code from being clipped when exported to PDF.
+# 79 columns keeps notebook code readable in narrow editor panes and
+# side-by-side diffs (no PDF export to worry about clipping anymore).
 line-length = 79
 
 [lint]
