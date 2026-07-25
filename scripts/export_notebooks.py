@@ -82,6 +82,45 @@ def _inject_banner(html_path: pathlib.Path, notebook_name: str, pdf_name: str) -
     html_path.write_text(html.replace(marker, banner + marker, 1))
 
 
+# marimo's PDF export rasterizes each mo.ui.table by capturing it in a
+# fixed-width browser viewport (_VIEWPORT_WIDTH in marimo's own
+# _server/export/_pdf_raster.py). A table wider than that doesn't get
+# scaled down - it gets silently clipped, cutting off trailing columns
+# entirely (confirmed: a 14-column table at ~1670px wide lost its last
+# two columns in the exported PDF, with no visual sign beyond the
+# missing data). Catch this before the slow PDF export step runs.
+_RASTER_VIEWPORT_WIDTH = 1440
+
+
+def _check_table_widths(html_path: pathlib.Path) -> list[tuple[int, int]]:
+    from playwright.sync_api import sync_playwright
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        page = browser.new_page(
+            viewport={"width": _RASTER_VIEWPORT_WIDTH, "height": 1000}
+        )
+        page.goto(f"file://{html_path.resolve()}")
+        page.wait_for_timeout(3000)
+        widths = page.evaluate(
+            """
+            () => Array.from(document.querySelectorAll('marimo-table')).map(
+                (el) => {
+                    const inner = el.shadowRoot
+                        && el.shadowRoot.querySelector('table');
+                    return inner ? inner.scrollWidth : null;
+                }
+            )
+            """
+        )
+        browser.close()
+    return [
+        (i, w)
+        for i, w in enumerate(widths)
+        if w is not None and w > _RASTER_VIEWPORT_WIDTH
+    ]
+
+
 def _drop_blank_pages(pdf_path: pathlib.Path) -> None:
     # marimo's PDF export rasterizes table/widget outputs into stitched
     # screenshots; in long notebooks some of those screenshots contain a
@@ -145,6 +184,24 @@ def main() -> int:
                 ]
             )
             if result.returncode == 0:
+                too_wide = _check_table_widths(output)
+                if too_wide:
+                    print(
+                        f"{notebook.name}: {len(too_wide)} table(s) wider "
+                        f"than {_RASTER_VIEWPORT_WIDTH}px, which marimo's "
+                        "PDF export crops instead of scaling down:",
+                        file=sys.stderr,
+                    )
+                    for i, w in too_wide:
+                        print(f"  table #{i}: {w}px wide", file=sys.stderr)
+                    print(
+                        "Fix: drop or shorten columns, or split the table "
+                        "(see categorical_panel() in checkpoint_1.py for "
+                        "an example). See AGENTS.md for details.",
+                        file=sys.stderr,
+                    )
+                    return 1
+
                 print(
                     f"Exporting {notebook.relative_to(REPO_ROOT)} -> "
                     f"{pdf_output.relative_to(REPO_ROOT)}"
@@ -159,15 +216,6 @@ def main() -> int:
                         str(notebook),
                         "-o",
                         str(pdf_output),
-                        # Live mode rasterizes widgets against a real
-                        # kernel connection, which also avoids a marimo
-                        # bug in the default "static" mode where the
-                        # disconnected-kernel toast can bleed into a
-                        # later widget's screenshot (see _drop_blank_pages
-                        # for the other rasterization artifact it doesn't
-                        # fix).
-                        "--raster-server",
-                        "live",
                         "-f",
                     ]
                 )
