@@ -55,7 +55,21 @@ def _(mo):
             ]
         )
 
-    return (print_sections,)
+    def task_callout(task_id, *, category, lead, summary, depends_on=None):
+        # Ties a section back to its row in
+        # planning/checkpoint-2/checkpoint2_tasks.csv, so readers (and other
+        # notebooks) can trace prose back to who owns it and what it's
+        # gated on.
+        return mo.callout(
+            mo.md(
+                f"**Task {task_id}** &middot; {category} &middot; "
+                f"Lead: {lead} &middot; Depends on: {depends_on or 'None'}"
+                f"\n\n{summary}"
+            ),
+            kind="info",
+        )
+
+    return print_sections, task_callout
 
 
 @app.cell(hide_code=True)
@@ -2056,13 +2070,8 @@ def _(mo):
     features only, never concentration data, so the model tests whether land
     use alone can flag risk before a site is ever sampled.
 
-    **Pre-modeling task list** (not yet implemented): computing ∑TQ means
-    reshaping `ss_clean_df` to one row per site per compound, joining
-    `all_compound_dict_df`'s benchmark columns, dividing to get per-compound
-    TQ, splitting by `epa_ratio_eligible`, and summing within each group. That
-    yields two scores per site: the classified EPA-anchored ∑TQ, and a
-    supplementary state-only ∑TQ reported as context but never classified.
-    Remaining open questions:
+    The reshape/join/sum mechanics behind ∑TQ are formalized as Task PW in
+    the Pre-work section below. Remaining open questions:
     * Treat non-detects as 0 per compound (not dropped), so an absent compound
       contributes zero rather than excluding the sample.
     * Summing PFOA/PFOS's individual-MCL ratios with the 4-compound Hazard
@@ -2074,6 +2083,47 @@ def _(mo):
       reclassification shifts the distribution away from the old median-based
       cutoffs.
     """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo, task_callout):
+    mo.vstack(
+        [
+            mo.md("## Pre-work for Checkpoint 2"),
+            task_callout(
+                "PW",
+                category="Pre-work",
+                lead="Yai",
+                summary=(
+                    "Reshape `ss_clean_df` to one row per site per compound, "
+                    "join `all_compound_dict_df`'s EPA/state TQ benchmarks, "
+                    "and compute per-compound and summed TQ (∑TQ). This "
+                    "produces the classified target that Checkpoint 2's "
+                    "Step 4 models will predict, carrying forward the "
+                    "toxicity-quotient plan from Step 2.5 above."
+                ),
+            ),
+            mo.md("""
+    ### Reshape to one row per site per compound
+    Long-format the wide per-compound columns in `ss_clean_df` so each row is
+    a single (site, compound) pair, carrying the site's landscape/land-use
+    predictors alongside that compound's concentration.
+
+    ### Join TQ benchmarks
+    Left-join the reshaped table against `all_compound_dict_df`'s benchmark
+    columns (EPA final-rule values for the six regulated compounds, Smalling
+    et al. Table S5 state-only values for the rest) on compound name.
+
+    ### Compute per-compound and summed TQ
+    Divide concentration by benchmark for the per-compound TQ, then sum
+    within the `epa_ratio_eligible` group to get the classified ∑TQ (Hazard
+    Index) and, separately, a supplementary state-only ∑TQ reported as
+    context but never classified. Treat non-detects as 0 per compound, per
+    the open questions in Step 2.5 above.
+    """),
+        ]
+    )
     return
 
 
@@ -2120,9 +2170,7 @@ def _(mo):
     compounds stay in the dataset as a descriptive slice rather than feeding
     the classified ∑TQ target.
 
-    That additional processing, reshaping the data to one row per site per
-    compound, joining benchmarks, computing per-compound and summed TQ, and
-    resolving the open questions listed under Feature engineering and selection
+    That additional processing, formalized as Task PW in the Pre-work section
     above, is still pending. It will be completed and integrated into our
     processing data frames ahead of modeling.
 
