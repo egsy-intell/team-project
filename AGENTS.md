@@ -9,6 +9,27 @@ documents non-obvious constraints and quirks discovered while building
 that pipeline — read it before editing anything under `notebooks/` or
 the export scripts, especially before adding new tables or plots.
 
+## Agent role
+
+This is a 4-person team project, so consistency across contributors'
+sessions matters more than usual — treat yourself as the thing keeping
+the codebase and writeup aligned across everyone's work, not just the
+person currently prompting you.
+
+- Act as a pair-programming partner and copy-editor by default: flag
+  unclear writing, inconsistent terminology, and structural issues in
+  notebook prose/markdown, not just code correctness. Only drop this
+  posture if the user explicitly says to.
+- Prefer idiomatic Python (comprehensions, `pathlib`, vectorized
+  pandas/numpy operations, etc.) over imperative loops when both are
+  equally clear.
+- Keep the codebase DRY across the whole team's contributions: when
+  editing, actively look for duplicated logic or prose across notebooks
+  (repeated cleaning steps, copy-pasted section intros, restated task
+  descriptions) and propose consolidating it into a shared helper or a
+  single source of truth — the same way `print_sections()` and
+  `make_plot_grid()` already got consolidated (see below).
+
 ## Printing / PDF output
 
 We do not generate PDFs from this repo. An earlier version of this
@@ -32,9 +53,12 @@ is found.
 ## Repo layout
 
 - `notebooks/*.py` — marimo notebooks (plain Python, PEP 723 inline
-  script headers for standalone `uvx` execution). `checkpoint_1.py` is
-  the main analysis; `data_dictionary.py` documents predictors/compounds
-  and is embedded into `checkpoint_1.py` via `data_dictionary_app.embed()`.
+  script headers for standalone `uvx` execution). Each project checkpoint
+  is its own independent notebook (`checkpoint_1.py`, `checkpoint_2.py`,
+  ...); `notebooks/index.py` composes all of them into one combined
+  artifact (see "Multi-notebook checkpoint workflow" below).
+  `data_dictionary.py` documents predictors/compounds and is embedded
+  into `checkpoint_1.py` via `data_dictionary_app.embed()`.
 - `notebooks/ruff.toml` — lint config scoped to `notebooks/` only (ruff
   resolves the nearest config per directory, so this doesn't affect
   `scripts/`/`tests/`).
@@ -104,6 +128,37 @@ lays out up to 3 columns (`grid_cols = min(3, n_vars)`) and wraps into
 additional rows as needed, for both box plots and histograms. Follow
 this pattern for any new multi-variable plot instead of stacking one
 subplot per row.
+
+## Multi-notebook checkpoint workflow
+
+Each project checkpoint gets its own notebook rather than one
+ever-growing file. The pattern, established by `data_dictionary.py` and
+followed by `checkpoint_2.py`:
+
+- A later checkpoint embeds an earlier one to reuse its cleaned
+  dataframes: `from checkpoint_1 import app as checkpoint_1_app`, then
+  `await checkpoint_1_app.embed()` in an `async` cell, pulling needed
+  names off `.defs["name"]` (e.g. `mc_clean_df`, `ss_clean_df`,
+  `task_callout`). Anything a cell in `checkpoint_1.py` `return`s is
+  reachable this way, including plain helper functions, not just
+  dataframes.
+- Copy the local-checkout-vs-standalone-URL `try/except
+  ModuleNotFoundError` import fallback verbatim into the new notebook's
+  first cell (see any existing notebook's first cell) — it lets `uvx
+  marimo edit --sandbox <gh-pages-url>` download the sibling notebook
+  from the same repo location when there's no local checkout to import
+  from.
+- `notebooks/index.py` embeds every checkpoint notebook's `app` and
+  stacks their rendered output with `mo.vstack`, so the full project
+  reads as one document. It's exported like any other notebook to
+  `docs/notebooks/index.html`, which is what's served as the directory
+  index at the gh-pages `/notebooks/` path — the one URL that shows the
+  whole project.
+- When adding checkpoint 3+: create `checkpoint_3.py` following the
+  embed pattern above, then add its embed-and-stack cells to
+  `notebooks/index.py`. Nothing in `scripts/export_notebooks.py` or
+  `tests/test_notebooks.py` needs to change — both glob `notebooks/*.py`
+  and pick up new notebooks automatically.
 
 ## Commands
 
