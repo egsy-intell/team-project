@@ -69,7 +69,7 @@ def _(mo):
             kind="info",
         )
 
-    return print_sections, task_callout
+    return (print_sections,)
 
 
 @app.cell(hide_code=True)
@@ -360,7 +360,7 @@ def _(all_compound_dict_df, mo, pd):
         suffixes=("_smalling", "_seawolf"),
         indicator=True,
     )
-    return data_dir, ss_merged_df
+    return data_dir, pfas_cols, ss_merged_df
 
 
 @app.cell(hide_code=True)
@@ -419,7 +419,7 @@ def _(all_compound_dict_df, data_dir, mcmahon_env_df, np, pd):
         suffixes=("_mc_env", "_mc_geo"),
         indicator=True,
     )
-    return (mc_merged_df,)
+    return mc_merged_df, pfas_codes
 
 
 @app.cell(hide_code=True)
@@ -922,11 +922,7 @@ def _(mo):
 
 
 @app.cell(hide_code=True)
-def _(all_compound_dict_df, mo, pd, ss_clean_df):
-    smalling_quality_pfas_columns = all_compound_dict_df.loc[
-        all_compound_dict_df["smalling"], "compound"
-    ].tolist()
-
+def _(mo, pd, pfas_cols, ss_clean_df):
     smalling_quality_total_pfas = ss_clean_df["∑PFAS"]
     smalling_quality_detected_count = ss_clean_df["Count Detected PFAS"]
 
@@ -957,7 +953,7 @@ def _(all_compound_dict_df, mo, pd, ss_clean_df):
             },
             {
                 "Measure": "PFAS compounds evaluated",
-                "Result": len(smalling_quality_pfas_columns),
+                "Result": len(pfas_cols),
             },
             {
                 "Measure": "Cumulative PFAS range (ng/L)",
@@ -1007,14 +1003,8 @@ def _(mo):
 
 
 @app.cell(hide_code=True)
-def _(all_compound_dict_df, mo, pd, print_sections, ss_clean_df):
-    smalling_assessment_pfas_columns = all_compound_dict_df.loc[
-        all_compound_dict_df["smalling"], "compound"
-    ].tolist()
-
-    smalling_assessment_numeric_pfas = ss_clean_df[
-        smalling_assessment_pfas_columns
-    ]
+def _(mo, pd, pfas_cols, print_sections, ss_clean_df):
+    smalling_assessment_numeric_pfas = ss_clean_df[pfas_cols]
     smalling_assessment_published_count = ss_clean_df["Count Detected PFAS"]
     smalling_assessment_published_total = ss_clean_df["∑PFAS"]
     smalling_assessment_calculated_count = smalling_assessment_numeric_pfas.gt(
@@ -1026,7 +1016,7 @@ def _(all_compound_dict_df, mo, pd, print_sections, ss_clean_df):
 
     smalling_assessment_columns = (
         ["Site Code", "State", "Site Type"]
-        + smalling_assessment_pfas_columns
+        + pfas_cols
         + ["Count Detected PFAS", "∑PFAS", "∑EAR"]
     )
     smalling_missing_summary = (
@@ -2070,61 +2060,200 @@ def _(mo):
     features only, never concentration data, so the model tests whether land
     use alone can flag risk before a site is ever sampled.
 
-    The reshape/join/sum mechanics behind ∑TQ are formalized as Task PW in
-    the Pre-work section below. Remaining open questions:
-    * Treat non-detects as 0 per compound (not dropped), so an absent compound
-      contributes zero rather than excluding the sample.
+    The reshape/join/sum mechanics behind ∑TQ, worked out below, produce
+    `ss_scored_df`: `ss_clean_df`'s predictors joined with the classified
+    `sum_tq_epa` (∑TQ / Hazard Index) and a supplementary
+    `sum_tq_state_only` column. Design decisions made along the way:
+    * Non-detects are treated as 0 per compound (not dropped), so an absent
+      compound contributes zero rather than excluding the sample.
     * Summing PFOA/PFOS's individual-MCL ratios with the 4-compound Hazard
       Index (PFNA + PFHxS + GenX + PFBS) into one ∑TQ is our own design choice,
       not an EPA-prescribed method; state it as an assumption.
-    * Decide whether to exclude PFPeS/PFPrS (no benchmark in either source)
-      from ∑TQ entirely, or flag affected samples as partially unassessed.
-    * Run the pipeline against the full sample dataset to see how the
-      reclassification shifts the distribution away from the old median-based
-      cutoffs.
+    * PFPeS/PFPrS (no benchmark in either source) are kept in the long table
+      rather than dropped, with their per-compound TQ left as `NaN`; `NaN`
+      contributes nothing to either sum (`pandas`' default `sum(skipna=True)`)
+      rather than being silently treated as zero risk.
+    * Run against the full sample dataset (236 sites), `sum_tq_epa` ranges
+      0–17.7 with a median of 0.17, well below the trigger cutoff of 0.5 for
+      most sites but with a long right tail past the MCL-exceedance cutoff of
+      1.0 — Checkpoint 2's evaluation plan will formalize where those tier
+      boundaries fall.
+
+    McMahon's groundwater data (`mc_clean_df`) is scored the same way,
+    against the same benchmark table, producing a `sum_tq_epa` on the same
+    scale. It is not, however, directly comparable to Smalling's — two
+    things don't carry over cleanly, and are worth stating up front rather
+    than discovering downstream:
+    * McMahon's panel doesn't include HFPO-DA (GenX) at all — the site-level
+      geospatial data used never measured it. Its Hazard Index is
+      necessarily a 5-of-6-compound sum (missing the GenX term), so
+      `sum_tq_epa` is not directly apples-to-apples between the two
+      studies; treat cross-study ∑TQ comparisons with that caveat.
+    * McMahon's non-detects are already imputed as half the reporting limit
+      (`VA/2`) during Step 2 cleaning, not treated as 0 — a different
+      convention than Smalling's, inherited rather than newly introduced
+      here, but one more reason the two studies' ∑TQ values aren't
+      strictly comparable on the same footing.
     """)
     return
 
 
 @app.cell(hide_code=True)
-def _(mo, task_callout):
-    mo.vstack(
-        [
-            mo.md("## Pre-work for Checkpoint 2"),
-            task_callout(
-                "PW",
-                category="Pre-work",
-                lead="Yai",
-                summary=(
-                    "Reshape `ss_clean_df` to one row per site per compound, "
-                    "join `all_compound_dict_df`'s EPA/state TQ benchmarks, "
-                    "and compute per-compound and summed TQ (∑TQ). This "
-                    "produces the classified target that Checkpoint 2's "
-                    "Step 4 models will predict, carrying forward the "
-                    "toxicity-quotient plan from Step 2.5 above."
-                ),
-            ),
-            mo.md("""
+def _(mo):
+    mo.md("""
+    ## Toxicity quotient (∑TQ) construction
+
+    Reshape each study's data to one row per site per compound, join
+    `all_compound_dict_df`'s EPA/state TQ benchmarks, and compute
+    per-compound and summed TQ (∑TQ), producing the classified target
+    Checkpoint 2's Step 4 models will predict. Worked out first for
+    Smalling/Seawolf (`ss_clean_df` → `ss_scored_df`) below; McMahon's
+    groundwater data (`mc_clean_df` → `mc_scored_df`) follows the same
+    three steps and is scored further down.
+
     ### Reshape to one row per site per compound
     Long-format the wide per-compound columns in `ss_clean_df` so each row is
     a single (site, compound) pair, carrying the site's landscape/land-use
     predictors alongside that compound's concentration.
+    """)
+    return
 
+
+@app.cell
+def _(mc_clean_df, pd, pfas_codes, pfas_cols, ss_clean_df):
+    ss_long_df = pd.melt(
+        ss_clean_df,
+        id_vars=[c for c in ss_clean_df.columns if c not in pfas_cols],
+        value_vars=pfas_cols,
+        var_name="compound",
+        value_name="concentration",
+    )
+
+    mc_value_cols = [f"{c}-VA_clean" for c in pfas_codes]
+    mc_estimated_cols = [f"{c}-estimated" for c in pfas_codes]
+    mc_dropped_cols = mc_value_cols + mc_estimated_cols
+
+    mc_long_df = pd.melt(
+        mc_clean_df,
+        id_vars=[c for c in mc_clean_df.columns if c not in mc_dropped_cols],
+        value_vars=mc_value_cols,
+        var_name="compound",
+        value_name="concentration",
+    )
+
+    mc_long_df["compound"] = mc_long_df["compound"].str.removesuffix(
+        "-VA_clean"
+    )
+    return mc_long_df, ss_long_df
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md("""
     ### Join TQ benchmarks
     Left-join the reshaped table against `all_compound_dict_df`'s benchmark
     columns (EPA final-rule values for the six regulated compounds, Smalling
     et al. Table S5 state-only values for the rest) on compound name.
+    """)
+    return
 
+
+@app.cell
+def _(all_compound_dict_df):
+    def calc_scored_df(wide_df, long_df, site_id_col):
+        tq_benchmark_cols = [
+            "compound",
+            "benchmark_ng_L",
+            "trigger_ng_L",
+            "epa_ratio_eligible",
+        ]
+
+        tq_df = long_df.merge(
+            all_compound_dict_df[tq_benchmark_cols],
+            on="compound",
+            how="left",
+        )
+
+        tq_scored_df = tq_df.assign(
+            tq=tq_df["concentration"] / tq_df["benchmark_ng_L"]
+        )
+
+        sum_tq_epa_df = (
+            tq_scored_df[tq_scored_df["epa_ratio_eligible"]]
+            .groupby(site_id_col)["tq"]
+            .sum()
+            .rename("sum_tq_epa")
+            .reset_index()
+        )
+
+        sum_tq_state_only_df = (
+            tq_scored_df[~tq_scored_df["epa_ratio_eligible"]]
+            .groupby(site_id_col)["tq"]
+            .sum()
+            .rename("sum_tq_state_only")
+            .reset_index()
+        )
+
+        return wide_df.merge(sum_tq_epa_df, on=site_id_col, how="left").merge(
+            sum_tq_state_only_df, on=site_id_col, how="left"
+        )
+
+    return (calc_scored_df,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md("""
     ### Compute per-compound and summed TQ
     Divide concentration by benchmark for the per-compound TQ, then sum
     within the `epa_ratio_eligible` group to get the classified ∑TQ (Hazard
     Index) and, separately, a supplementary state-only ∑TQ reported as
-    context but never classified. Treat non-detects as 0 per compound, per
-    the open questions in Step 2.5 above.
-    """),
-        ]
-    )
+    context but never classified. `calc_scored_df()` below implements this
+    once and is reused for both studies; each study's own non-detect
+    convention (0 for Smalling, half the reporting limit for McMahon, per
+    Step 2.5 above) is already baked into its concentration values, not
+    something this step re-decides.
+    """)
     return
+
+
+@app.cell
+def _(calc_scored_df, ss_clean_df, ss_long_df):
+    ss_scored_df = calc_scored_df(ss_clean_df, ss_long_df, "Site Code")
+    return (ss_scored_df,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md("""
+    ### McMahon (groundwater) ∑TQ
+
+    `mc_clean_df` gets the same reshape/join/compute treatment as
+    `ss_clean_df` above via the shared `calc_scored_df()` helper, producing
+    `mc_scored_df`. Two structural differences from Smalling carried
+    through rather than being papered over:
+    * McMahon's panel has no HFPO-DA (GenX) column at all, so its Hazard
+      Index is necessarily a 5-of-6-compound sum (missing the GenX term).
+    * McMahon's non-detects are already imputed as half the reporting limit
+      rather than 0 (a Step 2 decision, not redone here).
+
+    That second difference shows up clearly in the result: across the 254
+    scored McMahon sites, `sum_tq_epa` never drops below ~1.0 (vs. a median
+    of 0.17 for Smalling's 236 sites) — every site clears the trigger and
+    MCL-exceedance cutoffs by construction, since even a "clean" site
+    accumulates a non-zero baseline TQ across 5 summed compounds under
+    half-reporting-limit imputation. The two studies' ∑TQ values are not on
+    the same footing, and combining them into one modeling target (Task
+    3.4) would need to address this class-balance skew directly, not just
+    the missing-GenX gap.
+    """)
+    return
+
+
+@app.cell
+def _(calc_scored_df, mc_clean_df, mc_long_df):
+    mc_scored_df = calc_scored_df(mc_clean_df, mc_long_df, "NAWQA_ID_mc_env")
+    return (mc_scored_df,)
 
 
 @app.cell(hide_code=True)
@@ -2170,9 +2299,15 @@ def _(mo):
     compounds stay in the dataset as a descriptive slice rather than feeding
     the classified ∑TQ target.
 
-    That additional processing, formalized as Task PW in the Pre-work section
-    above, is still pending. It will be completed and integrated into our
-    processing data frames ahead of modeling.
+    That additional processing, worked out in the ∑TQ construction section
+    above, is now complete: `ss_scored_df` carries the classified
+    `sum_tq_epa` alongside `ss_clean_df`'s predictors, ready for Checkpoint
+    2's evaluation plan to set the risk-tier cutoffs ahead of modeling.
+    McMahon's groundwater data is scored the same way into `mc_scored_df`,
+    but its `sum_tq_epa` is not on the same footing as Smalling's — a
+    missing GenX benchmark and a different non-detect convention push
+    every McMahon site above the trigger cutoff, a gap that needs
+    resolving before the two studies can share one modeling target.
 
     ## References
     * CDM Smith. (2024). EPA's final regulations: What do you
