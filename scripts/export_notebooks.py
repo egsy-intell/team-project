@@ -12,8 +12,6 @@ import re
 import subprocess
 import sys
 
-import fitz  # pymupdf
-
 REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent
 NOTEBOOKS_DIR = REPO_ROOT / "notebooks"
 OUTPUT_DIR = REPO_ROOT / "docs" / "notebooks"
@@ -36,7 +34,7 @@ def _strip_pep723_header(source: str) -> str:
     return _PEP723_HEADER_RE.sub("", source, count=1)
 
 
-def _banner(notebook_name: str, pdf_name: str) -> str:
+def _banner(notebook_name: str) -> str:
     notebook_url = f"{PAGES_BASE}/{notebook_name}"
     # marimo's own app root (#root) is styled position: static, but the app it
     # mounts inside is positioned absolute/top:0 relative to the page - which
@@ -65,89 +63,18 @@ def _banner(notebook_name: str, pdf_name: str) -> str:
       font-family: var(--marimo-monospace-font, ui-monospace, SFMono-Regular, Menlo, monospace);
       color: inherit;
     ">uvx marimo edit --sandbox {notebook_url}</pre>
-  <div style="margin-top: 6px;">
-    Or <a href="{pdf_name}" style="color: var(--link); text-decoration: underline;">download this notebook as a PDF</a>.
-  </div>
 </div>
 """
 
 
-def _inject_banner(html_path: pathlib.Path, notebook_name: str, pdf_name: str) -> None:
+def _inject_banner(html_path: pathlib.Path, notebook_name: str) -> None:
     html = html_path.read_text()
     marker = '<div id="root"></div>'
-    banner = _banner(notebook_name, pdf_name)
+    banner = _banner(notebook_name)
     if marker not in html:
         print(f"Warning: could not find {marker!r} in {html_path}, skipping banner", file=sys.stderr)
         return
     html_path.write_text(html.replace(marker, banner + marker, 1))
-
-
-# marimo's PDF export rasterizes each mo.ui.table by capturing it in a
-# fixed-width browser viewport (_VIEWPORT_WIDTH in marimo's own
-# _server/export/_pdf_raster.py). A table wider than that doesn't get
-# scaled down - it gets silently clipped, cutting off trailing columns
-# entirely (confirmed: a 14-column table at ~1670px wide lost its last
-# two columns in the exported PDF, with no visual sign beyond the
-# missing data). Catch this before the slow PDF export step runs.
-_RASTER_VIEWPORT_WIDTH = 1440
-
-
-def _check_table_widths(html_path: pathlib.Path) -> list[tuple[int, int]]:
-    from playwright.sync_api import sync_playwright
-
-    with sync_playwright() as p:
-        browser = p.chromium.launch()
-        page = browser.new_page(
-            viewport={"width": _RASTER_VIEWPORT_WIDTH, "height": 1000}
-        )
-        page.goto(f"file://{html_path.resolve()}")
-        page.wait_for_timeout(3000)
-        widths = page.evaluate(
-            """
-            () => Array.from(document.querySelectorAll('marimo-table')).map(
-                (el) => {
-                    const inner = el.shadowRoot
-                        && el.shadowRoot.querySelector('table');
-                    return inner ? inner.scrollWidth : null;
-                }
-            )
-            """
-        )
-        browser.close()
-    return [
-        (i, w)
-        for i, w in enumerate(widths)
-        if w is not None and w > _RASTER_VIEWPORT_WIDTH
-    ]
-
-
-def _drop_blank_pages(pdf_path: pathlib.Path) -> None:
-    # marimo's PDF export rasterizes table/widget outputs into stitched
-    # screenshots; in long notebooks some of those screenshots contain a
-    # baked-in blank band, which surfaces as one or more fully white pages
-    # in the final PDF (a marimo bug, not something our CSS/layout can
-    # influence - confirmed by pixel-diffing the rasterized images
-    # directly). Detect and drop pages that render as pure white: every
-    # legitimate page in these notebooks has visible text/figures, so a
-    # 100%-white render is unambiguously this artifact, not real content.
-    doc = fitz.open(pdf_path)
-    blank_pages = [
-        i
-        for i, page in enumerate(doc)
-        if min(page.get_pixmap(dpi=72).samples) > 250
-    ]
-    if not blank_pages:
-        doc.close()
-        return
-    print(
-        f"Dropping {len(blank_pages)} blank page(s) from {pdf_path.name}: "
-        f"{[p + 1 for p in blank_pages]}"
-    )
-    doc.delete_pages(blank_pages)
-    tmp_path = pdf_path.with_suffix(".pdf.tmp")
-    doc.save(str(tmp_path))
-    doc.close()
-    tmp_path.replace(pdf_path)
 
 
 def main() -> int:
@@ -160,7 +87,6 @@ def main() -> int:
 
     for notebook in notebooks:
         output = OUTPUT_DIR / f"{notebook.stem}.html"
-        pdf_output = OUTPUT_DIR / f"{notebook.stem}.pdf"
         print(f"Exporting {notebook.relative_to(REPO_ROOT)} -> {output.relative_to(REPO_ROOT)}")
 
         # Strip the PEP 723 header in place (rather than exporting from a
@@ -183,42 +109,6 @@ def main() -> int:
                     "-f",
                 ]
             )
-            if result.returncode == 0:
-                too_wide = _check_table_widths(output)
-                if too_wide:
-                    print(
-                        f"{notebook.name}: {len(too_wide)} table(s) wider "
-                        f"than {_RASTER_VIEWPORT_WIDTH}px, which marimo's "
-                        "PDF export crops instead of scaling down:",
-                        file=sys.stderr,
-                    )
-                    for i, w in too_wide:
-                        print(f"  table #{i}: {w}px wide", file=sys.stderr)
-                    print(
-                        "Fix: drop or shorten columns, or split the table "
-                        "(see categorical_panel() in checkpoint_1.py for "
-                        "an example). See AGENTS.md for details.",
-                        file=sys.stderr,
-                    )
-                    return 1
-
-                print(
-                    f"Exporting {notebook.relative_to(REPO_ROOT)} -> "
-                    f"{pdf_output.relative_to(REPO_ROOT)}"
-                )
-                pdf_result = subprocess.run(
-                    [
-                        sys.executable,
-                        "-m",
-                        "marimo",
-                        "export",
-                        "pdf",
-                        str(notebook),
-                        "-o",
-                        str(pdf_output),
-                        "-f",
-                    ]
-                )
         finally:
             notebook.write_text(source)
 
@@ -226,13 +116,7 @@ def main() -> int:
             print(f"Failed to export {notebook.name}", file=sys.stderr)
             return result.returncode
 
-        if pdf_result.returncode != 0:
-            print(f"Failed to export {notebook.name} to PDF", file=sys.stderr)
-            return pdf_result.returncode
-
-        _drop_blank_pages(pdf_output)
-
-        _inject_banner(output, notebook.name, pdf_output.name)
+        _inject_banner(output, notebook.name)
 
         source_copy = OUTPUT_DIR / notebook.name
         print(f"Copying {notebook.relative_to(REPO_ROOT)} -> {source_copy.relative_to(REPO_ROOT)}")
