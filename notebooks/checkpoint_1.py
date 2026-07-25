@@ -2224,6 +2224,23 @@ def _(calc_scored_df, ss_clean_df, ss_long_df):
 
 
 @app.cell(hide_code=True)
+def _(mo, ss_scored_df):
+    mo.vstack(
+        [
+            mo.md("#### ∑TQ summary — Smalling/Seawolf (`ss_scored_df`)"),
+            mo.ui.table(
+                ss_scored_df[["sum_tq_epa", "sum_tq_state_only"]]
+                .describe()
+                .round(3)
+                .reset_index()
+                .rename(columns={"index": "Statistic"})
+            ),
+        ]
+    )
+    return
+
+
+@app.cell(hide_code=True)
 def _(mo):
     mo.md("""
     ### McMahon (groundwater) ∑TQ
@@ -2253,6 +2270,23 @@ def _(mo):
 @app.cell
 def _(calc_scored_df, mc_clean_df, mc_long_df):
     mc_scored_df = calc_scored_df(mc_clean_df, mc_long_df, "NAWQA_ID_mc_env")
+    return
+
+
+@app.cell(hide_code=True)
+def _(mc_scored_df, mo):
+    mo.vstack(
+        [
+            mo.md("#### ∑TQ summary — McMahon (`mc_scored_df`)"),
+            mo.ui.table(
+                mc_scored_df[["sum_tq_epa", "sum_tq_state_only"]]
+                .describe()
+                .round(3)
+                .reset_index()
+                .rename(columns={"index": "Statistic"})
+            ),
+        ]
+    )
     return
 
 
