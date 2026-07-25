@@ -11,7 +11,7 @@
 import marimo
 
 __generated_with = "0.23.14"
-app = marimo.App(width="medium", css_file="print.css")
+app = marimo.App(width="medium")
 
 
 @app.cell(hide_code=True)
