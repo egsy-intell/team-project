@@ -33,7 +33,22 @@ def _(mo):
 
 
 @app.cell
-def _(ET, mo, pd):
+def _(mo):
+    def print_sections(items):
+        # PDF/print exports have no JS, so tabs/accordions can't hide panes
+        # interactively - render every item as an always-visible labeled
+        # section instead, which also reads fine in the live app.
+        return mo.vstack(
+            [
+                mo.vstack([mo.md(f"**{label}**"), content])
+                for label, content in items.items()
+            ]
+        )
+    return (print_sections,)
+
+
+@app.cell
+def _(ET, mo, pd, print_sections):
     data_dir = mo.notebook_dir() / ".." / "data" / "usgs"
 
     if not data_dir.exists():
@@ -113,7 +128,7 @@ def _(ET, mo, pd):
             .apply(lambda col: col.str.strip())
         )
 
-    mo.ui.tabs({
+    print_sections({
         "Seawolf": seawolf_dict_df,
         "McMahon": filter_mcmahon("PFAS_ENV")
     })

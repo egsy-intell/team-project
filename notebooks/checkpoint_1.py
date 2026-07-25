@@ -44,6 +44,21 @@ def _():
 
 
 @app.cell(hide_code=True)
+def _(mo):
+    def print_sections(items):
+        # PDF/print exports have no JS, so tabs/accordions can't hide panes
+        # interactively - render every item as an always-visible labeled
+        # section instead, which also reads fine in the live app.
+        return mo.vstack(
+            [
+                mo.vstack([mo.md(f"**{label}**"), content])
+                for label, content in items.items()
+            ]
+        )
+    return (print_sections,)
+
+
+@app.cell(hide_code=True)
 async def _(data_dictionary_app):
     data_dictionary_result = await data_dictionary_app.embed()
     all_compound_dict_df = data_dictionary_result.defs["all_compound_dict_df"]
@@ -388,6 +403,7 @@ def _(
     mc_merged_df,
     mo,
     pd,
+    print_sections,
     ss_merged_df,
     ss_unmatched_count,
 ):
@@ -433,7 +449,7 @@ def _(
 
     mo.vstack([
         mo.ui.table(integration_feasibility_summary),
-        mo.accordion({
+        print_sections({
             "Sample identifiers for consistency review": mo.ui.table(
                 integration_identifier_samples
             ),
@@ -457,7 +473,7 @@ def _(mo):
 
 
 @app.cell(hide_code=True)
-def _(mc_merged_df, mo, ss_merged_clean_df):
+def _(mc_merged_df, print_sections, ss_merged_clean_df):
     def get_nan_counts(df, remove_non_matching = True):
         nan_counts = df.isna().sum()
         nan_table = (nan_counts
@@ -470,7 +486,7 @@ def _(mc_merged_df, mo, ss_merged_clean_df):
 
         return nan_table
 
-    mo.ui.tabs({
+    print_sections({
         "Seawolf/Smalling": get_nan_counts(ss_merged_clean_df),
         "McMahon": get_nan_counts(mc_merged_df)
     })
@@ -847,7 +863,7 @@ def _(mo):
 
 
 @app.cell(hide_code=True)
-def _(all_compound_dict_df, mo, pd, ss_clean_df):
+def _(all_compound_dict_df, mo, pd, print_sections, ss_clean_df):
     smalling_assessment_pfas_columns = all_compound_dict_df.loc[
         all_compound_dict_df["smalling"], "compound"
     ].tolist()
@@ -930,7 +946,7 @@ def _(all_compound_dict_df, mo, pd, ss_clean_df):
 
     mo.vstack([
         mo.ui.table(smalling_quality_checks),
-        mo.accordion({
+        print_sections({
             "Columns with the most missing values": mo.ui.table(smalling_missing_summary),
         }),
         mo.md("""
@@ -954,7 +970,7 @@ def _(mo):
 
 
 @app.cell(hide_code=True)
-def _(mo, pd, ss_clean_df):
+def _(mo, pd, print_sections, ss_clean_df):
     seawolf_quality_landcover_columns = [
         "OpenWater", "PerennialIceSnow", "DevelopedOpenSpace",
         "DevelopedLowIntensity", "DevelopedMediumIntensity",
@@ -1012,7 +1028,7 @@ def _(mo, pd, ss_clean_df):
 
     mo.vstack([
         mo.ui.table(seawolf_exploration_summary),
-        mo.accordion({
+        print_sections({
             "Sites by contributing study": mo.ui.table(seawolf_study_summary),
         }),
         mo.md(f"""
@@ -1036,7 +1052,7 @@ def _(mo):
 
 
 @app.cell(hide_code=True)
-def _(mo, pd, ss_clean_df):
+def _(mo, pd, print_sections, ss_clean_df):
     seawolf_assessment_landcover_columns = [
         "OpenWater", "PerennialIceSnow", "DevelopedOpenSpace",
         "DevelopedLowIntensity", "DevelopedMediumIntensity",
@@ -1118,7 +1134,7 @@ def _(mo, pd, ss_clean_df):
 
     mo.vstack([
         mo.ui.table(seawolf_quality_checks),
-        mo.accordion({
+        print_sections({
             "Columns with the most missing values": mo.ui.table(seawolf_missing_summary),
         }),
         mo.md("""
@@ -1147,7 +1163,7 @@ def _(mo):
 
 
 @app.cell(hide_code=True)
-def _(mc_clean_df, mo, pd):
+def _(mc_clean_df, mo, pd, print_sections):
     mcmahon_quality_clean_columns = [
         column for column in mc_clean_df.columns if column.endswith("-VA_clean")
     ]
@@ -1202,7 +1218,7 @@ def _(mc_clean_df, mo, pd):
 
     mo.vstack([
         mo.ui.table(mcmahon_exploration_summary),
-        mo.accordion({
+        print_sections({
             "Land-use variable summary": mo.ui.table(mcmahon_land_use_summary),
         }),
         mo.md(f"""
@@ -1224,7 +1240,7 @@ def _(mo):
 
 
 @app.cell(hide_code=True)
-def _(mc_clean_df, mo, pd):
+def _(mc_clean_df, mo, pd, print_sections):
     mcmahon_assessment_clean_columns = [
         column for column in mc_clean_df.columns if column.endswith("-VA_clean")
     ]
@@ -1315,7 +1331,7 @@ def _(mc_clean_df, mo, pd):
 
     mo.vstack([
         mo.ui.table(mcmahon_quality_checks),
-        mo.accordion({
+        print_sections({
             "Columns with the most missing values": mo.ui.table(mcmahon_missing_summary),
         }),
         mo.md("""
@@ -1343,7 +1359,7 @@ def _(mo):
 
 
 @app.cell
-def _(mc_clean_df, mo, pd, ss_clean_df):
+def _(mc_clean_df, mo, pd, print_sections, ss_clean_df):
     def categorical_profile(dataset_name, dataframe, columns):
         profile_rows = []
         value_count_tables = {}
@@ -1531,13 +1547,13 @@ def _(mc_clean_df, mo, pd, ss_clean_df):
     def categorical_panel(profile_df, category_tables, dataset_note):
         panel_items = [mo.ui.table(profile_df)]
         if category_tables:
-            panel_items.append(mo.accordion(category_tables))
+            panel_items.append(print_sections(category_tables))
         panel_items.append(mo.md(dataset_note))
         return mo.vstack(panel_items)
 
     mo.vstack([
         mo.ui.table(categorical_overall_summary),
-        mo.ui.tabs({
+        print_sections({
             "Smalling": categorical_panel(
                 smalling_categorical_profile,
                 smalling_category_tables,
