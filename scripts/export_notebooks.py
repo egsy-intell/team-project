@@ -12,6 +12,8 @@ import re
 import subprocess
 import sys
 
+import fitz  # pymupdf
+
 REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent
 NOTEBOOKS_DIR = REPO_ROOT / "notebooks"
 OUTPUT_DIR = REPO_ROOT / "docs" / "notebooks"
@@ -80,6 +82,35 @@ def _inject_banner(html_path: pathlib.Path, notebook_name: str, pdf_name: str) -
     html_path.write_text(html.replace(marker, banner + marker, 1))
 
 
+def _drop_blank_pages(pdf_path: pathlib.Path) -> None:
+    # marimo's PDF export rasterizes table/widget outputs into stitched
+    # screenshots; in long notebooks some of those screenshots contain a
+    # baked-in blank band, which surfaces as one or more fully white pages
+    # in the final PDF (a marimo bug, not something our CSS/layout can
+    # influence - confirmed by pixel-diffing the rasterized images
+    # directly). Detect and drop pages that render as pure white: every
+    # legitimate page in these notebooks has visible text/figures, so a
+    # 100%-white render is unambiguously this artifact, not real content.
+    doc = fitz.open(pdf_path)
+    blank_pages = [
+        i
+        for i, page in enumerate(doc)
+        if min(page.get_pixmap(dpi=72).samples) > 250
+    ]
+    if not blank_pages:
+        doc.close()
+        return
+    print(
+        f"Dropping {len(blank_pages)} blank page(s) from {pdf_path.name}: "
+        f"{[p + 1 for p in blank_pages]}"
+    )
+    doc.delete_pages(blank_pages)
+    tmp_path = pdf_path.with_suffix(".pdf.tmp")
+    doc.save(str(tmp_path))
+    doc.close()
+    tmp_path.replace(pdf_path)
+
+
 def main() -> int:
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -128,6 +159,15 @@ def main() -> int:
                         str(notebook),
                         "-o",
                         str(pdf_output),
+                        # Live mode rasterizes widgets against a real
+                        # kernel connection, which also avoids a marimo
+                        # bug in the default "static" mode where the
+                        # disconnected-kernel toast can bleed into a
+                        # later widget's screenshot (see _drop_blank_pages
+                        # for the other rasterization artifact it doesn't
+                        # fix).
+                        "--raster-server",
+                        "live",
                         "-f",
                     ]
                 )
@@ -141,6 +181,8 @@ def main() -> int:
         if pdf_result.returncode != 0:
             print(f"Failed to export {notebook.name} to PDF", file=sys.stderr)
             return pdf_result.returncode
+
+        _drop_blank_pages(pdf_output)
 
         _inject_banner(output, notebook.name, pdf_output.name)
 
