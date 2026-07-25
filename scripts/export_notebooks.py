@@ -87,6 +87,7 @@ def main() -> int:
 
     for notebook in notebooks:
         output = OUTPUT_DIR / f"{notebook.stem}.html"
+        pdf_output = OUTPUT_DIR / f"{notebook.stem}.pdf"
         print(f"Exporting {notebook.relative_to(REPO_ROOT)} -> {output.relative_to(REPO_ROOT)}")
 
         # Strip the PEP 723 header in place (rather than exporting from a
@@ -109,12 +110,34 @@ def main() -> int:
                     "-f",
                 ]
             )
+            if result.returncode == 0:
+                print(
+                    f"Exporting {notebook.relative_to(REPO_ROOT)} -> "
+                    f"{pdf_output.relative_to(REPO_ROOT)}"
+                )
+                pdf_result = subprocess.run(
+                    [
+                        sys.executable,
+                        "-m",
+                        "marimo",
+                        "export",
+                        "pdf",
+                        str(notebook),
+                        "-o",
+                        str(pdf_output),
+                        "-f",
+                    ]
+                )
         finally:
             notebook.write_text(source)
 
         if result.returncode != 0:
             print(f"Failed to export {notebook.name}", file=sys.stderr)
             return result.returncode
+
+        if pdf_result.returncode != 0:
+            print(f"Failed to export {notebook.name} to PDF", file=sys.stderr)
+            return pdf_result.returncode
 
         _inject_uvx_banner(output, notebook.name)
 
