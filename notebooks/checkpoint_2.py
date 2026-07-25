@@ -43,7 +43,7 @@ async def _(checkpoint_1_app):
     checkpoint_1_result = await checkpoint_1_app.embed()
     mc_clean_df = checkpoint_1_result.defs["mc_clean_df"]
     ss_clean_df = checkpoint_1_result.defs["ss_clean_df"]
-    return
+    return mc_clean_df, ss_clean_df
 
 
 @app.cell(hide_code=True)
@@ -51,6 +51,16 @@ def _(mo):
     mo.md(r"""
     # Checkpoint 2 start!
     """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mc_clean_df, mo, ss_clean_df):
+    mo.md(
+        f"Inherited from checkpoint 1: `mc_clean_df` "
+        f"({mc_clean_df.shape[0]} rows), `ss_clean_df` "
+        f"({ss_clean_df.shape[0]} rows)."
+    )
     return
 
 
