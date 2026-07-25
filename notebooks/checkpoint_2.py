@@ -43,7 +43,7 @@ async def _(checkpoint_1_app):
     checkpoint_1_result = await checkpoint_1_app.embed()
     mc_clean_df = checkpoint_1_result.defs["mc_clean_df"]
     ss_clean_df = checkpoint_1_result.defs["ss_clean_df"]
-    return mc_clean_df, ss_clean_df
+    return
 
 
 @app.cell(hide_code=True)
