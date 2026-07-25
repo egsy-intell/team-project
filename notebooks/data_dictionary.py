@@ -14,10 +14,10 @@ app = marimo.App(width="medium", css_file="print.css")
 
 @app.cell
 def _():
-    import marimo as mo
-
-    import pandas as pd
     import xml.etree.ElementTree as ET
+
+    import marimo as mo
+    import pandas as pd
 
     return ET, mo, pd
 
@@ -29,7 +29,6 @@ def _(mo):
 
     ## Predictors
     """)
-    return
 
 
 @app.cell
@@ -44,6 +43,7 @@ def _(mo):
                 for label, content in items.items()
             ]
         )
+
     return (print_sections,)
 
 
@@ -77,7 +77,9 @@ def _(ET, mo, pd, print_sections):
         data_dir / "seawolf" / "NationalPFASReconLandscapeMetadata.xml"
     )
 
-    mcmahon_dict_df = pd.read_csv(data_dir / "mcmahon" / "PFAS_Data_Dictionary.csv", encoding="latin1")
+    mcmahon_dict_df = pd.read_csv(
+        data_dir / "mcmahon" / "PFAS_Data_Dictionary.csv", encoding="latin1"
+    )
     mcmahon_env_df = pd.read_csv(data_dir / "mcmahon" / "PFAS_ENV.csv")
 
     # Data quirk: All values are labeled with <<compound>>-VA
@@ -123,15 +125,13 @@ def _(ET, mo, pd, print_sections):
     def filter_mcmahon(table_name):
         filter = mcmahon_dict_df["TABLE"] == table_name
 
-        return (
-            mcmahon_dict_df.loc[filter, ["PARAMETER", "DEFINITION"]]
-            .apply(lambda col: col.str.strip())
+        return mcmahon_dict_df.loc[filter, ["PARAMETER", "DEFINITION"]].apply(
+            lambda col: col.str.strip()
         )
 
-    print_sections({
-        "Seawolf": seawolf_dict_df,
-        "McMahon": filter_mcmahon("PFAS_ENV")
-    })
+    print_sections(
+        {"Seawolf": seawolf_dict_df, "McMahon": filter_mcmahon("PFAS_ENV")}
+    )
     return filter_mcmahon, mcmahon_alias
 
 
@@ -140,7 +140,6 @@ def _(mo):
     mo.md(r"""
     ## Compounds
     """)
-    return
 
 
 @app.cell
@@ -149,9 +148,15 @@ def _(filter_mcmahon, mcmahon_alias, mo, pd):
     # and remark-code boilerplate rows in with the actual PFAS compounds, so
     # filter down to rows whose PARAMETER is an actual compound abbreviation.
     _mcmahon_non_compound = {
-        "", "NAWQA_ID", "DATE", "TIME",
-        "<parameter name>-RMK", "<parameter name>-VA",
-        "<", "E", "n",
+        "",
+        "NAWQA_ID",
+        "DATE",
+        "TIME",
+        "<parameter name>-RMK",
+        "<parameter name>-VA",
+        "<",
+        "E",
+        "n",
     }
 
     _mcmahon_compound_df = (
@@ -166,23 +171,103 @@ def _(filter_mcmahon, mcmahon_alias, mo, pd):
     # compound names are documented here directly.
     _smalling_compound_df = pd.DataFrame(
         [
-            {"compound": "PFBA", "definition": "Perfluorobutanoate (PFBA), nanograms per liter"},
-            {"compound": "PFPeA", "definition": "Perfluoropentanoate (PFPeA), nanograms per liter"},
-            {"compound": "PFHxA", "definition": "Perfluorohexanoate (PFHxA), nanograms per liter"},
-            {"compound": "PFHpA", "definition": "Perfluoroheptanoate (PFHpA), nanograms per liter"},
-            {"compound": "PFOA", "definition": "Perfluorooctanoate (PFOA), nanograms per liter"},
-            {"compound": "PFNA", "definition": "Perfluorononanoate (PFNA), nanograms per liter"},
-            {"compound": "PFDA", "definition": "Perfluorodecanoate (PFDA), nanograms per liter"},
-            {"compound": "PFBS", "definition": "Perfluorobutane sulfonate (PFBS), nanograms per liter"},
-            {"compound": "PFPeS", "definition": "Perfluoropentane sulfonate (PFPeS), nanograms per liter"},
-            {"compound": "PFHxS", "definition": "Perfluorohexane sulfonate (PFHxS), nanograms per liter"},
-            {"compound": "PFHpS", "definition": "Perfluoroheptane sulfonate (PFHpS), nanograms per liter"},
-            {"compound": "PFOS", "definition": "Perfluorooctane sulfonate (PFOS), nanograms per liter"},
-            {"compound": "PFDS", "definition": "Perfluorodecane sulfonate (PFDS), nanograms per liter"},
-            {"compound": "PFPrS", "definition": "Perfluoropropane sulfonate (PFPrS), nanograms per liter"},
-            {"compound": "6:2 FTS", "definition": "6:2 Fluorotelomer sulfonate (6:2 FTS), nanograms per liter"},
-            {"compound": "FOSA", "definition": "Perfluorooctane sulfonamide (FOSA, also called PFOSA), nanograms per liter"},
-            {"compound": "HFPO-DA;GenX", "definition": "Hexafluoropropylene oxide dimer acid (HFPO-DA, trade name GenX), nanograms per liter"},
+            {
+                "compound": "PFBA",
+                "definition": "Perfluorobutanoate (PFBA), nanograms per liter",
+            },
+            {
+                "compound": "PFPeA",
+                "definition": (
+                    "Perfluoropentanoate (PFPeA), nanograms per liter"
+                ),
+            },
+            {
+                "compound": "PFHxA",
+                "definition": (
+                    "Perfluorohexanoate (PFHxA), nanograms per liter"
+                ),
+            },
+            {
+                "compound": "PFHpA",
+                "definition": (
+                    "Perfluoroheptanoate (PFHpA), nanograms per liter"
+                ),
+            },
+            {
+                "compound": "PFOA",
+                "definition": "Perfluorooctanoate (PFOA), nanograms per liter",
+            },
+            {
+                "compound": "PFNA",
+                "definition": "Perfluorononanoate (PFNA), nanograms per liter",
+            },
+            {
+                "compound": "PFDA",
+                "definition": "Perfluorodecanoate (PFDA), nanograms per liter",
+            },
+            {
+                "compound": "PFBS",
+                "definition": (
+                    "Perfluorobutane sulfonate (PFBS), nanograms per liter"
+                ),
+            },
+            {
+                "compound": "PFPeS",
+                "definition": (
+                    "Perfluoropentane sulfonate (PFPeS), nanograms per liter"
+                ),
+            },
+            {
+                "compound": "PFHxS",
+                "definition": (
+                    "Perfluorohexane sulfonate (PFHxS), nanograms per liter"
+                ),
+            },
+            {
+                "compound": "PFHpS",
+                "definition": (
+                    "Perfluoroheptane sulfonate (PFHpS), nanograms per liter"
+                ),
+            },
+            {
+                "compound": "PFOS",
+                "definition": (
+                    "Perfluorooctane sulfonate (PFOS), nanograms per liter"
+                ),
+            },
+            {
+                "compound": "PFDS",
+                "definition": (
+                    "Perfluorodecane sulfonate (PFDS), nanograms per liter"
+                ),
+            },
+            {
+                "compound": "PFPrS",
+                "definition": (
+                    "Perfluoropropane sulfonate (PFPrS), nanograms per liter"
+                ),
+            },
+            {
+                "compound": "6:2 FTS",
+                "definition": (
+                    "6:2 Fluorotelomer sulfonate (6:2 FTS), nanograms per "
+                    "liter"
+                ),
+            },
+            {
+                "compound": "FOSA",
+                "definition": (
+                    "Perfluorooctane sulfonamide (FOSA, also called "
+                    "PFOSA), nanograms per liter"
+                ),
+            },
+            {
+                "compound": "HFPO-DA;GenX",
+                "definition": (
+                    "Hexafluoropropylene oxide dimer acid (HFPO-DA, trade "
+                    "name GenX), nanograms per liter"
+                ),
+            },
         ]
     )
 
@@ -196,7 +281,9 @@ def _(filter_mcmahon, mcmahon_alias, mo, pd):
             indicator=True,
         )
         .assign(
-            definition=lambda df: df["definition_mcmahon"].fillna(df["definition_smalling"]),
+            definition=lambda df: df["definition_mcmahon"].fillna(
+                df["definition_smalling"]
+            ),
             mcmahon=lambda df: df["_merge"].isin(["left_only", "both"]),
             smalling=lambda df: df["_merge"].isin(["right_only", "both"]),
         )
@@ -215,7 +302,9 @@ def _(filter_mcmahon, mcmahon_alias, mo, pd):
         import urllib.request as _urllib_request
         from pathlib import Path as _Path
 
-        _factors_dir = _Path(_tempfile.gettempdir()) / "egsy-pfas-data" / "factors"
+        _factors_dir = (
+            _Path(_tempfile.gettempdir()) / "egsy-pfas-data" / "factors"
+        )
         _factors_dir.mkdir(parents=True, exist_ok=True)
         _dest = _factors_dir / "pfas_tq_benchmarks_epa_aligned.csv"
         if not _dest.exists():
@@ -224,12 +313,13 @@ def _(filter_mcmahon, mcmahon_alias, mo, pd):
                 _dest,
             )
 
-    _tq_benchmark_df = pd.read_csv(_factors_dir / "pfas_tq_benchmarks_epa_aligned.csv")
+    _tq_benchmark_df = pd.read_csv(
+        _factors_dir / "pfas_tq_benchmarks_epa_aligned.csv"
+    )
 
     all_compound_dict_df = all_compound_dict_df.merge(
         _tq_benchmark_df, on="compound", how="left"
     )
-    return
 
 
 if __name__ == "__main__":
