@@ -29,6 +29,7 @@ def _(mo):
 
     ## Predictors
     """)
+    return
 
 
 @app.cell
@@ -140,6 +141,7 @@ def _(mo):
     mo.md(r"""
     ## Compounds
     """)
+    return
 
 
 @app.cell
@@ -320,6 +322,7 @@ def _(filter_mcmahon, mcmahon_alias, mo, pd):
     all_compound_dict_df = all_compound_dict_df.merge(
         _tq_benchmark_df, on="compound", how="left"
     )
+    return
 
 
 if __name__ == "__main__":

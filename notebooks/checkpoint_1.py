@@ -241,6 +241,7 @@ def _(mo):
     project will retain the anonymized identifiers and will not attempt to
     infer exact home addresses or private-well locations.
     """)
+    return
 
 
 @app.cell(hide_code=True)
@@ -261,6 +262,7 @@ def _(mo):
        these were not found.
     3. Merge: using a left join, to report on any unmatched rows
     """)
+    return
 
 
 @app.cell(hide_code=True)
@@ -362,6 +364,7 @@ def _(mo):
         2. `n`: Estimation. Flag as estimated
     4. Merge: using a left join to capture any unmatched records
     """)
+    return
 
 
 @app.cell(hide_code=True)
@@ -413,6 +416,7 @@ def _(mo):
 
     ### Unmatched rows and `NaN` clean up
     """)
+    return
 
 
 @app.cell(hide_code=True)
@@ -524,6 +528,7 @@ def _(
             ),
         ]
     )
+    return
 
 
 @app.cell(hide_code=True)
@@ -538,6 +543,7 @@ def _(mo):
     As for `NaN` values, the only ones found belong to the `Seawolf/Smalling`
     merged data set.
     """)
+    return
 
 
 @app.cell(hide_code=True)
@@ -568,6 +574,7 @@ def _(mc_merged_df, print_sections, ss_merged_clean_df):
             "McMahon": get_nan_counts(mc_merged_df),
         }
     )
+    return
 
 
 @app.cell(hide_code=True)
@@ -591,6 +598,7 @@ def _(mo):
     found within the 5km search radius" maps to "the nearest one is at least
     ~5km away" rather than an arbitrary outlier.
     """)
+    return
 
 
 @app.cell
@@ -637,6 +645,7 @@ def _(mo):
     already assessed in the join-ability sections above. *`ss_clean_df` and
     `mc_clean_df` will be used from now on.*
     """)
+    return
 
 
 @app.cell(hide_code=True)
@@ -644,6 +653,7 @@ def _(mo):
     mo.md(r"""
     ### Combined summary statistics and distributions
     """)
+    return
 
 
 @app.cell(hide_code=True)
@@ -698,6 +708,7 @@ def _(mc_clean_df, mo, np, pd, ss_clean_df):
             mo.ui.table(combined_summary),
         ]
     )
+    return
 
 
 @app.cell(hide_code=True)
@@ -776,6 +787,7 @@ def _(mc_clean_df, mo, pd, ss_clean_df):
             mo.ui.table(distribution_summary),
         ]
     )
+    return
 
 
 @app.cell(hide_code=True)
@@ -847,6 +859,7 @@ def _(mo, ss_clean_df):
             ss_histogram,
         ]
     )
+    return
 
 
 @app.cell(hide_code=True)
@@ -907,6 +920,7 @@ def _(mc_clean_df, mo):
             mac_histogram,
         ]
     )
+    return
 
 
 @app.cell(hide_code=True)
@@ -916,6 +930,7 @@ def _(mo):
 
     #### Data exploration
     """)
+    return
 
 
 @app.cell(hide_code=True)
@@ -992,6 +1007,7 @@ def _(all_compound_dict_df, mo, pd, ss_clean_df):
         """),
         ]
     )
+    return
 
 
 @app.cell(hide_code=True)
@@ -999,6 +1015,7 @@ def _(mo):
     mo.md(r"""
     #### Quality assessment
     """)
+    return
 
 
 @app.cell(hide_code=True)
@@ -1137,6 +1154,7 @@ def _(all_compound_dict_df, mo, pd, print_sections, ss_clean_df):
         """),
         ]
     )
+    return
 
 
 @app.cell(hide_code=True)
@@ -1146,6 +1164,7 @@ def _(mo):
 
     #### Data exploration
     """)
+    return
 
 
 @app.cell(hide_code=True)
@@ -1252,6 +1271,7 @@ def _(mo, pd, print_sections, ss_clean_df):
         """),
         ]
     )
+    return
 
 
 @app.cell(hide_code=True)
@@ -1259,6 +1279,7 @@ def _(mo):
     mo.md(r"""
     #### Quality assessment
     """)
+    return
 
 
 @app.cell(hide_code=True)
@@ -1413,6 +1434,7 @@ def _(mo, pd, print_sections, ss_clean_df):
         """),
         ]
     )
+    return
 
 
 @app.cell(hide_code=True)
@@ -1422,6 +1444,7 @@ def _(mo):
 
     #### Data exploration
     """)
+    return
 
 
 @app.cell(hide_code=True)
@@ -1512,6 +1535,7 @@ def _(mc_clean_df, mo, pd, print_sections):
         """),
         ]
     )
+    return
 
 
 @app.cell(hide_code=True)
@@ -1519,6 +1543,7 @@ def _(mo):
     mo.md(r"""
     #### Quality assessment
     """)
+    return
 
 
 @app.cell(hide_code=True)
@@ -1677,6 +1702,7 @@ def _(mc_clean_df, mo, pd, print_sections):
         """),
         ]
     )
+    return
 
 
 @app.cell(hide_code=True)
@@ -1691,6 +1717,7 @@ def _(mo):
     identifiers and laboratory quality flags are excluded because they are keys
     or data-quality indicators rather than explanatory categories.
     """)
+    return
 
 
 @app.cell
@@ -1986,6 +2013,7 @@ def _(mc_clean_df, mo, pd, print_sections, ss_clean_df):
         """),
         ]
     )
+    return
 
 
 @app.cell(hide_code=True)
@@ -2060,6 +2088,7 @@ def _(mo):
       reclassification shifts the distribution away from the old median-based
       cutoffs.
     """)
+    return
 
 
 @app.cell(hide_code=True)
@@ -2176,6 +2205,7 @@ def _(mo):
       around private-well populations falling outside EPA's public-water-system
       rule.
     """)
+    return
 
 
 if __name__ == "__main__":
