@@ -1,0 +1,9 @@
+# Scoped to notebooks/ only (ruff resolves the nearest config file walking
+# up from each linted file, so this doesn't affect scripts/ or tests/).
+# 79 columns keeps notebook code from being clipped when exported to PDF.
+line-length = 79
+
+[lint]
+# Ruff's default select set ("E4", "E7", "E9", "F") omits pycodestyle's E5xx
+# bucket, which is where the line-too-long check (E501) lives.
+extend-select = ["E501"]
