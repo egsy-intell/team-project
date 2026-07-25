@@ -2220,7 +2220,7 @@ def _(mo):
 @app.cell
 def _(calc_scored_df, ss_clean_df, ss_long_df):
     ss_scored_df = calc_scored_df(ss_clean_df, ss_long_df, "Site Code")
-    return (ss_scored_df,)
+    return
 
 
 @app.cell(hide_code=True)
@@ -2253,7 +2253,7 @@ def _(mo):
 @app.cell
 def _(calc_scored_df, mc_clean_df, mc_long_df):
     mc_scored_df = calc_scored_df(mc_clean_df, mc_long_df, "NAWQA_ID_mc_env")
-    return (mc_scored_df,)
+    return
 
 
 @app.cell(hide_code=True)
