@@ -1,0 +1,17 @@
+# Scoped to notebooks/ only (ruff resolves the nearest config file walking
+# up from each linted file, so this doesn't affect scripts/ or tests/).
+# 79 columns keeps notebook code from being clipped when exported to PDF.
+line-length = 79
+
+[lint]
+# Ruff's default rule set omits pycodestyle's E5xx bucket, which is where
+# the line-too-long check (E501) lives.
+extend-select = ["E501"]
+
+# marimo's own formatter (`marimo check --fix`, run by the PR autofix
+# workflow) enforces a trailing `return` at the end of every cell
+# function, even when it defines nothing - that's how marimo determines a
+# cell's outputs are complete. Ruff's default rule set flags that same
+# statement as "useless" (PLR1711), so the two tools fight over it on
+# every autofix cycle. Defer to marimo's convention here.
+ignore = ["PLR1711"]

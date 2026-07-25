@@ -34,7 +34,7 @@ def _strip_pep723_header(source: str) -> str:
     return _PEP723_HEADER_RE.sub("", source, count=1)
 
 
-def _uvx_banner(notebook_name: str) -> str:
+def _banner(notebook_name: str, pdf_name: str) -> str:
     notebook_url = f"{PAGES_BASE}/{notebook_name}"
     # marimo's own app root (#root) is styled position: static, but the app it
     # mounts inside is positioned absolute/top:0 relative to the page - which
@@ -63,16 +63,19 @@ def _uvx_banner(notebook_name: str) -> str:
       font-family: var(--marimo-monospace-font, ui-monospace, SFMono-Regular, Menlo, monospace);
       color: inherit;
     ">uvx marimo edit --sandbox {notebook_url}</pre>
+  <div style="margin-top: 6px;">
+    Or <a href="{pdf_name}" style="color: var(--link); text-decoration: underline;">download this notebook as a PDF</a>.
+  </div>
 </div>
 """
 
 
-def _inject_uvx_banner(html_path: pathlib.Path, notebook_name: str) -> None:
+def _inject_banner(html_path: pathlib.Path, notebook_name: str, pdf_name: str) -> None:
     html = html_path.read_text()
     marker = '<div id="root"></div>'
-    banner = _uvx_banner(notebook_name)
+    banner = _banner(notebook_name, pdf_name)
     if marker not in html:
-        print(f"Warning: could not find {marker!r} in {html_path}, skipping uvx banner", file=sys.stderr)
+        print(f"Warning: could not find {marker!r} in {html_path}, skipping banner", file=sys.stderr)
         return
     html_path.write_text(html.replace(marker, banner + marker, 1))
 
@@ -87,6 +90,7 @@ def main() -> int:
 
     for notebook in notebooks:
         output = OUTPUT_DIR / f"{notebook.stem}.html"
+        pdf_output = OUTPUT_DIR / f"{notebook.stem}.pdf"
         print(f"Exporting {notebook.relative_to(REPO_ROOT)} -> {output.relative_to(REPO_ROOT)}")
 
         # Strip the PEP 723 header in place (rather than exporting from a
@@ -109,6 +113,24 @@ def main() -> int:
                     "-f",
                 ]
             )
+            if result.returncode == 0:
+                print(
+                    f"Exporting {notebook.relative_to(REPO_ROOT)} -> "
+                    f"{pdf_output.relative_to(REPO_ROOT)}"
+                )
+                pdf_result = subprocess.run(
+                    [
+                        sys.executable,
+                        "-m",
+                        "marimo",
+                        "export",
+                        "pdf",
+                        str(notebook),
+                        "-o",
+                        str(pdf_output),
+                        "-f",
+                    ]
+                )
         finally:
             notebook.write_text(source)
 
@@ -116,7 +138,11 @@ def main() -> int:
             print(f"Failed to export {notebook.name}", file=sys.stderr)
             return result.returncode
 
-        _inject_uvx_banner(output, notebook.name)
+        if pdf_result.returncode != 0:
+            print(f"Failed to export {notebook.name} to PDF", file=sys.stderr)
+            return pdf_result.returncode
+
+        _inject_banner(output, notebook.name, pdf_output.name)
 
         source_copy = OUTPUT_DIR / notebook.name
         print(f"Copying {notebook.relative_to(REPO_ROOT)} -> {source_copy.relative_to(REPO_ROOT)}")
