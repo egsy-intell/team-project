@@ -1,7 +1,7 @@
 # /// script
 # requires-python = ">=3.14"
 # dependencies = [
-#     "marimo>=0.23.14",
+#     "marimo>=0.23.3",
 #     "pandas>=3.0.3",
 # ]
 # ///
@@ -28,7 +28,10 @@ def _():
         import tempfile as _tempfile
         import urllib.request as _urllib_request
 
-        _RAW_BASE = "https://raw.githubusercontent.com/egsy-intell/team-project/main/notebooks"
+        _RAW_BASE = (
+            "https://raw.githubusercontent.com/egsy-intell/"
+            "team-project/main/notebooks"
+        )
         _tmp_dir = _tempfile.mkdtemp(prefix="egsy-pfas-")
         _dest = f"{_tmp_dir}/checkpoint_1.py"
         _urllib_request.urlretrieve(f"{_RAW_BASE}/checkpoint_1.py", _dest)
@@ -137,7 +140,7 @@ def _(mo, task_callout):
 
 
 @app.cell(hide_code=True)
-def _(mc_scored_df, mo, ss_scored_df, task_callout):
+def _(mo, ss_scored_df, task_callout):
     from itertools import combinations
 
     import pandas as pd
@@ -303,12 +306,16 @@ def _(mc_scored_df, mo, ss_scored_df, task_callout):
     leakage_summary = pd.DataFrame(
         [
             {
-                "Validation check": "Study groups appearing in both partitions",
+                "Validation check": (
+                    "Study groups appearing in both partitions"
+                ),
                 "Result": len(study_overlap),
                 "Assessment": "Pass" if not study_overlap else "Review",
             },
             {
-                "Validation check": "Site identifiers appearing in both partitions",
+                "Validation check": (
+                    "Site identifiers appearing in both partitions"
+                ),
                 "Result": len(site_overlap),
                 "Assessment": "Pass" if not site_overlap else "Review",
             },
@@ -345,18 +352,24 @@ def _(mc_scored_df, mo, ss_scored_df, task_callout):
                 f"""
                 #### Target and grouping definition
 
-                Checkpoint 1 now supplies `ss_scored_df`, including the completed
-                `sum_tq_epa` value. For evaluation, that continuous score is mapped to
+                Checkpoint 1 now supplies `ss_scored_df`, including the
+                completed
+                `sum_tq_epa` value. For evaluation, that continuous
+                score is mapped to
                 the three project classes:
 
                 * `within_reduced_monitoring`: `sum_tq_epa < 0.5`
                 * `above_trigger`: `0.5 <= sum_tq_epa < 1.0`
                 * `mcl_exceedance`: `sum_tq_epa >= 1.0`
 
-                `{study_group_column}` is used as the canonical grouping field because
-                Smalling provides the measured PFAS outcome. The corresponding Seawolf
-                landscape record describes the same site and therefore follows it into
-                the same partition. Smalling and Seawolf are not treated as separate
+                `{study_group_column}` is used as the canonical
+                grouping field because
+                Smalling provides the measured PFAS outcome. The
+                corresponding Seawolf
+                landscape record describes the same site and
+                therefore follows it into
+                the same partition. Smalling and Seawolf are not
+                treated as separate
                 train/test datasets.
                 """
             ),
@@ -366,16 +379,20 @@ def _(mc_scored_df, mo, ss_scored_df, task_callout):
                 """
                 #### Holdout-selection rules
 
-                Candidate holdouts are created from complete study groups rather than
+                Candidate holdouts are created from complete study
+                groups rather than
                 individual rows. The selected split prioritizes, in order:
 
-                1. All three PFAS risk tiers occurring in both training and test data.
+                1. All three PFAS risk tiers occurring in both
+                   training and test data.
                 2. A test partition close to 20% of eligible tap-water sites.
                 3. A test-set class distribution close to the full dataset.
                 4. Zero overlap in study labels and site identifiers.
 
-                This produces a deterministic study-level holdout from the current
-                data. The test studies must remain untouched during scaling, encoding,
+                This produces a deterministic study-level holdout
+                from the current
+                data. The test studies must remain untouched during
+                scaling, encoding,
                 feature selection, and hyperparameter tuning.
                 """
             ),
@@ -388,16 +405,22 @@ def _(mc_scored_df, mo, ss_scored_df, task_callout):
                 r"""
                 #### Model optimization inside the training partition
 
-                Hyperparameter selection will use grouped cross-validation only within
-                `tapwater_train_df`. `StratifiedGroupKFold` is appropriate because it
-                attempts to preserve the risk-tier distribution while still keeping
+                Hyperparameter selection will use grouped
+                cross-validation only within
+                `tapwater_train_df`. `StratifiedGroupKFold` is
+                appropriate because it
+                attempts to preserve the risk-tier distribution
+                while still keeping
                 every study intact:
 
                 ```python
                 from sklearn.model_selection import StratifiedGroupKFold
 
                 grouped_cv = StratifiedGroupKFold(
-                    n_splits=min(5, tapwater_train_df["study_group"].nunique()),
+                    n_splits=min(
+                        5,
+                        tapwater_train_df["study_group"].nunique(),
+                    ),
                     shuffle=True,
                     random_state=42,
                 )
@@ -411,28 +434,30 @@ def _(mc_scored_df, mo, ss_scored_df, task_callout):
                 ```
 
                 Study labels, site identifiers, PFAS concentrations,
-                `sum_tq_epa`, and `pfas_risk_tier` are grouping, identification,
-                or outcome fields—not model predictors. All preprocessing must be
+                `sum_tq_epa`, and `pfas_risk_tier` are grouping,
+                identification,
+                or outcome fields—not model predictors. All
+                preprocessing must be
                 fitted inside each training fold through one pipeline.
 
                 #### McMahon treatment
 
-                `mc_scored_df` is provisionally excluded from this tap-water split.
-                McMahon contains groundwater observations, omits GenX, and applies a
-                different non-detect convention. Under the current construction its
+                `mc_scored_df` is provisionally excluded from this
+                tap-water split.
+                McMahon contains groundwater observations, omits
+                GenX, and applies a
+                different non-detect convention. Under the current
+                construction its
                 target distribution is therefore not on the same footing as
-                Smalling/Seawolf. Task 3.4 will decide whether it should support a
+                Smalling/Seawolf. Task 3.4 will decide whether it
+                should support a
                 separate groundwater model or serve as a qualified external
                 evaluation slice.
                 """
             ),
         ]
     )
-    return (
-        tapwater_split_df,
-        tapwater_test_df,
-        tapwater_train_df,
-    )
+    return
 
 
 @app.cell(hide_code=True)
