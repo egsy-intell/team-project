@@ -42,13 +42,14 @@ def _():
 async def _(checkpoint_1_app):
     checkpoint_1_result = await checkpoint_1_app.embed()
     mc_clean_df = checkpoint_1_result.defs["mc_clean_df"]
-    ss_clean_df = checkpoint_1_result.defs["ss_clean_df"]
+    mc_scored_df = checkpoint_1_result.defs["mc_scored_df"]
+    ss_scored_df = checkpoint_1_result.defs["ss_scored_df"]
     task_callout = checkpoint_1_result.defs["task_callout"]
-    return mc_clean_df, ss_clean_df, task_callout
+    return mc_clean_df, mc_scored_df, ss_scored_df, task_callout
 
 
 @app.cell(hide_code=True)
-def _(mc_clean_df, mo, ss_clean_df):
+def _(mc_clean_df, mc_scored_df, mo, ss_scored_df):
     mo.md(f"""
     # Step 3-4: Model Selection, Training & Evaluation Design (Checkpoint 2)
 
@@ -64,9 +65,12 @@ def _(mc_clean_df, mo, ss_clean_df):
     dependencies, tied to `planning/checkpoint-2/checkpoint2_tasks.csv`; use
     the task ID to cross-reference the task board.
 
-    Inherited from checkpoint 1's Step 2 cleaning and Pre-work (Task PW):
-    `mc_clean_df` ({mc_clean_df.shape[0]} rows), `ss_clean_df`
-    ({ss_clean_df.shape[0]} rows).
+    Inherited from checkpoint 1's Step 2 cleaning and ∑TQ construction:
+    `ss_scored_df` ({ss_scored_df.shape[0]} rows), `mc_scored_df`
+    ({mc_scored_df.shape[0]} rows). `mc_clean_df` ({mc_clean_df.shape[0]}
+    rows) is also available unscored — McMahon's role (combined vs.
+    held-out, task `3.4`) isn't decided yet, so both are kept until
+    that's settled.
     """)
     return
 
