@@ -129,6 +129,18 @@ additional rows as needed, for both box plots and histograms. Follow
 this pattern for any new multi-variable plot instead of stacking one
 subplot per row.
 
+**One cell per data pipeline unit, not one cell per pandas call.** A
+step like "reshape wide to long," "join reference/benchmark data," or
+"score and aggregate a target" is one cell, even if it takes several
+statements/intermediate variables to get there — don't split each
+`.assign()`/`.groupby()`/`.merge()` into its own cell. Reserve cell
+boundaries for a change in what's being described (matches the
+markdown-then-code pairing already used throughout `checkpoint_1.py`,
+e.g. reshape / join benchmarks / compute ∑TQ in the ∑TQ construction
+section). Splitting finer than that mainly pays off transiently while
+debugging (isolating exactly which line in a chain broke); once a
+pipeline is working, collapse it back to one cell per unit.
+
 ## Multi-notebook checkpoint workflow
 
 Each project checkpoint gets its own notebook rather than one
@@ -159,6 +171,23 @@ followed by `checkpoint_2.py`:
   `notebooks/index.py`. Nothing in `scripts/export_notebooks.py` or
   `tests/test_notebooks.py` needs to change — both glob `notebooks/*.py`
   and pick up new notebooks automatically.
+
+## Task-tracking prose is scaffolding, not published content
+
+`task_callout()` (see above) and inline "Task PW"/"Task 3.2"-style IDs in
+markdown cells exist so the team can track ownership and dependencies
+against `planning/checkpoint-2/checkpoint2_tasks.csv` while a task is
+still open — they're a coordination aid for us, not something a reader of
+the published notebook needs. **When a task is completed, strip its
+`task_callout()` and any "Task <ID>" prose references from the notebook**
+(the CSV row is the durable record of who did what and when; it doesn't
+need to be duplicated in the published writeup). Replace a task's
+`task_callout()` header with a plain section heading, and reword prose
+that named the task ID into normal descriptive language. See the removal
+of Task PW's callout/ID references from `checkpoint_1.py`'s ∑TQ
+construction section for the pattern. Leave `task_callout()` calls for
+still-open tasks (and their `depends_on=` links) alone until those tasks
+are done too.
 
 ## Commands
 

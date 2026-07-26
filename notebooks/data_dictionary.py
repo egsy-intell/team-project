@@ -319,9 +319,15 @@ def _(filter_mcmahon, mcmahon_alias, mo, pd):
         _factors_dir / "pfas_tq_benchmarks_epa_aligned.csv"
     )
 
+    # McMahon-only compounds have no benchmark row (the CSV only covers
+    # Smalling's 17), so the left join leaves epa_ratio_eligible NaN for
+    # them, which silently widens the column to object dtype. Cast to
+    # pandas' nullable boolean so it stays true bool + NA rather than
+    # plain Python bool objects, which `~` bitwise-inverts instead of
+    # logically negating (True/False -> -2/-1) under object dtype.
     all_compound_dict_df = all_compound_dict_df.merge(
         _tq_benchmark_df, on="compound", how="left"
-    )
+    ).astype({"epa_ratio_eligible": "boolean"})
     return
 
 
