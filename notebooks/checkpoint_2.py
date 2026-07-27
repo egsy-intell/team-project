@@ -168,9 +168,7 @@ def _(combinations, mo, pd, ss_scored_df):
         ordered=True,
     )
     tapwater_split_df["study_group"] = (
-        tapwater_split_df[study_group_column]
-        .astype("string")
-        .str.strip()
+        tapwater_split_df[study_group_column].astype("string").str.strip()
     )
     tapwater_split_df = tapwater_split_df.dropna(
         subset=["Site Code", "study_group", "pfas_risk_tier"]
@@ -204,18 +202,15 @@ def _(combinations, mo, pd, ss_scored_df):
     candidate_rows = []
     for held_out_count in range(1, len(all_studies)):
         for held_out_studies in combinations(all_studies, held_out_count):
-            test_mask = tapwater_split_df["study_group"].isin(
-                held_out_studies
-            )
+            test_mask = tapwater_split_df["study_group"].isin(held_out_studies)
             train_part = tapwater_split_df.loc[~test_mask]
             test_part = tapwater_split_df.loc[test_mask]
 
             train_classes = set(train_part["pfas_risk_tier"].dropna())
             test_classes = set(test_part["pfas_risk_tier"].dropna())
-            missing_class_penalty = (
-                len(set(risk_labels) - train_classes)
-                + len(set(risk_labels) - test_classes)
-            )
+            missing_class_penalty = len(
+                set(risk_labels) - train_classes
+            ) + len(set(risk_labels) - test_classes)
 
             test_fraction = len(test_part) / len(tapwater_split_df)
             test_distribution = (
@@ -474,6 +469,108 @@ def _(mo, task_callout):
                     "differences from Step 2, once the study-grouped split "
                     "strategy (3.3) is settled."
                 ),
+            ),
+            mo.md(
+                """
+                **Draft proposal below, pending Yai/Raj sign-off** —
+                left as a draft rather than a final decision since this
+                task is co-owned and Raj hasn't weighed in yet.
+                """
+            ),
+        ]
+    )
+    return
+
+
+@app.cell
+def _(mc_scored_df, pd, ss_scored_df):
+    _risk_labels = [
+        "within_reduced_monitoring",
+        "above_trigger",
+        "mcl_exceedance",
+    ]
+
+    def _tier_distribution(scored_df):
+        tiers = pd.cut(
+            scored_df["sum_tq_epa"],
+            bins=[float("-inf"), 0.5, 1.0, float("inf")],
+            labels=_risk_labels,
+            right=False,
+            ordered=True,
+        )
+        return tiers.value_counts(normalize=True).reindex(
+            _risk_labels, fill_value=0.0
+        )
+
+    groundwater_comparison_df = pd.DataFrame(
+        [
+            {
+                "Study": "Smalling/Seawolf (tap water)",
+                "Sites": len(ss_scored_df),
+                "Compounds summed": 6,
+                "Non-detect convention": "0",
+                "sum_tq_epa median": ss_scored_df["sum_tq_epa"].median(),
+                **_tier_distribution(ss_scored_df).round(3).to_dict(),
+            },
+            {
+                "Study": "McMahon (groundwater)",
+                "Sites": len(mc_scored_df),
+                "Compounds summed": 5,
+                "Non-detect convention": "½ reporting limit",
+                "sum_tq_epa median": mc_scored_df["sum_tq_epa"].median(),
+                **_tier_distribution(mc_scored_df).round(3).to_dict(),
+            },
+        ]
+    )
+    return (groundwater_comparison_df,)
+
+
+@app.cell(hide_code=True)
+def _(groundwater_comparison_df, mo):
+    mo.vstack(
+        [
+            mo.md(
+                """
+                #### Structural comparison
+
+                McMahon's ∑TQ isn't on the same footing as
+                Smalling/Seawolf's, for two compounding reasons: it sums
+                5 of the 6 regulated compounds instead of 6 (no GenX
+                column at all), and its non-detects are imputed as half
+                the reporting limit instead of 0. That second difference
+                dominates — it gives every McMahon site a non-zero
+                baseline TQ, so `sum_tq_epa` never drops below ~1.0
+                regardless of actual site conditions. McMahon's risk-tier
+                column below is degenerate: 100% `mcl_exceedance` by
+                construction, not by geology.
+                """
+            ),
+            mo.ui.table(groundwater_comparison_df),
+            mo.md(
+                """
+                #### Proposed decision: hold out, don't combine
+
+                Combining McMahon into the Smalling/Seawolf training set
+                would let a model achieve perfect recall on the
+                `mcl_exceedance` tier simply by learning "is this a
+                McMahon row," an artifact of imputation and compound
+                coverage, not a land-use signal — exactly the kind of
+                leakage the study-grouped split in 3.3 already guards
+                against for cross-study effects. A single-class study
+                also cannot exercise the per-class metrics defined in
+                3.1, which need all three tiers represented.
+
+                Proposed treatment instead: keep `mc_scored_df` fully
+                outside both the training and 3.3 test partitions, and
+                report model predictions on it separately as a
+                qualified generalization check — framed explicitly as
+                "does the model's *relative* ranking of McMahon sites
+                look plausible," not as a comparable accuracy number,
+                since the target itself isn't comparable across studies.
+                Revisit combining groundwater and tap-water data only if
+                a future checkpoint re-derives McMahon's ∑TQ with a
+                matched non-detect convention and a GenX estimate.
+                """
             ),
         ]
     )
