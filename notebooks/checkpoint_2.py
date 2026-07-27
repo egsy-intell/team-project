@@ -621,9 +621,9 @@ def _(mo):
     and modeling proposals for classifying site-level PFAS risk from
     land-use predictors: per-class metrics and a study-grouped split (Step
     3), and two competing classifiers, an interpretable baseline and a
-    non-linear ensemble (Step 4). Implementing Task PW's ∑TQ target,
-    training both models, and evaluating them against the plan above is
-    Step 5 work for the final checkpoint.
+    non-linear ensemble (Step 4), against the already-computed ∑TQ
+    target from checkpoint 1. Training both models and evaluating them
+    against the plan above is Step 5 work for the final checkpoint.
     """)
     return
 
