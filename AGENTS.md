@@ -122,6 +122,23 @@ _(make_plot_grid, mo, ss_clean_df):`). See `make_plot_grid()` in
 `checkpoint_1.py`, shared by both the Smalling+Seawolf and McMahon
 exploratory-plot sections.
 
+**Prefix cell-local variables with `_`; module-level constants are
+`UPPER_SNAKE_CASE`.** marimo requires every non-underscore-prefixed name
+to be globally unique across the notebook and makes it a `return`able,
+cross-cell value — so a bare name reads as "this crosses cell
+boundaries," while `_`-prefixed reads as "this cell's own scratch
+work," even for names never at risk of colliding today. Prefix a
+variable the moment it won't be in that cell's `return` tuple,
+including loop variables and DataFrame intermediates in a
+single-purpose cell (e.g. `_tapwater_split_df`, `_held_out_studies` in
+the split-strategy section of `checkpoint_2.py`). A name a cell does
+return — and that other cells take as a function parameter — stays
+unprefixed, and if it's a fixed lookup table or label set rather than
+computed data, name it `UPPER_SNAKE_CASE` in its own cell (e.g.
+`RISK_LABELS` in `checkpoint_2.py`) instead of `lower_snake_case`, so
+it reads as a constant at every call site that takes it as a
+parameter.
+
 **Small-multiple plots (one subplot per variable) should use a compact
 grid, not one plot per row.** `make_plot_grid()` in `checkpoint_1.py`
 lays out up to 3 columns (`grid_cols = min(3, n_vars)`) and wraps into

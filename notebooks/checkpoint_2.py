@@ -143,180 +143,188 @@ def _(mo, task_callout):
 
 
 @app.cell(hide_code=True)
-def _(combinations, mo, pd, ss_scored_df):
-    risk_labels = [
+def _():
+    RISK_LABELS = [
         "within_reduced_monitoring",
         "above_trigger",
         "mcl_exceedance",
     ]
+    return (RISK_LABELS,)
 
+
+@app.cell(hide_code=True)
+def _(RISK_LABELS, combinations, mo, pd, ss_scored_df):
     # Smalling provides the measured outcome, so Study_smalling is the
     # canonical grouping field. The matched Seawolf predictor row follows the
     # same site into whichever partition that Smalling study is assigned to.
-    study_group_column = (
+    _study_group_column = (
         "Study_smalling"
         if "Study_smalling" in ss_scored_df.columns
         else "Study_seawolf"
     )
 
-    tapwater_split_df = ss_scored_df.copy()
-    tapwater_split_df["pfas_risk_tier"] = pd.cut(
-        tapwater_split_df["sum_tq_epa"],
+    _tapwater_split_df = ss_scored_df.copy()
+    _tapwater_split_df["pfas_risk_tier"] = pd.cut(
+        _tapwater_split_df["sum_tq_epa"],
         bins=[float("-inf"), 0.5, 1.0, float("inf")],
-        labels=risk_labels,
+        labels=RISK_LABELS,
         right=False,
         ordered=True,
     )
-    tapwater_split_df["study_group"] = (
-        tapwater_split_df[study_group_column].astype("string").str.strip()
+    _tapwater_split_df["study_group"] = (
+        _tapwater_split_df[_study_group_column].astype("string").str.strip()
     )
-    tapwater_split_df = tapwater_split_df.dropna(
+    _tapwater_split_df = _tapwater_split_df.dropna(
         subset=["Site Code", "study_group", "pfas_risk_tier"]
     ).copy()
 
     # Review the number of sites and target classes available in each study
     # before selecting a holdout. This is necessary because whole-study splits
     # cannot guarantee exact row-level stratification.
-    study_risk_profile = (
-        tapwater_split_df.groupby(
+    _study_risk_profile = (
+        _tapwater_split_df.groupby(
             ["study_group", "pfas_risk_tier"],
             observed=False,
         )
         .size()
         .unstack(fill_value=0)
-        .reindex(columns=risk_labels, fill_value=0)
+        .reindex(columns=RISK_LABELS, fill_value=0)
         .reset_index()
     )
-    study_risk_profile["Sites"] = study_risk_profile[risk_labels].sum(axis=1)
-    study_risk_profile = study_risk_profile[
-        ["study_group", "Sites", *risk_labels]
+    _study_risk_profile["Sites"] = _study_risk_profile[RISK_LABELS].sum(axis=1)
+    _study_risk_profile = _study_risk_profile[
+        ["study_group", "Sites", *RISK_LABELS]
     ].sort_values(["Sites", "study_group"], ascending=[False, True])
 
-    all_studies = sorted(tapwater_split_df["study_group"].unique().tolist())
-    full_distribution = (
-        tapwater_split_df["pfas_risk_tier"]
+    _all_studies = sorted(_tapwater_split_df["study_group"].unique().tolist())
+    _full_distribution = (
+        _tapwater_split_df["pfas_risk_tier"]
         .value_counts(normalize=True)
-        .reindex(risk_labels, fill_value=0.0)
+        .reindex(RISK_LABELS, fill_value=0.0)
     )
 
-    candidate_rows = []
-    for held_out_count in range(1, len(all_studies)):
-        for held_out_studies in combinations(all_studies, held_out_count):
-            test_mask = tapwater_split_df["study_group"].isin(held_out_studies)
-            train_part = tapwater_split_df.loc[~test_mask]
-            test_part = tapwater_split_df.loc[test_mask]
-
-            train_classes = set(train_part["pfas_risk_tier"].dropna())
-            test_classes = set(test_part["pfas_risk_tier"].dropna())
-            missing_class_penalty = len(
-                set(risk_labels) - train_classes
-            ) + len(set(risk_labels) - test_classes)
-
-            test_fraction = len(test_part) / len(tapwater_split_df)
-            test_distribution = (
-                test_part["pfas_risk_tier"]
-                .value_counts(normalize=True)
-                .reindex(risk_labels, fill_value=0.0)
+    _candidate_rows = []
+    for _held_out_count in range(1, len(_all_studies)):
+        for _held_out_studies in combinations(_all_studies, _held_out_count):
+            _test_mask = _tapwater_split_df["study_group"].isin(
+                _held_out_studies
             )
-            distribution_gap = float(
-                (test_distribution - full_distribution).abs().sum()
+            _train_part = _tapwater_split_df.loc[~_test_mask]
+            _test_part = _tapwater_split_df.loc[_test_mask]
+
+            _train_classes = set(_train_part["pfas_risk_tier"].dropna())
+            _test_classes = set(_test_part["pfas_risk_tier"].dropna())
+            _missing_class_penalty = len(
+                set(RISK_LABELS) - _train_classes
+            ) + len(set(RISK_LABELS) - _test_classes)
+
+            _test_fraction = len(_test_part) / len(_tapwater_split_df)
+            _test_distribution = (
+                _test_part["pfas_risk_tier"]
+                .value_counts(normalize=True)
+                .reindex(RISK_LABELS, fill_value=0.0)
+            )
+            _distribution_gap = float(
+                (_test_distribution - _full_distribution).abs().sum()
             )
 
             # Prefer a roughly 20% test set, preserve every class in both
             # partitions, and then choose the closest class distribution.
-            selection_score = (
-                missing_class_penalty * 10
-                + abs(test_fraction - 0.20)
-                + distribution_gap
+            _selection_score = (
+                _missing_class_penalty * 10
+                + abs(_test_fraction - 0.20)
+                + _distribution_gap
             )
-            candidate_rows.append(
+            _candidate_rows.append(
                 {
-                    "held_out_studies": held_out_studies,
-                    "test_fraction": test_fraction,
-                    "missing_class_penalty": missing_class_penalty,
-                    "distribution_gap": distribution_gap,
-                    "selection_score": selection_score,
+                    "held_out_studies": _held_out_studies,
+                    "test_fraction": _test_fraction,
+                    "missing_class_penalty": _missing_class_penalty,
+                    "distribution_gap": _distribution_gap,
+                    "selection_score": _selection_score,
                 }
             )
 
-    split_candidates_df = pd.DataFrame(candidate_rows).sort_values(
+    _split_candidates_df = pd.DataFrame(_candidate_rows).sort_values(
         [
             "missing_class_penalty",
             "selection_score",
             "held_out_studies",
         ]
     )
-    selected_candidate = split_candidates_df.iloc[0]
-    selected_test_studies = list(selected_candidate["held_out_studies"])
+    _selected_candidate = _split_candidates_df.iloc[0]
+    _selected_test_studies = list(_selected_candidate["held_out_studies"])
 
-    selected_test_mask = tapwater_split_df["study_group"].isin(
-        selected_test_studies
+    _selected_test_mask = _tapwater_split_df["study_group"].isin(
+        _selected_test_studies
     )
-    tapwater_train_df = tapwater_split_df.loc[~selected_test_mask].copy()
-    tapwater_test_df = tapwater_split_df.loc[selected_test_mask].copy()
+    _tapwater_train_df = _tapwater_split_df.loc[~_selected_test_mask].copy()
+    _tapwater_test_df = _tapwater_split_df.loc[_selected_test_mask].copy()
 
-    train_studies = sorted(tapwater_train_df["study_group"].unique().tolist())
-    test_studies = sorted(tapwater_test_df["study_group"].unique().tolist())
-    study_overlap = sorted(set(train_studies).intersection(test_studies))
-    site_overlap = sorted(
-        set(tapwater_train_df["Site Code"]).intersection(
-            tapwater_test_df["Site Code"]
+    _train_studies = sorted(
+        _tapwater_train_df["study_group"].unique().tolist()
+    )
+    _test_studies = sorted(_tapwater_test_df["study_group"].unique().tolist())
+    _study_overlap = sorted(set(_train_studies).intersection(_test_studies))
+    _site_overlap = sorted(
+        set(_tapwater_train_df["Site Code"]).intersection(
+            _tapwater_test_df["Site Code"]
         )
     )
 
-    partition_summary = pd.DataFrame(
+    _partition_summary = pd.DataFrame(
         [
             {
                 "Partition": "Training",
-                "Sites": len(tapwater_train_df),
-                "Study groups": len(train_studies),
-                "Studies": ", ".join(train_studies),
+                "Sites": len(_tapwater_train_df),
+                "Study groups": len(_train_studies),
+                "Studies": ", ".join(_train_studies),
             },
             {
                 "Partition": "Test",
-                "Sites": len(tapwater_test_df),
-                "Study groups": len(test_studies),
-                "Studies": ", ".join(test_studies),
+                "Sites": len(_tapwater_test_df),
+                "Study groups": len(_test_studies),
+                "Studies": ", ".join(_test_studies),
             },
         ]
     )
 
-    partition_class_summary = (
+    _partition_class_summary = (
         pd.concat(
             [
-                tapwater_train_df.assign(Partition="Training"),
-                tapwater_test_df.assign(Partition="Test"),
+                _tapwater_train_df.assign(Partition="Training"),
+                _tapwater_test_df.assign(Partition="Test"),
             ]
         )
         .groupby(["Partition", "pfas_risk_tier"], observed=False)
         .size()
         .unstack(fill_value=0)
-        .reindex(columns=risk_labels, fill_value=0)
+        .reindex(columns=RISK_LABELS, fill_value=0)
         .reset_index()
     )
 
-    leakage_summary = pd.DataFrame(
+    _leakage_summary = pd.DataFrame(
         [
             {
                 "Validation check": (
                     "Study groups appearing in both partitions"
                 ),
-                "Result": len(study_overlap),
-                "Assessment": "Pass" if not study_overlap else "Review",
+                "Result": len(_study_overlap),
+                "Assessment": "Pass" if not _study_overlap else "Review",
             },
             {
                 "Validation check": (
                     "Site identifiers appearing in both partitions"
                 ),
-                "Result": len(site_overlap),
-                "Assessment": "Pass" if not site_overlap else "Review",
+                "Result": len(_site_overlap),
+                "Assessment": "Pass" if not _site_overlap else "Review",
             },
             {
                 "Validation check": "Risk tiers missing from either partition",
-                "Result": int(selected_candidate["missing_class_penalty"]),
+                "Result": int(_selected_candidate["missing_class_penalty"]),
                 "Assessment": (
                     "Pass"
-                    if selected_candidate["missing_class_penalty"] == 0
+                    if _selected_candidate["missing_class_penalty"] == 0
                     else "Review; grouped data could not preserve every tier"
                 ),
             },
@@ -335,8 +343,9 @@ def _(combinations, mo, pd, ss_scored_df):
                 contributing study remain together, preventing
                 study-design and geographic leakage into evaluation.
                 McMahon is provisionally kept outside this split
-                pending Task 3.4 because its groundwater target is not
-                directly comparable to Smalling/Seawolf.
+                because its groundwater target is not directly
+                comparable to Smalling/Seawolf, as the next section
+                covers in more detail.
                 """
             ),
             mo.md(
@@ -353,7 +362,7 @@ def _(combinations, mo, pd, ss_scored_df):
                 * `above_trigger`: `0.5 <= sum_tq_epa < 1.0`
                 * `mcl_exceedance`: `sum_tq_epa >= 1.0`
 
-                `{study_group_column}` is used as the canonical
+                `{_study_group_column}` is used as the canonical
                 grouping field because
                 Smalling provides the measured PFAS outcome. The
                 corresponding Seawolf
@@ -365,7 +374,7 @@ def _(combinations, mo, pd, ss_scored_df):
                 """
             ),
             mo.md("#### Current tap-water risk tiers by study"),
-            mo.ui.table(study_risk_profile),
+            mo.ui.table(_study_risk_profile),
             mo.md(
                 """
                 #### Holdout-selection rules
@@ -387,11 +396,11 @@ def _(combinations, mo, pd, ss_scored_df):
                 feature selection, and hyperparameter tuning.
                 """
             ),
-            mo.ui.table(partition_summary),
+            mo.ui.table(_partition_summary),
             mo.md("#### Risk-tier counts by partition"),
-            mo.ui.table(partition_class_summary),
+            mo.ui.table(_partition_class_summary),
             mo.md("#### Leakage validation"),
-            mo.ui.table(leakage_summary),
+            mo.ui.table(_leakage_summary),
             mo.md(
                 r"""
                 #### Model optimization inside the training partition
@@ -440,10 +449,9 @@ def _(combinations, mo, pd, ss_scored_df):
                 different non-detect convention. Under the current
                 construction its
                 target distribution is therefore not on the same footing as
-                Smalling/Seawolf. Task 3.4 will decide whether it
-                should support a
-                separate groundwater model or serve as a qualified external
-                evaluation slice.
+                Smalling/Seawolf. Whether it should support a
+                separate groundwater model or serve as a qualified
+                external evaluation slice is taken up next.
                 """
             ),
         ]
@@ -483,23 +491,17 @@ def _(mo, task_callout):
 
 
 @app.cell
-def _(mc_scored_df, pd, ss_scored_df):
-    _risk_labels = [
-        "within_reduced_monitoring",
-        "above_trigger",
-        "mcl_exceedance",
-    ]
-
+def _(RISK_LABELS, mc_scored_df, pd, ss_scored_df):
     def _tier_distribution(scored_df):
         tiers = pd.cut(
             scored_df["sum_tq_epa"],
             bins=[float("-inf"), 0.5, 1.0, float("inf")],
-            labels=_risk_labels,
+            labels=RISK_LABELS,
             right=False,
             ordered=True,
         )
         return tiers.value_counts(normalize=True).reindex(
-            _risk_labels, fill_value=0.0
+            RISK_LABELS, fill_value=0.0
         )
 
     groundwater_comparison_df = pd.DataFrame(
