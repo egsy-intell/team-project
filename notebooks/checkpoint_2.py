@@ -209,8 +209,6 @@ def _(combinations, mo, pd, ss_scored_df):
             )
             train_part = tapwater_split_df.loc[~test_mask]
             test_part = tapwater_split_df.loc[test_mask]
-            if train_part.empty or test_part.empty:
-                continue
 
             train_classes = set(train_part["pfas_risk_tier"].dropna())
             test_classes = set(test_part["pfas_risk_tier"].dropna())
