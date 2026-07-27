@@ -14,7 +14,10 @@ app = marimo.App(width="medium")
 
 @app.cell(hide_code=True)
 def _():
+    from itertools import combinations
+
     import marimo as mo
+    import pandas as pd
 
     # When this notebook is opened from a local checkout, checkpoint_1.py
     # sits right next to it. When marimo downloads it standalone from a URL
@@ -38,7 +41,7 @@ def _():
         _sys.path.insert(0, _tmp_dir)
 
         from checkpoint_1 import app as checkpoint_1_app
-    return checkpoint_1_app, mo
+    return checkpoint_1_app, combinations, mo, pd
 
 
 @app.cell(hide_code=True)
@@ -140,11 +143,7 @@ def _(mo, task_callout):
 
 
 @app.cell(hide_code=True)
-def _(mo, ss_scored_df, task_callout):
-    from itertools import combinations
-
-    import pandas as pd
-
+def _(combinations, mo, pd, ss_scored_df):
     risk_labels = [
         "within_reduced_monitoring",
         "above_trigger",
@@ -333,20 +332,19 @@ def _(mo, ss_scored_df, task_callout):
 
     mo.vstack(
         [
-            mo.md("### Split strategy - group by study"),
-            task_callout(
-                "3.3",
-                category="Step 3 - Evaluation Plan",
-                lead="Raj",
-                summary=(
-                    "Use the completed `ss_scored_df` target to create a "
-                    "study-grouped train/test split for the tap-water model. "
-                    "All sites from a contributing study remain together, "
-                    "preventing study-design and geographic leakage. McMahon "
-                    "is provisionally kept outside this split pending Task "
-                    "3.4 because its groundwater target is not directly "
-                    "comparable to Smalling/Seawolf."
-                ),
+            mo.md(
+                """
+                ### Split strategy - group by study
+
+                The train/test split for the tap-water model groups by
+                study rather than shuffling individual rows, using the
+                completed `ss_scored_df` target. All sites from a
+                contributing study remain together, preventing
+                study-design and geographic leakage into evaluation.
+                McMahon is provisionally kept outside this split
+                pending Task 3.4 because its groundwater target is not
+                directly comparable to Smalling/Seawolf.
+                """
             ),
             mo.md(
                 f"""
