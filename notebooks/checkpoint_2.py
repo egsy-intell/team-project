@@ -153,7 +153,29 @@ def _():
 
 
 @app.cell(hide_code=True)
-def _(RISK_LABELS, combinations, mo, pd, ss_scored_df):
+def _():
+    RISK_TIER_BINS = [float("-inf"), 0.5, 1.0, float("inf")]
+    return (RISK_TIER_BINS,)
+
+
+@app.cell(hide_code=True)
+def _(RISK_LABELS, RISK_TIER_BINS, pd):
+    def classify_pfas_risk_tier(sum_tq_epa):
+        return pd.cut(
+            sum_tq_epa,
+            bins=RISK_TIER_BINS,
+            labels=RISK_LABELS,
+            right=False,
+            ordered=True,
+        )
+
+    return (classify_pfas_risk_tier,)
+
+
+@app.cell(hide_code=True)
+def _(
+    RISK_LABELS, classify_pfas_risk_tier, combinations, mo, pd, ss_scored_df
+):
     # Smalling provides the measured outcome, so Study_smalling is the
     # canonical grouping field. The matched Seawolf predictor row follows the
     # same site into whichever partition that Smalling study is assigned to.
@@ -164,12 +186,8 @@ def _(RISK_LABELS, combinations, mo, pd, ss_scored_df):
     )
 
     _tapwater_split_df = ss_scored_df.copy()
-    _tapwater_split_df["pfas_risk_tier"] = pd.cut(
-        _tapwater_split_df["sum_tq_epa"],
-        bins=[float("-inf"), 0.5, 1.0, float("inf")],
-        labels=RISK_LABELS,
-        right=False,
-        ordered=True,
+    _tapwater_split_df["pfas_risk_tier"] = classify_pfas_risk_tier(
+        _tapwater_split_df["sum_tq_epa"]
     )
     _tapwater_split_df["study_group"] = (
         _tapwater_split_df[_study_group_column].astype("string").str.strip()
@@ -491,15 +509,9 @@ def _(mo, task_callout):
 
 
 @app.cell
-def _(RISK_LABELS, mc_scored_df, pd, ss_scored_df):
+def _(RISK_LABELS, classify_pfas_risk_tier, mc_scored_df, pd, ss_scored_df):
     def _tier_distribution(scored_df):
-        tiers = pd.cut(
-            scored_df["sum_tq_epa"],
-            bins=[float("-inf"), 0.5, 1.0, float("inf")],
-            labels=RISK_LABELS,
-            right=False,
-            ordered=True,
-        )
+        tiers = classify_pfas_risk_tier(scored_df["sum_tq_epa"])
         return tiers.value_counts(normalize=True).reindex(
             RISK_LABELS, fill_value=0.0
         )
