@@ -74,10 +74,10 @@ def _(mo):
 
 @app.cell(hide_code=True)
 async def _(data_dictionary_app):
-    data_dictionary_result = await data_dictionary_app.embed()
-    all_compound_dict_df = data_dictionary_result.defs["all_compound_dict_df"]
-    mcmahon_env_df = data_dictionary_result.defs["mcmahon_env_df"]
-    seawolf_dict_df = data_dictionary_result.defs["seawolf_dict_df"]
+    _data_dictionary_result = await data_dictionary_app.embed()
+    all_compound_dict_df = _data_dictionary_result.defs["all_compound_dict_df"]
+    mcmahon_env_df = _data_dictionary_result.defs["mcmahon_env_df"]
+    seawolf_dict_df = _data_dictionary_result.defs["seawolf_dict_df"]
     return all_compound_dict_df, mcmahon_env_df, seawolf_dict_df
 
 
@@ -281,16 +281,16 @@ def _(mo):
 
 @app.cell(hide_code=True)
 def _(all_compound_dict_df, mo, pd):
-    from pathlib import Path
+    from pathlib import Path as _Path
 
-    notebook_dir = mo.notebook_dir()
-    if notebook_dir is None:
+    _notebook_dir = mo.notebook_dir()
+    if _notebook_dir is None:
         raise RuntimeError(
             "Could not determine notebook directory. Save/open the notebook "
             "from disk."
         )
 
-    data_dir = Path(notebook_dir).resolve().parent / "data" / "usgs"
+    data_dir = _Path(_notebook_dir).resolve().parent / "data" / "usgs"
 
     if not data_dir.exists():
         # Notebook was opened standalone (e.g. `uvx marimo edit --sandbox
@@ -299,7 +299,7 @@ def _(all_compound_dict_df, mo, pd):
         import tempfile as _tempfile
         import urllib.request as _urllib_request
 
-        data_dir = Path(_tempfile.gettempdir()) / "egsy-pfas-data" / "usgs"
+        data_dir = _Path(_tempfile.gettempdir()) / "egsy-pfas-data" / "usgs"
         _RAW_BASE = "https://raw.githubusercontent.com/egsy-intell/team-project/main/data/usgs"
         _files = [
             "smalling/PFAS_ENV.csv",
@@ -315,10 +315,10 @@ def _(all_compound_dict_df, mo, pd):
             _urllib_request.urlretrieve(f"{_RAW_BASE}/{_rel}", _dest)
 
     # First line of this file is a table caption, not a header row.
-    smalling_df = pd.read_csv(
+    _smalling_df = pd.read_csv(
         data_dir / "smalling" / "PFAS_ENV.csv", skiprows=1
     )
-    seawolf_df = pd.read_csv(
+    _seawolf_df = pd.read_csv(
         data_dir / "seawolf" / "PFAS_DataSummaries_5k_50k_SummaryData.csv"
     )
 
@@ -326,7 +326,9 @@ def _(all_compound_dict_df, mo, pd):
     # space); normalize to "HFPO-DA;GenX" so it matches all_compound_dict_df
     # and the TQ benchmark table (pfas_tq_benchmarks_epa_aligned.csv)
     # everywhere downstream.
-    smalling_df = smalling_df.rename(columns={"HFPO-DA; GenX": "HFPO-DA;GenX"})
+    _smalling_df = _smalling_df.rename(
+        columns={"HFPO-DA; GenX": "HFPO-DA;GenX"}
+    )
 
     # Individual PFAS compound columns mix numeric concentrations (ng/L) with
     # two non-numeric sentinels: "nd" (tested, not detected above the lab
@@ -337,25 +339,25 @@ def _(all_compound_dict_df, mo, pd):
         all_compound_dict_df["smalling"], "compound"
     ].tolist()
 
-    smalling_clean = smalling_df.copy()
-    smalling_clean[pfas_cols] = smalling_clean[pfas_cols].replace("nd", 0)
-    smalling_clean[pfas_cols] = smalling_clean[pfas_cols].apply(
+    _smalling_clean = _smalling_df.copy()
+    _smalling_clean[pfas_cols] = _smalling_clean[pfas_cols].replace("nd", 0)
+    _smalling_clean[pfas_cols] = _smalling_clean[pfas_cols].apply(
         pd.to_numeric, errors="coerce"
     )
 
     # Last column in smallings is empty
-    smalling_clean = smalling_clean.drop(columns=smalling_clean.columns[-1])
+    _smalling_clean = _smalling_clean.drop(columns=_smalling_clean.columns[-1])
 
     # ∑EAR uses "-" for "not analyzed" rather than NaN.
-    smalling_clean["∑EAR"] = pd.to_numeric(
-        smalling_clean["∑EAR"], errors="coerce"
+    _smalling_clean["∑EAR"] = pd.to_numeric(
+        _smalling_clean["∑EAR"], errors="coerce"
     )
 
     # Final step: left merge to preserve unmatched rows
-    ss_merged_df = smalling_clean.merge(
-        right=seawolf_df,
-        left_on=smalling_clean["Site Code"].str.strip(),
-        right_on=seawolf_df["SiteCode"].str.strip(),
+    ss_merged_df = _smalling_clean.merge(
+        right=_seawolf_df,
+        left_on=_smalling_clean["Site Code"].str.strip(),
+        right_on=_seawolf_df["SiteCode"].str.strip(),
         how="left",
         suffixes=("_smalling", "_seawolf"),
         indicator=True,
@@ -387,34 +389,36 @@ def _(all_compound_dict_df, data_dir, mcmahon_env_df, np, pd):
         all_compound_dict_df["mcmahon"], "compound"
     ].tolist()
 
-    mcmahon_env_clean = mcmahon_env_df.copy()
+    _mcmahon_env_clean = mcmahon_env_df.copy()
 
-    for c in pfas_codes:
-        rmk = mcmahon_env_clean[f"{c}-RMK"].fillna("").str.strip()
-        va = mcmahon_env_clean[f"{c}-VA"]
+    for _c in pfas_codes:
+        _rmk = _mcmahon_env_clean[f"{_c}-RMK"].fillna("").str.strip()
+        _va = _mcmahon_env_clean[f"{_c}-VA"]
 
         # <: non-detect, use half the reporting limit as the estimate
         # n: trace detection, keep value as-is but flag low confidence
         # blank: confident detection, keep value as-is
-        mcmahon_env_clean[f"{c}-VA_clean"] = np.where(rmk == "<", va / 2, va)
-        mcmahon_env_clean[f"{c}-estimated"] = rmk == "n"
+        _mcmahon_env_clean[f"{_c}-VA_clean"] = np.where(
+            _rmk == "<", _va / 2, _va
+        )
+        _mcmahon_env_clean[f"{_c}-estimated"] = _rmk == "n"
 
     # Drop raw remark/value columns now that -VA_clean and -estimated
     # capture the same information in usable form.
-    raw_cols = [
-        c for c in mcmahon_env_clean.columns if c.endswith(("-RMK", "-VA"))
+    _raw_cols = [
+        c for c in _mcmahon_env_clean.columns if c.endswith(("-RMK", "-VA"))
     ]
-    mcmahon_env_clean = mcmahon_env_clean.drop(columns=raw_cols)
+    _mcmahon_env_clean = _mcmahon_env_clean.drop(columns=_raw_cols)
 
-    mcmahon_geo_df = pd.read_csv(
+    _mcmahon_geo_df = pd.read_csv(
         data_dir / "mcmahon" / "PFAS_GEOSPATIAL.csv",
         thousands=",",
     )
 
-    mc_merged_df = mcmahon_env_clean.merge(
-        right=mcmahon_geo_df,
-        left_on=mcmahon_env_clean["NAWQA_ID"].str.strip(),
-        right_on=mcmahon_geo_df["NAWQA_ID"].str.strip(),
+    mc_merged_df = _mcmahon_env_clean.merge(
+        right=_mcmahon_geo_df,
+        left_on=_mcmahon_env_clean["NAWQA_ID"].str.strip(),
+        right_on=_mcmahon_geo_df["NAWQA_ID"].str.strip(),
         how="left",
         suffixes=("_mc_env", "_mc_geo"),
         indicator=True,
@@ -435,16 +439,16 @@ def _(mo):
 
 @app.cell(hide_code=True)
 def _(mc_merged_df, mo, ss_merged_df):
-    ss_unmatched_df = ss_merged_df[ss_merged_df["_merge"] == "left_only"]
-    ss_unmatched_count = ss_unmatched_df.shape[0]
+    _ss_unmatched_df = ss_merged_df[ss_merged_df["_merge"] == "left_only"]
+    ss_unmatched_count = _ss_unmatched_df.shape[0]
 
-    mac_unmatched_df = mc_merged_df[mc_merged_df["_merge"] == "left_only"]
-    mac_unmatched_count = mac_unmatched_df.shape[0]
+    _mac_unmatched_df = mc_merged_df[mc_merged_df["_merge"] == "left_only"]
+    mac_unmatched_count = _mac_unmatched_df.shape[0]
 
     mo.md(f"""
     After joining the features and the PFAS concentration sets we get minimal
     data loss. The only concentration measurement without landscape attributes
-    is `{ss_unmatched_df.iloc[0, 0]}`.
+    is `{_ss_unmatched_df.iloc[0, 0]}`.
     It will be dropped.
     """)
     return mac_unmatched_count, ss_unmatched_count
@@ -460,7 +464,7 @@ def _(
     ss_merged_df,
     ss_unmatched_count,
 ):
-    integration_feasibility_summary = pd.DataFrame(
+    _integration_feasibility_summary = pd.DataFrame(
         [
             {
                 "Datasets": (
@@ -497,7 +501,7 @@ def _(
         ]
     )
 
-    integration_identifier_samples = pd.DataFrame(
+    _integration_identifier_samples = pd.DataFrame(
         {
             "Smalling Site Code sample": (
                 ss_merged_df["Site Code"]
@@ -532,11 +536,11 @@ def _(
 
     mo.vstack(
         [
-            mo.ui.table(integration_feasibility_summary),
+            mo.ui.table(_integration_feasibility_summary),
             print_sections(
                 {
                     "Sample identifiers for consistency review": mo.ui.table(
-                        integration_identifier_samples
+                        _integration_identifier_samples
                     ),
                 }
             ),
@@ -562,7 +566,7 @@ def _(mo):
 
 @app.cell(hide_code=True)
 def _(mc_merged_df, print_sections, ss_merged_clean_df):
-    def get_nan_counts(df, remove_non_matching=True):
+    def _get_nan_counts(df, remove_non_matching=True):
         nan_counts = df.isna().sum()
         nan_table = (
             nan_counts.reset_index()
@@ -584,8 +588,8 @@ def _(mc_merged_df, print_sections, ss_merged_clean_df):
 
     print_sections(
         {
-            "Seawolf/Smalling": get_nan_counts(ss_merged_clean_df),
-            "McMahon": get_nan_counts(mc_merged_df),
+            "Seawolf/Smalling": _get_nan_counts(ss_merged_clean_df),
+            "McMahon": _get_nan_counts(mc_merged_df),
         }
     )
     return
@@ -621,7 +625,7 @@ def _(mc_merged_df, seawolf_dict_df, ss_merged_clean_df):
 
     # NaN in these columns means "nothing detected in the buffer," so 0 is the
     # correct fill: each has a natural zero (no facilities, no area burned).
-    seawolf_structural_zero_columns = [
+    _seawolf_structural_zero_columns = [
         "number_pfas_sites_proximal",
         "Burn_Area_5k_frac",
         "Burn_area_50k_frac",
@@ -630,20 +634,20 @@ def _(mc_merged_df, seawolf_dict_df, ss_merged_clean_df):
     ]
 
     ss_clean_df = ss_merged_clean_df.copy()
-    ss_clean_df[seawolf_structural_zero_columns] = ss_clean_df[
-        seawolf_structural_zero_columns
+    ss_clean_df[_seawolf_structural_zero_columns] = ss_clean_df[
+        _seawolf_structural_zero_columns
     ].fillna(0)
 
     # mean_dist_to_pfas_site has no natural zero (undefined without a
     # facility), so fill with the attribute's rdommax (~5km) instead: that's
     # the buffer radius the field is computed over, i.e. "no facility within
     # 5km" -> "at least ~5km away."
-    mean_dist_rdom_max = seawolf_dict_df.set_index("attribute").loc[
+    _mean_dist_rdom_max = seawolf_dict_df.set_index("attribute").loc[
         "mean_dist_to_pfas_site", "rdom_max"
     ]
     ss_clean_df["mean_dist_to_pfas_site"] = ss_clean_df[
         "mean_dist_to_pfas_site"
-    ].fillna(mean_dist_rdom_max)
+    ].fillna(_mean_dist_rdom_max)
     return mc_clean_df, ss_clean_df
 
 
@@ -672,7 +676,7 @@ def _(mo):
 
 @app.cell(hide_code=True)
 def _(mc_clean_df, mo, np, pd, ss_clean_df):
-    def make_numeric_summary_table(df, dataset_name):
+    def _make_numeric_summary_table(df, dataset_name):
         numeric_df = df.select_dtypes(include="number")
         if numeric_df.empty:
             return pd.DataFrame(
@@ -708,10 +712,10 @@ def _(mc_clean_df, mo, np, pd, ss_clean_df):
         summary.insert(0, "Dataset", dataset_name)
         return summary.round(3)
 
-    combined_summary = pd.concat(
+    _combined_summary = pd.concat(
         [
-            make_numeric_summary_table(ss_clean_df, "Smalling + Seawolf"),
-            make_numeric_summary_table(mc_clean_df, "McMahon"),
+            _make_numeric_summary_table(ss_clean_df, "Smalling + Seawolf"),
+            _make_numeric_summary_table(mc_clean_df, "McMahon"),
         ],
         ignore_index=True,
     )
@@ -719,7 +723,7 @@ def _(mc_clean_df, mo, np, pd, ss_clean_df):
     mo.vstack(
         [
             mo.md("#### Numeric summary statistics for the cleaned datasets"),
-            mo.ui.table(combined_summary),
+            mo.ui.table(_combined_summary),
         ]
     )
     return
@@ -727,7 +731,7 @@ def _(mc_clean_df, mo, np, pd, ss_clean_df):
 
 @app.cell(hide_code=True)
 def _(mc_clean_df, mo, pd, ss_clean_df):
-    def describe_distribution(df, columns, dataset_name):
+    def _describe_distribution(df, columns, dataset_name):
         rows = []
         for col in columns:
             values = pd.to_numeric(df[col], errors="coerce").dropna()
@@ -766,7 +770,7 @@ def _(mc_clean_df, mo, pd, ss_clean_df):
 
         return pd.DataFrame(rows)
 
-    ss_analysis_columns = [
+    _ss_analysis_columns = [
         "∑PFAS",
         "Count Detected PFAS",
         "∑EAR",
@@ -777,20 +781,22 @@ def _(mc_clean_df, mo, pd, ss_clean_df):
         "Urbn_burn_5k_frac",
         "Urbn_burn_50k_frac",
     ]
-    ss_analysis_columns = [
-        col for col in ss_analysis_columns if col in ss_clean_df.columns
+    _ss_analysis_columns = [
+        col for col in _ss_analysis_columns if col in ss_clean_df.columns
     ]
 
-    mc_analysis_columns = [
+    _mc_analysis_columns = [
         col for col in mc_clean_df.columns if col.endswith("-VA_clean")
     ][:6] + ["AGRI_12", "NATU_12", "URBA_12"]
 
-    distribution_summary = pd.concat(
+    _distribution_summary = pd.concat(
         [
-            describe_distribution(
-                ss_clean_df, ss_analysis_columns, "Smalling + Seawolf"
+            _describe_distribution(
+                ss_clean_df, _ss_analysis_columns, "Smalling + Seawolf"
             ),
-            describe_distribution(mc_clean_df, mc_analysis_columns, "McMahon"),
+            _describe_distribution(
+                mc_clean_df, _mc_analysis_columns, "McMahon"
+            ),
         ],
         ignore_index=True,
     )
@@ -798,7 +804,7 @@ def _(mc_clean_df, mo, pd, ss_clean_df):
     mo.vstack(
         [
             mo.md("#### Skewness and IQR outlier summary"),
-            mo.ui.table(distribution_summary),
+            mo.ui.table(_distribution_summary),
         ]
     )
     return
@@ -806,7 +812,7 @@ def _(mc_clean_df, mo, pd, ss_clean_df):
 
 @app.cell(hide_code=True)
 def _():
-    import matplotlib.pyplot as plt
+    import matplotlib.pyplot as _plt
 
     def make_plot_grid(df, columns, title, kind):
         # A compact 3x3 grid of small multiples (one subplot per
@@ -815,7 +821,7 @@ def _():
         n_vars = max(1, len(columns))
         grid_cols = min(3, n_vars)
         grid_rows = -(-n_vars // grid_cols)
-        fig, axes = plt.subplots(
+        fig, axes = _plt.subplots(
             grid_rows,
             grid_cols,
             figsize=(3.2 * grid_cols, 2.6 * grid_rows),
@@ -851,7 +857,7 @@ def _():
 
 @app.cell(hide_code=True)
 def _(make_plot_grid, mo, ss_clean_df):
-    ss_viz_columns = [
+    _ss_viz_columns = [
         "∑PFAS",
         "Count Detected PFAS",
         "∑EAR",
@@ -862,8 +868,8 @@ def _(make_plot_grid, mo, ss_clean_df):
         "Urbn_burn_5k_frac",
         "Urbn_burn_50k_frac",
     ]
-    ss_viz_columns = [
-        col for col in ss_viz_columns if col in ss_clean_df.columns
+    _ss_viz_columns = [
+        col for col in _ss_viz_columns if col in ss_clean_df.columns
     ]
 
     mo.vstack(
@@ -871,14 +877,14 @@ def _(make_plot_grid, mo, ss_clean_df):
             mo.md("#### Exploratory plots for Smalling + Seawolf\n\n"),
             make_plot_grid(
                 ss_clean_df,
-                ss_viz_columns,
+                _ss_viz_columns,
                 "Smalling + Seawolf: box plots",
                 kind="box",
             ),
             mo.md(""),
             make_plot_grid(
                 ss_clean_df,
-                ss_viz_columns,
+                _ss_viz_columns,
                 "Smalling + Seawolf: histograms",
                 kind="hist",
             ),
@@ -889,7 +895,7 @@ def _(make_plot_grid, mo, ss_clean_df):
 
 @app.cell(hide_code=True)
 def _(make_plot_grid, mc_clean_df, mo):
-    mc_viz_columns = [
+    _mc_viz_columns = [
         col for col in mc_clean_df.columns if col.endswith("-VA_clean")
     ][:6] + ["AGRI_12", "NATU_12", "URBA_12"]
 
@@ -897,12 +903,12 @@ def _(make_plot_grid, mc_clean_df, mo):
         [
             mo.md("#### Exploratory plots for McMahon\n\n"),
             make_plot_grid(
-                mc_clean_df, mc_viz_columns, "McMahon: box plots", kind="box"
+                mc_clean_df, _mc_viz_columns, "McMahon: box plots", kind="box"
             ),
             mo.md(""),
             make_plot_grid(
                 mc_clean_df,
-                mc_viz_columns,
+                _mc_viz_columns,
                 "McMahon: histograms",
                 kind="hist",
             ),
@@ -923,10 +929,10 @@ def _(mo):
 
 @app.cell(hide_code=True)
 def _(mo, pd, pfas_cols, ss_clean_df):
-    smalling_quality_total_pfas = ss_clean_df["∑PFAS"]
-    smalling_quality_detected_count = ss_clean_df["Count Detected PFAS"]
+    _smalling_quality_total_pfas = ss_clean_df["∑PFAS"]
+    _smalling_quality_detected_count = ss_clean_df["Count Detected PFAS"]
 
-    smalling_exploration_summary = pd.DataFrame(
+    _smalling_exploration_summary = pd.DataFrame(
         [
             {
                 "Measure": "Dataset shape (`ss_clean_df`)",
@@ -958,19 +964,19 @@ def _(mo, pd, pfas_cols, ss_clean_df):
             {
                 "Measure": "Cumulative PFAS range (ng/L)",
                 "Result": (
-                    f"{smalling_quality_total_pfas.min():.3f} to "
-                    f"{smalling_quality_total_pfas.max():.3f}"
+                    f"{_smalling_quality_total_pfas.min():.3f} to "
+                    f"{_smalling_quality_total_pfas.max():.3f}"
                 ),
             },
             {
                 "Measure": "Median cumulative PFAS (ng/L)",
-                "Result": f"{smalling_quality_total_pfas.median():.3f}",
+                "Result": f"{_smalling_quality_total_pfas.median():.3f}",
             },
             {
                 "Measure": "Detected compounds per site",
                 "Result": (
-                    f"{smalling_quality_detected_count.min():.0f} to "
-                    f"{smalling_quality_detected_count.max():.0f}"
+                    f"{_smalling_quality_detected_count.min():.0f} to "
+                    f"{_smalling_quality_detected_count.max():.0f}"
                 ),
             },
         ]
@@ -978,7 +984,7 @@ def _(mo, pd, pfas_cols, ss_clean_df):
 
     mo.vstack(
         [
-            mo.ui.table(smalling_exploration_summary),
+            mo.ui.table(_smalling_exploration_summary),
             mo.md(f"""
         The Smalling portion of `ss_clean_df` contains measured PFAS results
         for **{len(ss_clean_df)} sampling sites**. Cumulative PFAS
@@ -1004,23 +1010,23 @@ def _(mo):
 
 @app.cell(hide_code=True)
 def _(mo, pd, pfas_cols, print_sections, ss_clean_df):
-    smalling_assessment_numeric_pfas = ss_clean_df[pfas_cols]
-    smalling_assessment_published_count = ss_clean_df["Count Detected PFAS"]
-    smalling_assessment_published_total = ss_clean_df["∑PFAS"]
-    smalling_assessment_calculated_count = smalling_assessment_numeric_pfas.gt(
-        0
-    ).sum(axis=1)
-    smalling_assessment_calculated_total = (
-        smalling_assessment_numeric_pfas.fillna(0).sum(axis=1)
+    _smalling_assessment_numeric_pfas = ss_clean_df[pfas_cols]
+    _smalling_assessment_published_count = ss_clean_df["Count Detected PFAS"]
+    _smalling_assessment_published_total = ss_clean_df["∑PFAS"]
+    _smalling_assessment_calculated_count = (
+        _smalling_assessment_numeric_pfas.gt(0).sum(axis=1)
+    )
+    _smalling_assessment_calculated_total = (
+        _smalling_assessment_numeric_pfas.fillna(0).sum(axis=1)
     )
 
-    smalling_assessment_columns = (
+    _smalling_assessment_columns = (
         ["Site Code", "State", "Site Type"]
         + pfas_cols
         + ["Count Detected PFAS", "∑PFAS", "∑EAR"]
     )
-    smalling_missing_summary = (
-        ss_clean_df[smalling_assessment_columns]
+    _smalling_missing_summary = (
+        ss_clean_df[_smalling_assessment_columns]
         .isna()
         .sum()
         .sort_values(ascending=False)
@@ -1029,11 +1035,11 @@ def _(mo, pd, pfas_cols, print_sections, ss_clean_df):
         .rename_axis("Column")
         .reset_index()
     )
-    smalling_missing_summary["Missing (%)"] = (
-        100 * smalling_missing_summary["Missing values"] / len(ss_clean_df)
+    _smalling_missing_summary["Missing (%)"] = (
+        100 * _smalling_missing_summary["Missing values"] / len(ss_clean_df)
     ).round(1)
 
-    smalling_quality_checks = pd.DataFrame(
+    _smalling_quality_checks = pd.DataFrame(
         [
             {
                 "Quality check": "Missing site identifiers",
@@ -1051,7 +1057,7 @@ def _(mo, pd, pfas_cols, print_sections, ss_clean_df):
                     "ss_merged_df)"
                 ),
                 "Result": int(
-                    smalling_assessment_numeric_pfas.eq(0).sum().sum()
+                    _smalling_assessment_numeric_pfas.eq(0).sum().sum()
                 ),
                 "Assessment": (
                     "Expected; 'nd' was converted to 0 upstream and is no "
@@ -1061,7 +1067,7 @@ def _(mo, pd, pfas_cols, print_sections, ss_clean_df):
             {
                 "Quality check": "Compound results not analyzed or missing",
                 "Result": int(
-                    smalling_assessment_numeric_pfas.isna().sum().sum()
+                    _smalling_assessment_numeric_pfas.isna().sum().sum()
                 ),
                 "Assessment": (
                     "Review; retain as missing rather than treating as "
@@ -1070,7 +1076,9 @@ def _(mo, pd, pfas_cols, print_sections, ss_clean_df):
             },
             {
                 "Quality check": "Rows with zero detected PFAS",
-                "Result": int(smalling_assessment_published_count.eq(0).sum()),
+                "Result": int(
+                    _smalling_assessment_published_count.eq(0).sum()
+                ),
                 "Assessment": (
                     "Review; this table alone does not represent the "
                     "proposed Low class"
@@ -1081,8 +1089,8 @@ def _(mo, pd, pfas_cols, print_sections, ss_clean_df):
                     "Published count differs from simple recalculation"
                 ),
                 "Result": int(
-                    smalling_assessment_calculated_count.ne(
-                        smalling_assessment_published_count
+                    _smalling_assessment_calculated_count.ne(
+                        _smalling_assessment_published_count
                     ).sum()
                 ),
                 "Assessment": (
@@ -1095,8 +1103,8 @@ def _(mo, pd, pfas_cols, print_sections, ss_clean_df):
                     "Published total differs by more than 0.1 ng/L"
                 ),
                 "Result": int(
-                    smalling_assessment_calculated_total.sub(
-                        smalling_assessment_published_total
+                    _smalling_assessment_calculated_total.sub(
+                        _smalling_assessment_published_total
                     )
                     .abs()
                     .gt(0.1)
@@ -1106,7 +1114,9 @@ def _(mo, pd, pfas_cols, print_sections, ss_clean_df):
             },
             {
                 "Quality check": "Negative cumulative PFAS values",
-                "Result": int(smalling_assessment_published_total.lt(0).sum()),
+                "Result": int(
+                    _smalling_assessment_published_total.lt(0).sum()
+                ),
                 "Assessment": "Pass",
             },
         ]
@@ -1114,11 +1124,11 @@ def _(mo, pd, pfas_cols, print_sections, ss_clean_df):
 
     mo.vstack(
         [
-            mo.ui.table(smalling_quality_checks),
+            mo.ui.table(_smalling_quality_checks),
             print_sections(
                 {
                     "Columns with the most missing values": mo.ui.table(
-                        smalling_missing_summary
+                        _smalling_missing_summary
                     ),
                 }
             ),
@@ -1147,7 +1157,7 @@ def _(mo):
 
 @app.cell(hide_code=True)
 def _(mo, pd, print_sections, ss_clean_df):
-    seawolf_quality_landcover_columns = [
+    _seawolf_quality_landcover_columns = [
         "OpenWater",
         "PerennialIceSnow",
         "DevelopedOpenSpace",
@@ -1168,19 +1178,19 @@ def _(mo, pd, print_sections, ss_clean_df):
         "WoodyWetlands",
         "EmergentHerbaceousWetlands",
     ]
-    seawolf_quality_predictor_columns = [
+    _seawolf_quality_predictor_columns = [
         "number_pfas_sites_proximal",
         "mean_dist_to_pfas_site",
         "Burn_Area_5k_frac",
         "Burn_area_50k_frac",
         "Urbn_burn_5k_frac",
         "Urbn_burn_50k_frac",
-    ] + seawolf_quality_landcover_columns
-    seawolf_quality_landcover_total = ss_clean_df[
-        seawolf_quality_landcover_columns
+    ] + _seawolf_quality_landcover_columns
+    _seawolf_quality_landcover_total = ss_clean_df[
+        _seawolf_quality_landcover_columns
     ].sum(axis=1)
 
-    seawolf_exploration_summary = pd.DataFrame(
+    _seawolf_exploration_summary = pd.DataFrame(
         [
             {
                 "Measure": "Dataset shape (`ss_clean_df`)",
@@ -1199,7 +1209,7 @@ def _(mo, pd, print_sections, ss_clean_df):
             },
             {
                 "Measure": "Landscape predictor columns",
-                "Result": len(seawolf_quality_predictor_columns),
+                "Result": len(_seawolf_quality_predictor_columns),
             },
             {
                 "Measure": "Sites with a recorded proximal-facility count",
@@ -1209,19 +1219,19 @@ def _(mo, pd, print_sections, ss_clean_df):
             },
             {
                 "Measure": "Mean land-cover fraction sum",
-                "Result": f"{seawolf_quality_landcover_total.mean():.3f}",
+                "Result": f"{_seawolf_quality_landcover_total.mean():.3f}",
             },
             {
                 "Measure": "Land-cover fraction-sum range",
                 "Result": (
-                    f"{seawolf_quality_landcover_total.min():.3f} to "
-                    f"{seawolf_quality_landcover_total.max():.3f}"
+                    f"{_seawolf_quality_landcover_total.min():.3f} to "
+                    f"{_seawolf_quality_landcover_total.max():.3f}"
                 ),
             },
         ]
     )
 
-    seawolf_study_summary = (
+    _seawolf_study_summary = (
         ss_clean_df["Study_seawolf"]
         .value_counts()
         .rename_axis("Study")
@@ -1230,11 +1240,11 @@ def _(mo, pd, print_sections, ss_clean_df):
 
     mo.vstack(
         [
-            mo.ui.table(seawolf_exploration_summary),
+            mo.ui.table(_seawolf_exploration_summary),
             print_sections(
                 {
                     "Sites by contributing study": mo.ui.table(
-                        seawolf_study_summary
+                        _seawolf_study_summary
                     ),
                 }
             ),
@@ -1262,7 +1272,7 @@ def _(mo):
 
 @app.cell(hide_code=True)
 def _(mo, pd, print_sections, ss_clean_df):
-    seawolf_assessment_landcover_columns = [
+    _seawolf_assessment_landcover_columns = [
         "OpenWater",
         "PerennialIceSnow",
         "DevelopedOpenSpace",
@@ -1283,33 +1293,33 @@ def _(mo, pd, print_sections, ss_clean_df):
         "WoodyWetlands",
         "EmergentHerbaceousWetlands",
     ]
-    seawolf_assessment_fraction_columns = [
+    _seawolf_assessment_fraction_columns = [
         "Burn_Area_5k_frac",
         "Burn_area_50k_frac",
         "Urbn_burn_5k_frac",
         "Urbn_burn_50k_frac",
-    ] + seawolf_assessment_landcover_columns
+    ] + _seawolf_assessment_landcover_columns
 
-    seawolf_assessment_landcover_total = ss_clean_df[
-        seawolf_assessment_landcover_columns
+    _seawolf_assessment_landcover_total = ss_clean_df[
+        _seawolf_assessment_landcover_columns
     ].sum(axis=1)
-    seawolf_assessment_invalid_fraction_count = int(
+    _seawolf_assessment_invalid_fraction_count = int(
         (
-            ss_clean_df[seawolf_assessment_fraction_columns].lt(0)
-            | ss_clean_df[seawolf_assessment_fraction_columns].gt(1)
+            ss_clean_df[_seawolf_assessment_fraction_columns].lt(0)
+            | ss_clean_df[_seawolf_assessment_fraction_columns].gt(1)
         )
         .sum()
         .sum()
     )
 
-    seawolf_assessment_columns = [
+    _seawolf_assessment_columns = [
         "SiteCode",
         "Study_seawolf",
         "number_pfas_sites_proximal",
         "mean_dist_to_pfas_site",
-    ] + seawolf_assessment_fraction_columns
-    seawolf_missing_summary = (
-        ss_clean_df[seawolf_assessment_columns]
+    ] + _seawolf_assessment_fraction_columns
+    _seawolf_missing_summary = (
+        ss_clean_df[_seawolf_assessment_columns]
         .isna()
         .sum()
         .sort_values(ascending=False)
@@ -1318,11 +1328,11 @@ def _(mo, pd, print_sections, ss_clean_df):
         .rename_axis("Column")
         .reset_index()
     )
-    seawolf_missing_summary["Missing (%)"] = (
-        100 * seawolf_missing_summary["Missing values"] / len(ss_clean_df)
+    _seawolf_missing_summary["Missing (%)"] = (
+        100 * _seawolf_missing_summary["Missing values"] / len(ss_clean_df)
     ).round(1)
 
-    seawolf_quality_checks = pd.DataFrame(
+    _seawolf_quality_checks = pd.DataFrame(
         [
             {
                 "Quality check": "Missing site identifiers",
@@ -1341,15 +1351,15 @@ def _(mo, pd, print_sections, ss_clean_df):
             },
             {
                 "Quality check": "Fraction values outside 0-1",
-                "Result": seawolf_assessment_invalid_fraction_count,
+                "Result": _seawolf_assessment_invalid_fraction_count,
                 "Assessment": "Pass"
-                if seawolf_assessment_invalid_fraction_count == 0
+                if _seawolf_assessment_invalid_fraction_count == 0
                 else "Review",
             },
             {
                 "Quality check": "Land-cover totals substantially below 1.0",
                 "Result": int(
-                    seawolf_assessment_landcover_total.lt(0.95).sum()
+                    _seawolf_assessment_landcover_total.lt(0.95).sum()
                 ),
                 "Assessment": (
                     "Review; some locations may have incomplete land-cover "
@@ -1388,11 +1398,11 @@ def _(mo, pd, print_sections, ss_clean_df):
 
     mo.vstack(
         [
-            mo.ui.table(seawolf_quality_checks),
+            mo.ui.table(_seawolf_quality_checks),
             print_sections(
                 {
                     "Columns with the most missing values": mo.ui.table(
-                        seawolf_missing_summary
+                        _seawolf_missing_summary
                     ),
                 }
             ),
@@ -1427,24 +1437,24 @@ def _(mo):
 
 @app.cell(hide_code=True)
 def _(mc_clean_df, mo, pd, print_sections):
-    mcmahon_quality_clean_columns = [
+    _mcmahon_quality_clean_columns = [
         column
         for column in mc_clean_df.columns
         if column.endswith("-VA_clean")
     ]
-    mcmahon_quality_estimated_columns = [
+    _mcmahon_quality_estimated_columns = [
         column
         for column in mc_clean_df.columns
         if column.endswith("-estimated")
     ]
-    mcmahon_quality_total_concentration = mc_clean_df[
-        mcmahon_quality_clean_columns
+    _mcmahon_quality_total_concentration = mc_clean_df[
+        _mcmahon_quality_clean_columns
     ].sum(axis=1, min_count=1)
-    mcmahon_quality_land_use_total = mc_clean_df[
+    _mcmahon_quality_land_use_total = mc_clean_df[
         ["AGRI_12", "NATU_12", "URBA_12"]
     ].sum(axis=1)
 
-    mcmahon_exploration_summary = pd.DataFrame(
+    _mcmahon_exploration_summary = pd.DataFrame(
         [
             {
                 "Measure": "Cleaned dataset shape (`mc_clean_df`)",
@@ -1459,35 +1469,35 @@ def _(mc_clean_df, mo, pd, print_sections):
             },
             {
                 "Measure": "PFAS compounds evaluated",
-                "Result": len(mcmahon_quality_clean_columns),
+                "Result": len(_mcmahon_quality_clean_columns),
             },
             {
                 "Measure": "Estimated or trace-result flags",
                 "Result": int(
-                    mc_clean_df[mcmahon_quality_estimated_columns].sum().sum()
+                    mc_clean_df[_mcmahon_quality_estimated_columns].sum().sum()
                 ),
             },
             {
                 "Measure": "Cleaned concentration-total range (ng/L)",
                 "Result": (
-                    f"{mcmahon_quality_total_concentration.min():.1f} to "
-                    f"{mcmahon_quality_total_concentration.max():.1f}"
+                    f"{_mcmahon_quality_total_concentration.min():.1f} to "
+                    f"{_mcmahon_quality_total_concentration.max():.1f}"
                 ),
             },
             {
                 "Measure": "Median cleaned concentration total (ng/L)",
                 "Result": (
-                    f"{mcmahon_quality_total_concentration.median():.1f}"
+                    f"{_mcmahon_quality_total_concentration.median():.1f}"
                 ),
             },
             {
                 "Measure": "Mean land-use percentage total",
-                "Result": f"{mcmahon_quality_land_use_total.mean():.1f}%",
+                "Result": f"{_mcmahon_quality_land_use_total.mean():.1f}%",
             },
         ]
     )
 
-    mcmahon_land_use_summary = (
+    _mcmahon_land_use_summary = (
         mc_clean_df[["AGRI_12", "NATU_12", "URBA_12"]]
         .describe()
         .T.reset_index(names="Land-use variable")
@@ -1496,11 +1506,11 @@ def _(mc_clean_df, mo, pd, print_sections):
 
     mo.vstack(
         [
-            mo.ui.table(mcmahon_exploration_summary),
+            mo.ui.table(_mcmahon_exploration_summary),
             print_sections(
                 {
                     "Land-use variable summary": mo.ui.table(
-                        mcmahon_land_use_summary
+                        _mcmahon_land_use_summary
                     ),
                 }
             ),
@@ -1526,17 +1536,17 @@ def _(mo):
 
 @app.cell(hide_code=True)
 def _(mc_clean_df, mo, pd, print_sections):
-    mcmahon_assessment_clean_columns = [
+    _mcmahon_assessment_clean_columns = [
         column
         for column in mc_clean_df.columns
         if column.endswith("-VA_clean")
     ]
-    mcmahon_assessment_estimated_columns = [
+    _mcmahon_assessment_estimated_columns = [
         column
         for column in mc_clean_df.columns
         if column.endswith("-estimated")
     ]
-    mcmahon_assessment_geospatial_columns = [
+    _mcmahon_assessment_geospatial_columns = [
         column
         for column in mc_clean_df.columns
         if column
@@ -1548,15 +1558,15 @@ def _(mc_clean_df, mo, pd, print_sections):
             "NAWQA_ID_mc_geo",
             "_merge",
         ]
-        and column not in mcmahon_assessment_clean_columns
-        and column not in mcmahon_assessment_estimated_columns
+        and column not in _mcmahon_assessment_clean_columns
+        and column not in _mcmahon_assessment_estimated_columns
     ]
-    mcmahon_assessment_land_use_columns = ["AGRI_12", "NATU_12", "URBA_12"]
-    mcmahon_assessment_land_use_total = mc_clean_df[
-        mcmahon_assessment_land_use_columns
+    _mcmahon_assessment_land_use_columns = ["AGRI_12", "NATU_12", "URBA_12"]
+    _mcmahon_assessment_land_use_total = mc_clean_df[
+        _mcmahon_assessment_land_use_columns
     ].sum(axis=1)
 
-    mcmahon_quality_checks = pd.DataFrame(
+    _mcmahon_quality_checks = pd.DataFrame(
         [
             {
                 "Quality check": "Missing environmental site IDs",
@@ -1583,7 +1593,7 @@ def _(mc_clean_df, mo, pd, print_sections):
             {
                 "Quality check": "Missing cleaned PFAS values",
                 "Result": int(
-                    mc_clean_df[mcmahon_assessment_clean_columns]
+                    mc_clean_df[_mcmahon_assessment_clean_columns]
                     .isna()
                     .sum()
                     .sum()
@@ -1593,7 +1603,7 @@ def _(mc_clean_df, mo, pd, print_sections):
             {
                 "Quality check": "Missing geospatial predictor values",
                 "Result": int(
-                    mc_clean_df[mcmahon_assessment_geospatial_columns]
+                    mc_clean_df[_mcmahon_assessment_geospatial_columns]
                     .isna()
                     .sum()
                     .sum()
@@ -1603,7 +1613,7 @@ def _(mc_clean_df, mo, pd, print_sections):
             {
                 "Quality check": "Negative geospatial values",
                 "Result": int(
-                    mc_clean_df[mcmahon_assessment_geospatial_columns]
+                    mc_clean_df[_mcmahon_assessment_geospatial_columns]
                     .lt(0)
                     .sum()
                     .sum()
@@ -1614,8 +1624,8 @@ def _(mc_clean_df, mo, pd, print_sections):
                 "Quality check": "Land-use values outside 0-100%",
                 "Result": int(
                     (
-                        mc_clean_df[mcmahon_assessment_land_use_columns].lt(0)
-                        | mc_clean_df[mcmahon_assessment_land_use_columns].gt(
+                        mc_clean_df[_mcmahon_assessment_land_use_columns].lt(0)
+                        | mc_clean_df[_mcmahon_assessment_land_use_columns].gt(
                             100
                         )
                     )
@@ -1628,7 +1638,9 @@ def _(mc_clean_df, mo, pd, print_sections):
                 "Quality check": "Land-use totals outside 99.5-100.5%",
                 "Result": int(
                     (
-                        ~mcmahon_assessment_land_use_total.between(99.5, 100.5)
+                        ~_mcmahon_assessment_land_use_total.between(
+                            99.5, 100.5
+                        )
                     ).sum()
                 ),
                 "Assessment": (
@@ -1638,7 +1650,7 @@ def _(mc_clean_df, mo, pd, print_sections):
             {
                 "Quality check": "Estimated or trace-result flags",
                 "Result": int(
-                    mc_clean_df[mcmahon_assessment_estimated_columns]
+                    mc_clean_df[_mcmahon_assessment_estimated_columns]
                     .sum()
                     .sum()
                 ),
@@ -1647,7 +1659,7 @@ def _(mc_clean_df, mo, pd, print_sections):
         ]
     )
 
-    mcmahon_missing_summary = (
+    _mcmahon_missing_summary = (
         mc_clean_df.isna()
         .sum()
         .sort_values(ascending=False)
@@ -1656,17 +1668,17 @@ def _(mc_clean_df, mo, pd, print_sections):
         .reset_index()
         .rename(columns={"index": "Column"})
     )
-    mcmahon_missing_summary["Missing (%)"] = (
-        100 * mcmahon_missing_summary["Missing values"] / len(mc_clean_df)
+    _mcmahon_missing_summary["Missing (%)"] = (
+        100 * _mcmahon_missing_summary["Missing values"] / len(mc_clean_df)
     ).round(1)
 
     mo.vstack(
         [
-            mo.ui.table(mcmahon_quality_checks),
+            mo.ui.table(_mcmahon_quality_checks),
             print_sections(
                 {
                     "Columns with the most missing values": mo.ui.table(
-                        mcmahon_missing_summary
+                        _mcmahon_missing_summary
                     ),
                 }
             ),
@@ -1700,7 +1712,7 @@ def _(mo):
 
 @app.cell
 def _(mc_clean_df, mo, pd, print_sections, ss_clean_df):
-    def categorical_profile(dataset_name, dataframe, columns):
+    def _categorical_profile(dataset_name, dataframe, columns):
         profile_rows = []
         value_count_tables = {}
 
@@ -1853,7 +1865,7 @@ def _(mc_clean_df, mo, pd, print_sections, ss_clean_df):
         ), value_count_tables
 
     # Smalling categorical variables: geographic and water-source groupings.
-    smalling_categorical_columns = [
+    _smalling_categorical_columns = [
         column_name
         for column_name in ["State", "Site Type", "Study_smalling"]
         if column_name in ss_clean_df.columns
@@ -1861,7 +1873,7 @@ def _(mc_clean_df, mo, pd, print_sections, ss_clean_df):
 
     # Seawolf categorical variables: contributing study. SiteCode and station
     # names are identifiers and are intentionally excluded.
-    seawolf_categorical_columns = [
+    _seawolf_categorical_columns = [
         column_name
         for column_name in ["Study_seawolf"]
         if column_name in ss_clean_df.columns
@@ -1870,7 +1882,7 @@ def _(mc_clean_df, mo, pd, print_sections, ss_clean_df):
     # McMahon categorical variables are detected from the already merged
     # dataframe. Identifiers, dates/times, merge indicators, and
     # estimated-result flags are excluded.
-    mcmahon_categorical_exclusions = {
+    _mcmahon_categorical_exclusions = {
         "key_0",
         "NAWQA_ID_mc_env",
         "NAWQA_ID_mc_geo",
@@ -1878,60 +1890,64 @@ def _(mc_clean_df, mo, pd, print_sections, ss_clean_df):
         "TIME",
         "_merge",
     }
-    mcmahon_categorical_columns = [
+    _mcmahon_categorical_columns = [
         column_name
         for column_name in mc_clean_df.select_dtypes(
             include=["object", "string", "category", "bool"]
         ).columns
-        if column_name not in mcmahon_categorical_exclusions
+        if column_name not in _mcmahon_categorical_exclusions
         and not column_name.endswith("-estimated")
     ]
 
-    smalling_categorical_profile, smalling_category_tables = (
-        categorical_profile(
-            "Smalling", ss_clean_df, smalling_categorical_columns
+    _smalling_categorical_profile, _smalling_category_tables = (
+        _categorical_profile(
+            "Smalling", ss_clean_df, _smalling_categorical_columns
         )
     )
-    seawolf_categorical_profile, seawolf_category_tables = categorical_profile(
-        "Seawolf", ss_clean_df, seawolf_categorical_columns
+    _seawolf_categorical_profile, _seawolf_category_tables = (
+        _categorical_profile(
+            "Seawolf", ss_clean_df, _seawolf_categorical_columns
+        )
     )
-    mcmahon_categorical_profile, mcmahon_category_tables = categorical_profile(
-        "McMahon", mc_clean_df, mcmahon_categorical_columns
+    _mcmahon_categorical_profile, _mcmahon_category_tables = (
+        _categorical_profile(
+            "McMahon", mc_clean_df, _mcmahon_categorical_columns
+        )
     )
 
-    categorical_profiles = {
-        "Smalling": smalling_categorical_profile,
-        "Seawolf": seawolf_categorical_profile,
-        "McMahon": mcmahon_categorical_profile,
+    _categorical_profiles = {
+        "Smalling": _smalling_categorical_profile,
+        "Seawolf": _seawolf_categorical_profile,
+        "McMahon": _mcmahon_categorical_profile,
     }
 
-    categorical_overall_rows = []
-    for dataset_name, profile_df in categorical_profiles.items():
-        categorical_overall_rows.append(
+    _categorical_overall_rows = []
+    for _dataset_name, _profile_df in _categorical_profiles.items():
+        _categorical_overall_rows.append(
             {
-                "Dataset": dataset_name,
-                "Categorical variables evaluated": len(profile_df),
+                "Dataset": _dataset_name,
+                "Categorical variables evaluated": len(_profile_df),
                 "Variables with missing values": int(
-                    profile_df["Missing"].gt(0).sum()
+                    _profile_df["Missing"].gt(0).sum()
                 ),
                 "Single-level variables": int(
-                    profile_df["Distinct categories"].le(1).sum()
+                    _profile_df["Distinct categories"].le(1).sum()
                 ),
                 "Highly imbalanced variables (≥90%)": int(
-                    profile_df["Dominant (%)"].ge(90).sum()
+                    _profile_df["Dominant (%)"].ge(90).sum()
                 ),
                 "Variables with rare levels": int(
-                    profile_df["Rare categories (<5 rows)"].gt(0).sum()
+                    _profile_df["Rare categories (<5 rows)"].gt(0).sum()
                 ),
                 "Variables with label variants": int(
-                    profile_df["Label-variant groups"].gt(0).sum()
+                    _profile_df["Label-variant groups"].gt(0).sum()
                 ),
             }
         )
 
-    categorical_overall_summary = pd.DataFrame(categorical_overall_rows)
+    _categorical_overall_summary = pd.DataFrame(_categorical_overall_rows)
 
-    def categorical_panel(profile_df, category_tables, dataset_note):
+    def _categorical_panel(profile_df, category_tables, dataset_note):
         # profile_df has 14 columns; two of them ("Recommended treatment",
         # "Quality assessment") hold long free-text notes. All 14 together
         # are too wide to fit a printed page (they get cropped in the PDF
@@ -1952,12 +1968,12 @@ def _(mc_clean_df, mo, pd, print_sections, ss_clean_df):
 
     mo.vstack(
         [
-            mo.ui.table(categorical_overall_summary),
+            mo.ui.table(_categorical_overall_summary),
             print_sections(
                 {
-                    "Smalling": categorical_panel(
-                        smalling_categorical_profile,
-                        smalling_category_tables,
+                    "Smalling": _categorical_panel(
+                        _smalling_categorical_profile,
+                        _smalling_category_tables,
                         """
                 **Interpretation:** `Site Type` can be binary encoded. `State`
                 is a nominal geographic variable and should be one-hot encoded
@@ -1966,9 +1982,9 @@ def _(mc_clean_df, mo, pd, print_sections, ss_clean_df):
                 removed because it does not help distinguish observations.
                 """,
                     ),
-                    "Seawolf": categorical_panel(
-                        seawolf_categorical_profile,
-                        seawolf_category_tables,
+                    "Seawolf": _categorical_panel(
+                        _seawolf_categorical_profile,
+                        _seawolf_category_tables,
                         """
                 **Interpretation:** `Study_seawolf` may capture differences in
                 sampling design, geography, or time period. It can be retained
@@ -1978,9 +1994,9 @@ def _(mc_clean_df, mo, pd, print_sections, ss_clean_df):
                 contributing studies.
                 """,
                     ),
-                    "McMahon": categorical_panel(
-                        mcmahon_categorical_profile,
-                        mcmahon_category_tables,
+                    "McMahon": _categorical_panel(
+                        _mcmahon_categorical_profile,
+                        _mcmahon_category_tables,
                         """
                 **Interpretation:** Low-cardinality McMahon categories can be
                 one-hot encoded. Variables with one level should be dropped,
@@ -2129,14 +2145,14 @@ def _(mc_clean_df, pd, pfas_codes, pfas_cols, ss_clean_df):
         value_name="concentration",
     )
 
-    mc_value_cols = [f"{c}-VA_clean" for c in pfas_codes]
-    mc_estimated_cols = [f"{c}-estimated" for c in pfas_codes]
-    mc_dropped_cols = mc_value_cols + mc_estimated_cols
+    _mc_value_cols = [f"{c}-VA_clean" for c in pfas_codes]
+    _mc_estimated_cols = [f"{c}-estimated" for c in pfas_codes]
+    _mc_dropped_cols = _mc_value_cols + _mc_estimated_cols
 
     mc_long_df = pd.melt(
         mc_clean_df,
-        id_vars=[c for c in mc_clean_df.columns if c not in mc_dropped_cols],
-        value_vars=mc_value_cols,
+        id_vars=[c for c in mc_clean_df.columns if c not in _mc_dropped_cols],
+        value_vars=_mc_value_cols,
         var_name="compound",
         value_name="concentration",
     )
