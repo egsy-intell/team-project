@@ -197,18 +197,12 @@ def _(pd):
     # Step 5 has identical axes and models can be compared cell-by-cell.
 
     TIER_ORDER = [
-
         "within_reduced_monitoring",
-
         "above_trigger",
-
         "mcl_exceedance",
-
     ]
 
-
     def assign_tq_tier(sum_tq, trigger_cutoff=0.5, mcl_cutoff=1.0):
-
         """Map a sum_tq_epa series to the ordinal risk tier.
 
 
@@ -221,15 +215,10 @@ def _(pd):
         """
 
         return pd.cut(
-
             sum_tq,
-
             bins=[-float("inf"), trigger_cutoff, mcl_cutoff, float("inf")],
-
             labels=TIER_ORDER,
-
             right=False,
-
         )
 
     return (TIER_ORDER,)
@@ -238,20 +227,13 @@ def _(pd):
 @app.cell
 def _(TIER_ORDER, pd):
     from sklearn.metrics import (
-
         classification_report,
-
         confusion_matrix,
-
         f1_score,
-
         recall_score,
-
     )
 
-
     def evaluate_tier_model(y_true, y_pred, model_name, recall_floor=None):
-
         """Standard Task 3.1 evaluation for any ∑TQ tier classifier.
 
 
@@ -270,101 +252,60 @@ def _(TIER_ORDER, pd):
         # failure mode Task 3.1 warns about disappears from the report.
 
         report = pd.DataFrame(
-
             classification_report(
-
                 y_true,
-
                 y_pred,
-
                 labels=TIER_ORDER,
-
                 output_dict=True,
-
                 zero_division=0,
-
             )
-
         ).T
 
-
         per_class = report.loc[TIER_ORDER].assign(
-
             support=lambda df: df["support"].astype(int)
-
         )
-
 
         matrix = pd.DataFrame(
-
             confusion_matrix(y_true, y_pred, labels=TIER_ORDER),
-
             index=pd.Index(TIER_ORDER, name="actual"),
-
             columns=pd.Index(TIER_ORDER, name="predicted"),
-
         )
 
-
         macro_f1 = f1_score(
-
             y_true, y_pred, labels=TIER_ORDER, average="macro", zero_division=0
-
         )
 
         mcl_recall = recall_score(
-
             y_true,
-
             y_pred,
-
             labels=["mcl_exceedance"],
-
             average="macro",
-
             zero_division=0,
-
         )
-
 
         # The worst single error: an MCL-equivalent site predicted two tiers
 
         # down, which leaves the operator with no follow-up posture at all.
 
         critical_misses = int(
-
             matrix.loc["mcl_exceedance", "within_reduced_monitoring"]
-
         )
 
-
         summary = {
-
             "model": model_name,
-
             "macro_f1": round(macro_f1, 4),
-
             "mcl_exceedance_recall": round(mcl_recall, 4),
-
             "critical_misses": critical_misses,
-
             "n_evaluated": int(len(y_true)),
-
         }
 
         if recall_floor is not None:
-
             summary["meets_recall_floor"] = bool(mcl_recall >= recall_floor)
 
-
         return {
-
             "summary": summary,
-
             "per_class": per_class,
-
             "confusion_matrix": matrix,
-
         }
 
     return
@@ -434,9 +375,7 @@ def _(mo, ss_scored_df):
         ordered=True,
     )
     tapwater_split_df["study_group"] = (
-        tapwater_split_df[study_group_column]
-        .astype("string")
-        .str.strip()
+        tapwater_split_df[study_group_column].astype("string").str.strip()
     )
     tapwater_split_df = tapwater_split_df.dropna(
         subset=["Site Code", "study_group", "pfas_risk_tier"]
@@ -460,9 +399,7 @@ def _(mo, ss_scored_df):
         ["study_group", "Sites", *risk_labels]
     ].sort_values(["Sites", "study_group"], ascending=[False, True])
 
-    all_studies = sorted(
-        tapwater_split_df["study_group"].unique().tolist()
-    )
+    all_studies = sorted(tapwater_split_df["study_group"].unique().tolist())
     full_distribution = (
         tapwater_split_df["pfas_risk_tier"]
         .value_counts(normalize=True)
@@ -478,9 +415,8 @@ def _(mo, ss_scored_df):
     ):
         train_classes = set(train_part["pfas_risk_tier"].dropna())
         test_classes = set(test_part["pfas_risk_tier"].dropna())
-        missing_class_penalty = (
-            len(set(labels) - train_classes)
-            + len(set(labels) - test_classes)
+        missing_class_penalty = len(set(labels) - train_classes) + len(
+            set(labels) - test_classes
         )
 
         test_fraction = len(test_part) / len(full_data)
@@ -511,9 +447,7 @@ def _(mo, ss_scored_df):
             all_studies,
             held_out_count,
         ):
-            test_mask = tapwater_split_df["study_group"].isin(
-                held_out_studies
-            )
+            test_mask = tapwater_split_df["study_group"].isin(held_out_studies)
             train_part = tapwater_split_df.loc[~test_mask]
             test_part = tapwater_split_df.loc[test_mask]
             if train_part.empty or test_part.empty:
@@ -529,9 +463,7 @@ def _(mo, ss_scored_df):
             candidate_rows.append(
                 {
                     "Method": "Exhaustive search",
-                    "Candidate": (
-                        f"Candidate {len(candidate_rows) + 1}"
-                    ),
+                    "Candidate": (f"Candidate {len(candidate_rows) + 1}"),
                     "held_out_studies": held_out_studies,
                     "Held-out studies": ", ".join(held_out_studies),
                     **split_score,
@@ -546,9 +478,7 @@ def _(mo, ss_scored_df):
         ]
     )
     selected_candidate = split_candidates_df.iloc[0]
-    selected_test_studies = list(
-        selected_candidate["held_out_studies"]
-    )
+    selected_test_studies = list(selected_candidate["held_out_studies"])
 
     # Benchmark the custom search against sklearn's built-in grouped and
     # stratified splitter using the exact same scoring function.
@@ -594,9 +524,7 @@ def _(mo, ss_scored_df):
             }
         )
 
-    sklearn_fold_scores_df = pd.DataFrame(
-        sklearn_fold_rows
-    ).sort_values(
+    sklearn_fold_scores_df = pd.DataFrame(sklearn_fold_rows).sort_values(
         [
             "missing_class_penalty",
             "selection_score",
@@ -620,16 +548,10 @@ def _(mo, ss_scored_df):
     )
 
     best_sklearn_candidate = sklearn_fold_scores_df.iloc[0]
-    exhaustive_penalty = int(
-        selected_candidate["missing_class_penalty"]
-    )
-    sklearn_penalty = int(
-        best_sklearn_candidate["missing_class_penalty"]
-    )
+    exhaustive_penalty = int(selected_candidate["missing_class_penalty"])
+    sklearn_penalty = int(best_sklearn_candidate["missing_class_penalty"])
     exhaustive_score = float(selected_candidate["selection_score"])
-    sklearn_score = float(
-        best_sklearn_candidate["selection_score"]
-    )
+    sklearn_score = float(best_sklearn_candidate["selection_score"])
 
     penalty_diff = exhaustive_penalty - sklearn_penalty
     score_diff = exhaustive_score - sklearn_score
@@ -661,13 +583,9 @@ def _(mo, ss_scored_df):
             {
                 "Method": "Exhaustive search",
                 "Candidate": selected_candidate["Candidate"],
-                "Held-out studies": (
-                    selected_candidate["Held-out studies"]
-                ),
+                "Held-out studies": (selected_candidate["Held-out studies"]),
                 "Missing-tier penalty": exhaustive_penalty,
-                "Test fraction": float(
-                    selected_candidate["test_fraction"]
-                ),
+                "Test fraction": float(selected_candidate["test_fraction"]),
                 "Distribution gap": float(
                     selected_candidate["distribution_gap"]
                 ),
@@ -700,29 +618,17 @@ def _(mo, ss_scored_df):
         "distribution_gap",
         "selection_score",
     ]
-    split_comparison_preview = split_comparison_df[
-        comparison_columns
-    ].head(20)
+    split_comparison_preview = split_comparison_df[comparison_columns].head(20)
 
     selected_test_mask = tapwater_split_df["study_group"].isin(
         selected_test_studies
     )
-    tapwater_train_df = tapwater_split_df.loc[
-        ~selected_test_mask
-    ].copy()
-    tapwater_test_df = tapwater_split_df.loc[
-        selected_test_mask
-    ].copy()
+    tapwater_train_df = tapwater_split_df.loc[~selected_test_mask].copy()
+    tapwater_test_df = tapwater_split_df.loc[selected_test_mask].copy()
 
-    train_studies = sorted(
-        tapwater_train_df["study_group"].unique().tolist()
-    )
-    test_studies = sorted(
-        tapwater_test_df["study_group"].unique().tolist()
-    )
-    study_overlap = sorted(
-        set(train_studies).intersection(test_studies)
-    )
+    train_studies = sorted(tapwater_train_df["study_group"].unique().tolist())
+    test_studies = sorted(tapwater_test_df["study_group"].unique().tolist())
+    study_overlap = sorted(set(train_studies).intersection(test_studies))
     site_overlap = sorted(
         set(tapwater_train_df["Site Code"]).intersection(
             tapwater_test_df["Site Code"]
@@ -770,18 +676,14 @@ def _(mo, ss_scored_df):
                     "Study groups appearing in both partitions"
                 ),
                 "Result": len(study_overlap),
-                "Assessment": (
-                    "Pass" if not study_overlap else "Review"
-                ),
+                "Assessment": ("Pass" if not study_overlap else "Review"),
             },
             {
                 "Validation check": (
                     "Site identifiers appearing in both partitions"
                 ),
                 "Result": len(site_overlap),
-                "Assessment": (
-                    "Pass" if not site_overlap else "Review"
-                ),
+                "Assessment": ("Pass" if not site_overlap else "Review"),
             },
             {
                 "Validation check": (
@@ -791,10 +693,7 @@ def _(mo, ss_scored_df):
                 "Assessment": (
                     "Pass"
                     if exhaustive_penalty == 0
-                    else (
-                        "Review; grouped data could not preserve "
-                        "every tier"
-                    )
+                    else ("Review; grouped data could not preserve every tier")
                 ),
             },
         ]
