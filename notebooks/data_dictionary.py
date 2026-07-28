@@ -50,9 +50,9 @@ def _(mo):
 
 @app.cell
 def _(ET, mo, pd, print_sections):
-    data_dir = mo.notebook_dir() / ".." / "data" / "usgs"
+    _data_dir = mo.notebook_dir() / ".." / "data" / "usgs"
 
-    if not data_dir.exists():
+    if not _data_dir.exists():
         # Notebook was opened standalone (e.g. `uvx marimo edit --sandbox
         # <gh-pages-url>`), so there's no sibling data/ checkout. Download the
         # same files from the repo into a local cache and use that instead.
@@ -60,7 +60,7 @@ def _(ET, mo, pd, print_sections):
         import urllib.request
         from pathlib import Path
 
-        data_dir = Path(tempfile.gettempdir()) / "egsy-pfas-data" / "usgs"
+        _data_dir = Path(tempfile.gettempdir()) / "egsy-pfas-data" / "usgs"
         _RAW_BASE = "https://raw.githubusercontent.com/egsy-intell/team-project/main/data/usgs"
         _files = [
             "seawolf/NationalPFASReconLandscapeMetadata.xml",
@@ -68,20 +68,20 @@ def _(ET, mo, pd, print_sections):
             "mcmahon/PFAS_ENV.csv",
         ]
         for _rel in _files:
-            _dest = data_dir / _rel
+            _dest = _data_dir / _rel
             if _dest.exists():
                 continue
             _dest.parent.mkdir(parents=True, exist_ok=True)
             urllib.request.urlretrieve(f"{_RAW_BASE}/{_rel}", _dest)
 
-    seawolf_meta_tree = ET.parse(
-        data_dir / "seawolf" / "NationalPFASReconLandscapeMetadata.xml"
+    _seawolf_meta_tree = ET.parse(
+        _data_dir / "seawolf" / "NationalPFASReconLandscapeMetadata.xml"
     )
 
-    mcmahon_dict_df = pd.read_csv(
-        data_dir / "mcmahon" / "PFAS_Data_Dictionary.csv", encoding="latin1"
+    _mcmahon_dict_df = pd.read_csv(
+        _data_dir / "mcmahon" / "PFAS_Data_Dictionary.csv", encoding="latin1"
     )
-    mcmahon_env_df = pd.read_csv(data_dir / "mcmahon" / "PFAS_ENV.csv")
+    mcmahon_env_df = pd.read_csv(_data_dir / "mcmahon" / "PFAS_ENV.csv")
 
     # Data quirk: All values are labeled with <<compound>>-VA
     # except for `"PFBS-V"`. This is a correction
@@ -90,7 +90,7 @@ def _(ET, mo, pd, print_sections):
     # McMahon spells some compounds differently than Smalling despite
     # referring to the same substance; normalize to Smalling's spelling so
     # shared compounds line up as a single row.
-    mcmahon_alias = {
+    MCMAHON_ALIAS = {
         "4_2 FTS": "4:2 FTS",
         "6_2 FTS": "6:2 FTS",
         "8_2 FTS": "8:2 FTS",
@@ -105,7 +105,7 @@ def _(ET, mo, pd, print_sections):
     mcmahon_env_df = mcmahon_env_df.rename(
         columns={
             f"{old}-{suffix}": f"{new}-{suffix}"
-            for old, new in mcmahon_alias.items()
+            for old, new in MCMAHON_ALIAS.items()
             for suffix in ("VA", "RMK")
         }
     )
@@ -120,20 +120,20 @@ def _(ET, mo, pd, print_sections):
             "rdom_min": _to_float(attr.findtext(".//rdom/rdommin")),
             "rdom_max": _to_float(attr.findtext(".//rdom/rdommax")),
         }
-        for attr in seawolf_meta_tree.findall(".//eainfo/detailed/attr")
+        for attr in _seawolf_meta_tree.findall(".//eainfo/detailed/attr")
     )
 
     def filter_mcmahon(table_name):
-        filter = mcmahon_dict_df["TABLE"] == table_name
+        filter = _mcmahon_dict_df["TABLE"] == table_name
 
-        return mcmahon_dict_df.loc[filter, ["PARAMETER", "DEFINITION"]].apply(
+        return _mcmahon_dict_df.loc[filter, ["PARAMETER", "DEFINITION"]].apply(
             lambda col: col.str.strip()
         )
 
     print_sections(
         {"Seawolf": seawolf_dict_df, "McMahon": filter_mcmahon("PFAS_ENV")}
     )
-    return filter_mcmahon, mcmahon_alias
+    return MCMAHON_ALIAS, filter_mcmahon
 
 
 @app.cell
@@ -145,7 +145,7 @@ def _(mo):
 
 
 @app.cell
-def _(filter_mcmahon, mcmahon_alias, mo, pd):
+def _(MCMAHON_ALIAS, filter_mcmahon, mo, pd):
     # McMahon's PFAS_ENV table mixes non-compound fields (NAWQA_ID, DATE, TIME)
     # and remark-code boilerplate rows in with the actual PFAS compounds, so
     # filter down to rows whose PARAMETER is an actual compound abbreviation.
@@ -165,7 +165,7 @@ def _(filter_mcmahon, mcmahon_alias, mo, pd):
         filter_mcmahon("PFAS_ENV")
         .rename(columns={"PARAMETER": "compound", "DEFINITION": "definition"})
         .loc[lambda df: ~df["compound"].isin(_mcmahon_non_compound)]
-        .assign(compound=lambda df: df["compound"].replace(mcmahon_alias))
+        .assign(compound=lambda df: df["compound"].replace(MCMAHON_ALIAS))
         .reset_index(drop=True)
     )
 
