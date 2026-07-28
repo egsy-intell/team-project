@@ -825,7 +825,7 @@ def _(StratifiedGroupKFold, combinations, mo, pd, ss_scored_df):
             ),
         ]
     )
-    return (pd,)
+    return
 
 
 @app.cell(hide_code=True)
