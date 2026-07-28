@@ -184,100 +184,112 @@ def _(mo):
 
 
 @app.cell
+def _():
+    return
+
+
+@app.cell
 def _(pd):
-    # Importing evaluation metrics from scikit-learn
+    # Ordinal, low -> high. Fixed order so every confusion matrix produced in
+    # Step 5 has identical axes and models can be compared cell-by-cell.
+    TIER_ORDER = [
+        "within_reduced_monitoring",
+        "above_trigger",
+        "mcl_exceedance",
+    ]
 
-    from sklearn.metrics import (
+    def assign_tq_tier(sum_tq, trigger_cutoff=0.5, mcl_cutoff=1.0):
+        """Map a sum_tq_epa series to the ordinal risk tier.
 
-        classification_report,
-
-        confusion_matrix,
-
-        f1_score,
-
-        precision_recall_fscore_support,
-
-    )
-
-
-    def evaluate_risk_classifier(y_true, y_pred, model_name="Model"):
-
-        """
-
-        Standard evaluation function for our team's models.
-
-        Computes per-class metrics, macro F1-score, and outputs a formatted 3x3 confusion matrix.
-
-        """
-
-        labels = ["Low", "Medium", "High"]
-
-
-
-        # Calculate per-class metrics and macro F1
-
-        macro_f1 = f1_score(y_true, y_pred, average="macro", zero_division=0)
-
-
-
-        # Build classification report dictionary
-
-        report_dict = classification_report(
-
-            y_true, y_pred, labels=labels, output_dict=True, zero_division=0
-
+        Cutoffs default to the EPA-anchored values from Checkpoint 1 but stay
+        parameterized: Task 3.2 may adjust them once the reshaped target from
+        Task PW is available to profile.
+        """
+        return pd.cut(
+            sum_tq,
+            bins=[-float("inf"), trigger_cutoff, mcl_cutoff, float("inf")],
+            labels=TIER_ORDER,
+            right=False,
         )
 
+    return (TIER_ORDER,)
 
 
-        # Extract per-class summary table
-
-        metrics_summary = []
-
-        for label in labels:
-
-            metrics_summary.append({
-
-                "Risk Tier": label,
-
-                "Precision": round(report_dict[label]["precision"], 3),
-
-                "Recall": round(report_dict[label]["recall"], 3),
-
-                "F1-Score": round(report_dict[label]["f1-score"], 3),
-
-                "Support Count": int(report_dict[label]["support"])
-
-            })
+@app.cell
+def _():
+    return
 
 
+@app.cell
+def _(TIER_ORDER, pd):
+    from sklearn.metrics import (
+        classification_report,
+        confusion_matrix,
+        f1_score,
+        recall_score,
+    )
 
-        summary_df = pd.DataFrame(metrics_summary)
+    def evaluate_tier_model(y_true, y_pred, model_name, recall_floor=None):
+        """Standard Task 3.1 evaluation for any ∑TQ tier classifier.
 
+        Returns per-class precision/recall/F1, the two headline numbers the
+        metric framework selects on (macro-F1 and mcl_exceedance recall), a
+        labeled 3x3 confusion matrix, and a count of tier-skipping misses.
+        """
+        # zero_division=0: a model that never predicts a tier yields an
+        # undefined precision. Score it 0 rather than dropping the row, or the
+        # failure mode Task 3.1 warns about disappears from the report.
+        report = pd.DataFrame(
+            classification_report(
+                y_true,
+                y_pred,
+                labels=TIER_ORDER,
+                output_dict=True,
+                zero_division=0,
+            )
+        ).T
 
+        per_class = report.loc[TIER_ORDER].assign(
+            support=lambda df: df["support"].astype(int)
+        )
 
-        # Compute 3x3 confusion matrix
+        matrix = pd.DataFrame(
+            confusion_matrix(y_true, y_pred, labels=TIER_ORDER),
+            index=pd.Index(TIER_ORDER, name="actual"),
+            columns=pd.Index(TIER_ORDER, name="predicted"),
+        )
 
-        cm = confusion_matrix(y_true, y_pred, labels=labels)
+        macro_f1 = f1_score(
+            y_true, y_pred, labels=TIER_ORDER, average="macro", zero_division=0
+        )
+        mcl_recall = recall_score(
+            y_true,
+            y_pred,
+            labels=["mcl_exceedance"],
+            average="macro",
+            zero_division=0,
+        )
 
-        cm_df = pd.DataFrame(cm, index=[f"Actual {l}" for l in labels], columns=[f"Pred {l}" for l in labels])
+        # The worst single error: an MCL-equivalent site predicted two tiers
+        # down, which leaves the operator with no follow-up posture at all.
+        critical_misses = int(
+            matrix.loc["mcl_exceedance", "within_reduced_monitoring"]
+        )
 
+        summary = {
+            "model": model_name,
+            "macro_f1": round(macro_f1, 4),
+            "mcl_exceedance_recall": round(mcl_recall, 4),
+            "critical_misses": critical_misses,
+            "n_evaluated": int(len(y_true)),
+        }
+        if recall_floor is not None:
+            summary["meets_recall_floor"] = bool(mcl_recall >= recall_floor)
 
-
-        print(f"=== {model_name} Evaluation Summary ===")
-
-        print(f"Macro-Averaged F1-Score: {macro_f1:.4f}\n")
-
-
-
-        return {
-
-            "macro_f1": macro_f1,
-
-            "metrics_table": summary_df,
-
-            "confusion_matrix": cm_df
-
+        return {
+            "summary": summary,
+            "per_class": per_class,
+            "confusion_matrix": matrix,
         }
 
     return
