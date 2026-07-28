@@ -215,9 +215,7 @@ def _(mo):
 @app.cell
 def _(pd):
     # Ordinal, low -> high. Fixed order so every confusion matrix produced in
-
     # Step 5 has identical axes and models can be compared cell-by-cell.
-
     TIER_ORDER = [
         "within_reduced_monitoring",
         "above_trigger",
@@ -268,11 +266,8 @@ def _(
         """
 
         # zero_division=0: a model that never predicts a tier yields an
-
         # undefined precision. Score it 0 rather than dropping the row, or the
-
         # failure mode Task 3.1 warns about disappears from the report.
-
         report = pd.DataFrame(
             classification_report(
                 y_true,
@@ -306,9 +301,7 @@ def _(
         )
 
         # The worst single error: an MCL-equivalent site predicted two tiers
-
         # down, which leaves the operator with no follow-up posture at all.
-
         critical_misses = int(
             matrix.loc["mcl_exceedance", "within_reduced_monitoring"]
         )
