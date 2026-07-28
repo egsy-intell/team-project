@@ -241,7 +241,7 @@ def _(pd):
             right=False,
         )
 
-    return (TIER_ORDER, assign_tq_tier)
+    return (TIER_ORDER,)
 
 
 @app.cell
@@ -323,7 +323,7 @@ def _(
             "confusion_matrix": matrix,
         }
 
-    return (evaluate_tier_model,)
+    return
 
 
 @app.cell(hide_code=True)
