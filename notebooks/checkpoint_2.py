@@ -123,9 +123,6 @@ def _(mo):
     mo.md(r"""
     ### Classification metrics and evaluation rationale
 
-    **Task 3.1** · Step 3 - Evaluation Plan · Lead: Somyaranjan · Depends
-    on: None
-
     **Target:** the ∑TQ risk tier — `within_reduced_monitoring`
     (∑TQ < 0.5), `above_trigger` (0.5 ≤ ∑TQ < 1.0), `mcl_exceedance`
     (∑TQ ≥ 1.0).
