@@ -150,7 +150,7 @@ def _(mo, task_callout):
 
 app._unparsable_cell(
     """
-    %pip install scikit-learn
+    pip install scikit-learn
 
     from itertools import combinations
 
