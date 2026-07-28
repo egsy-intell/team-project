@@ -1,8 +1,9 @@
 # /// script
 # requires-python = ">=3.14"
 # dependencies = [
-#     "marimo>=0.23.3",
+#     "marimo>=0.23.14",
 #     "pandas>=3.0.3",
+#     "scikit-learn",
 # ]
 # ///
 
@@ -140,10 +141,11 @@ def _(mo, task_callout):
 
 
 @app.cell(hide_code=True)
-def _(mo, ss_scored_df, task_callout):
+def _(mc_scored_df, mo, ss_scored_df, task_callout):
     from itertools import combinations
 
     import pandas as pd
+    from sklearn.model_selection import StratifiedGroupKFold
 
     risk_labels = [
         "within_reduced_monitoring",
@@ -160,10 +162,20 @@ def _(mo, ss_scored_df, task_callout):
         else "Study_seawolf"
     )
 
+    # Provisional cutoffs pending Task 3.2 (Somyaranjan/Team).
+    # Update these constants once the risk-tier thresholds are finalized.
+    WITHIN_MONITORING_CUTOFF = 0.5
+    MCL_EXCEEDANCE_CUTOFF = 1.0
+
     tapwater_split_df = ss_scored_df.copy()
     tapwater_split_df["pfas_risk_tier"] = pd.cut(
         tapwater_split_df["sum_tq_epa"],
-        bins=[float("-inf"), 0.5, 1.0, float("inf")],
+        bins=[
+            float("-inf"),
+            WITHIN_MONITORING_CUTOFF,
+            MCL_EXCEEDANCE_CUTOFF,
+            float("inf"),
+        ],
         labels=risk_labels,
         right=False,
         ordered=True,
@@ -178,8 +190,8 @@ def _(mo, ss_scored_df, task_callout):
     ).copy()
 
     # Review the number of sites and target classes available in each study
-    # before selecting a holdout. This is necessary because whole-study splits
-    # cannot guarantee exact row-level stratification.
+    # before selecting a holdout. Whole-study splits cannot guarantee exact
+    # row-level stratification.
     study_risk_profile = (
         tapwater_split_df.groupby(
             ["study_group", "pfas_risk_tier"],
@@ -195,16 +207,57 @@ def _(mo, ss_scored_df, task_callout):
         ["study_group", "Sites", *risk_labels]
     ].sort_values(["Sites", "study_group"], ascending=[False, True])
 
-    all_studies = sorted(tapwater_split_df["study_group"].unique().tolist())
+    all_studies = sorted(
+        tapwater_split_df["study_group"].unique().tolist()
+    )
     full_distribution = (
         tapwater_split_df["pfas_risk_tier"]
         .value_counts(normalize=True)
         .reindex(risk_labels, fill_value=0.0)
     )
 
+    def score_split(
+        train_part,
+        test_part,
+        full_data,
+        labels,
+        overall_distribution,
+    ):
+        train_classes = set(train_part["pfas_risk_tier"].dropna())
+        test_classes = set(test_part["pfas_risk_tier"].dropna())
+        missing_class_penalty = (
+            len(set(labels) - train_classes)
+            + len(set(labels) - test_classes)
+        )
+
+        test_fraction = len(test_part) / len(full_data)
+        test_distribution = (
+            test_part["pfas_risk_tier"]
+            .value_counts(normalize=True)
+            .reindex(labels, fill_value=0.0)
+        )
+        distribution_gap = float(
+            (test_distribution - overall_distribution).abs().sum()
+        )
+
+        selection_score = (
+            missing_class_penalty * 10
+            + abs(test_fraction - 0.20)
+            + distribution_gap
+        )
+        return {
+            "test_fraction": test_fraction,
+            "missing_class_penalty": missing_class_penalty,
+            "distribution_gap": distribution_gap,
+            "selection_score": selection_score,
+        }
+
     candidate_rows = []
     for held_out_count in range(1, len(all_studies)):
-        for held_out_studies in combinations(all_studies, held_out_count):
+        for held_out_studies in combinations(
+            all_studies,
+            held_out_count,
+        ):
             test_mask = tapwater_split_df["study_group"].isin(
                 held_out_studies
             )
@@ -213,37 +266,22 @@ def _(mo, ss_scored_df, task_callout):
             if train_part.empty or test_part.empty:
                 continue
 
-            train_classes = set(train_part["pfas_risk_tier"].dropna())
-            test_classes = set(test_part["pfas_risk_tier"].dropna())
-            missing_class_penalty = (
-                len(set(risk_labels) - train_classes)
-                + len(set(risk_labels) - test_classes)
-            )
-
-            test_fraction = len(test_part) / len(tapwater_split_df)
-            test_distribution = (
-                test_part["pfas_risk_tier"]
-                .value_counts(normalize=True)
-                .reindex(risk_labels, fill_value=0.0)
-            )
-            distribution_gap = float(
-                (test_distribution - full_distribution).abs().sum()
-            )
-
-            # Prefer a roughly 20% test set, preserve every class in both
-            # partitions, and then choose the closest class distribution.
-            selection_score = (
-                missing_class_penalty * 10
-                + abs(test_fraction - 0.20)
-                + distribution_gap
+            split_score = score_split(
+                train_part,
+                test_part,
+                tapwater_split_df,
+                risk_labels,
+                full_distribution,
             )
             candidate_rows.append(
                 {
+                    "Method": "Exhaustive search",
+                    "Candidate": (
+                        f"Candidate {len(candidate_rows) + 1}"
+                    ),
                     "held_out_studies": held_out_studies,
-                    "test_fraction": test_fraction,
-                    "missing_class_penalty": missing_class_penalty,
-                    "distribution_gap": distribution_gap,
-                    "selection_score": selection_score,
+                    "Held-out studies": ", ".join(held_out_studies),
+                    **split_score,
                 }
             )
 
@@ -251,21 +289,188 @@ def _(mo, ss_scored_df, task_callout):
         [
             "missing_class_penalty",
             "selection_score",
-            "held_out_studies",
+            "Held-out studies",
         ]
     )
     selected_candidate = split_candidates_df.iloc[0]
-    selected_test_studies = list(selected_candidate["held_out_studies"])
+    selected_test_studies = list(
+        selected_candidate["held_out_studies"]
+    )
+
+    # Benchmark the custom search against sklearn's built-in grouped and
+    # stratified splitter using the exact same scoring function.
+    grouped_fold_count = min(5, len(all_studies))
+    if grouped_fold_count < 2:
+        raise ValueError(
+            "At least two study groups are required for grouped splitting."
+        )
+
+    grouped_cv = StratifiedGroupKFold(
+        n_splits=grouped_fold_count,
+        shuffle=True,
+        random_state=42,
+    )
+    sklearn_fold_rows = []
+    for fold_num, (train_idx, test_idx) in enumerate(
+        grouped_cv.split(
+            tapwater_split_df,
+            tapwater_split_df["pfas_risk_tier"],
+            groups=tapwater_split_df["study_group"],
+        ),
+        start=1,
+    ):
+        train_part = tapwater_split_df.iloc[train_idx]
+        test_part = tapwater_split_df.iloc[test_idx]
+        held_out_studies = tuple(
+            sorted(test_part["study_group"].unique().tolist())
+        )
+        split_score = score_split(
+            train_part,
+            test_part,
+            tapwater_split_df,
+            risk_labels,
+            full_distribution,
+        )
+        sklearn_fold_rows.append(
+            {
+                "Method": "StratifiedGroupKFold",
+                "Candidate": f"Fold {fold_num}",
+                "held_out_studies": held_out_studies,
+                "Held-out studies": ", ".join(held_out_studies),
+                **split_score,
+            }
+        )
+
+    sklearn_fold_scores_df = pd.DataFrame(
+        sklearn_fold_rows
+    ).sort_values(
+        [
+            "missing_class_penalty",
+            "selection_score",
+            "Held-out studies",
+        ]
+    )
+
+    split_comparison_df = pd.concat(
+        [
+            split_candidates_df,
+            sklearn_fold_scores_df,
+        ],
+        ignore_index=True,
+    ).sort_values(
+        [
+            "missing_class_penalty",
+            "selection_score",
+            "Method",
+            "Held-out studies",
+        ]
+    )
+
+    best_sklearn_candidate = sklearn_fold_scores_df.iloc[0]
+    exhaustive_penalty = int(
+        selected_candidate["missing_class_penalty"]
+    )
+    sklearn_penalty = int(
+        best_sklearn_candidate["missing_class_penalty"]
+    )
+    exhaustive_score = float(selected_candidate["selection_score"])
+    sklearn_score = float(
+        best_sklearn_candidate["selection_score"]
+    )
+
+    if (
+        exhaustive_penalty < sklearn_penalty
+        or (
+            exhaustive_penalty == sklearn_penalty
+            and exhaustive_score < sklearn_score - 1e-12
+        )
+    ):
+        comparison_result = (
+            "The exhaustive winner strictly outperforms every "
+            "StratifiedGroupKFold fold under the shared rubric."
+        )
+    elif (
+        exhaustive_penalty == sklearn_penalty
+        and abs(exhaustive_score - sklearn_score) <= 1e-12
+    ):
+        comparison_result = (
+            "The exhaustive winner ties the best "
+            "StratifiedGroupKFold fold under the shared rubric."
+        )
+    else:
+        comparison_result = (
+            "A StratifiedGroupKFold fold outperforms the exhaustive "
+            "winner under the shared rubric; the selection logic "
+            "should be reviewed."
+        )
+
+    method_best_summary = pd.DataFrame(
+        [
+            {
+                "Method": "Exhaustive search",
+                "Candidate": selected_candidate["Candidate"],
+                "Held-out studies": (
+                    selected_candidate["Held-out studies"]
+                ),
+                "Missing-tier penalty": exhaustive_penalty,
+                "Test fraction": float(
+                    selected_candidate["test_fraction"]
+                ),
+                "Distribution gap": float(
+                    selected_candidate["distribution_gap"]
+                ),
+                "Selection score": exhaustive_score,
+            },
+            {
+                "Method": "StratifiedGroupKFold",
+                "Candidate": best_sklearn_candidate["Candidate"],
+                "Held-out studies": (
+                    best_sklearn_candidate["Held-out studies"]
+                ),
+                "Missing-tier penalty": sklearn_penalty,
+                "Test fraction": float(
+                    best_sklearn_candidate["test_fraction"]
+                ),
+                "Distribution gap": float(
+                    best_sklearn_candidate["distribution_gap"]
+                ),
+                "Selection score": sklearn_score,
+            },
+        ]
+    )
+
+    comparison_columns = [
+        "Method",
+        "Candidate",
+        "Held-out studies",
+        "test_fraction",
+        "missing_class_penalty",
+        "distribution_gap",
+        "selection_score",
+    ]
+    split_comparison_preview = split_comparison_df[
+        comparison_columns
+    ].head(20)
 
     selected_test_mask = tapwater_split_df["study_group"].isin(
         selected_test_studies
     )
-    tapwater_train_df = tapwater_split_df.loc[~selected_test_mask].copy()
-    tapwater_test_df = tapwater_split_df.loc[selected_test_mask].copy()
+    tapwater_train_df = tapwater_split_df.loc[
+        ~selected_test_mask
+    ].copy()
+    tapwater_test_df = tapwater_split_df.loc[
+        selected_test_mask
+    ].copy()
 
-    train_studies = sorted(tapwater_train_df["study_group"].unique().tolist())
-    test_studies = sorted(tapwater_test_df["study_group"].unique().tolist())
-    study_overlap = sorted(set(train_studies).intersection(test_studies))
+    train_studies = sorted(
+        tapwater_train_df["study_group"].unique().tolist()
+    )
+    test_studies = sorted(
+        tapwater_test_df["study_group"].unique().tolist()
+    )
+    study_overlap = sorted(
+        set(train_studies).intersection(test_studies)
+    )
     site_overlap = sorted(
         set(tapwater_train_df["Site Code"]).intersection(
             tapwater_test_df["Site Code"]
@@ -296,7 +501,10 @@ def _(mo, ss_scored_df, task_callout):
                 tapwater_test_df.assign(Partition="Test"),
             ]
         )
-        .groupby(["Partition", "pfas_risk_tier"], observed=False)
+        .groupby(
+            ["Partition", "pfas_risk_tier"],
+            observed=False,
+        )
         .size()
         .unstack(fill_value=0)
         .reindex(columns=risk_labels, fill_value=0)
@@ -310,22 +518,31 @@ def _(mo, ss_scored_df, task_callout):
                     "Study groups appearing in both partitions"
                 ),
                 "Result": len(study_overlap),
-                "Assessment": "Pass" if not study_overlap else "Review",
+                "Assessment": (
+                    "Pass" if not study_overlap else "Review"
+                ),
             },
             {
                 "Validation check": (
                     "Site identifiers appearing in both partitions"
                 ),
                 "Result": len(site_overlap),
-                "Assessment": "Pass" if not site_overlap else "Review",
+                "Assessment": (
+                    "Pass" if not site_overlap else "Review"
+                ),
             },
             {
-                "Validation check": "Risk tiers missing from either partition",
-                "Result": int(selected_candidate["missing_class_penalty"]),
+                "Validation check": (
+                    "Risk tiers missing from either partition"
+                ),
+                "Result": exhaustive_penalty,
                 "Assessment": (
                     "Pass"
-                    if selected_candidate["missing_class_penalty"] == 0
-                    else "Review; grouped data could not preserve every tier"
+                    if exhaustive_penalty == 0
+                    else (
+                        "Review; grouped data could not preserve "
+                        "every tier"
+                    )
                 ),
             },
         ]
@@ -339,38 +556,35 @@ def _(mo, ss_scored_df, task_callout):
                 category="Step 3 - Evaluation Plan",
                 lead="Raj",
                 summary=(
-                    "Use the completed `ss_scored_df` target to create a "
-                    "study-grouped train/test split for the tap-water model. "
-                    "All sites from a contributing study remain together, "
-                    "preventing study-design and geographic leakage. McMahon "
-                    "is provisionally kept outside this split pending Task "
-                    "3.4 because its groundwater target is not directly "
-                    "comparable to Smalling/Seawolf."
+                    "Use the completed `ss_scored_df` target to "
+                    "create a study-grouped train/test split for the "
+                    "tap-water model. All sites from a contributing "
+                    "study remain together, preventing study-design "
+                    "and geographic leakage. Benchmark the custom "
+                    "exhaustive search against "
+                    "`StratifiedGroupKFold` using the same rubric."
                 ),
             ),
             mo.md(
                 f"""
                 #### Target and grouping definition
 
-                Checkpoint 1 now supplies `ss_scored_df`, including the
-                completed
-                `sum_tq_epa` value. For evaluation, that continuous
-                score is mapped to
-                the three project classes:
+                Checkpoint 1 supplies `ss_scored_df`, including the
+                completed `sum_tq_epa` value. That continuous score is
+                mapped to the three project classes:
 
-                * `within_reduced_monitoring`: `sum_tq_epa < 0.5`
-                * `above_trigger`: `0.5 <= sum_tq_epa < 1.0`
-                * `mcl_exceedance`: `sum_tq_epa >= 1.0`
+                * `within_reduced_monitoring`:
+                  `sum_tq_epa < {WITHIN_MONITORING_CUTOFF:.1f}`
+                * `above_trigger`:
+                  `{WITHIN_MONITORING_CUTOFF:.1f} <= sum_tq_epa < `
+                  `{MCL_EXCEEDANCE_CUTOFF:.1f}`
+                * `mcl_exceedance`:
+                  `sum_tq_epa >= {MCL_EXCEEDANCE_CUTOFF:.1f}`
 
-                `{study_group_column}` is used as the canonical
-                grouping field because
-                Smalling provides the measured PFAS outcome. The
-                corresponding Seawolf
-                landscape record describes the same site and
-                therefore follows it into
-                the same partition. Smalling and Seawolf are not
-                treated as separate
-                train/test datasets.
+                `{study_group_column}` is the canonical grouping field
+                because Smalling provides the measured PFAS outcome.
+                The corresponding Seawolf landscape row describes the
+                same site and follows it into the same partition.
                 """
             ),
             mo.md("#### Current tap-water risk tiers by study"),
@@ -379,23 +593,30 @@ def _(mo, ss_scored_df, task_callout):
                 """
                 #### Holdout-selection rules
 
-                Candidate holdouts are created from complete study
-                groups rather than
-                individual rows. The selected split prioritizes, in order:
+                Candidate holdouts are complete study groups, not
+                individual rows. Every candidate is scored using:
 
-                1. All three PFAS risk tiers occurring in both
-                   training and test data.
-                2. A test partition close to 20% of eligible tap-water sites.
-                3. A test-set class distribution close to the full dataset.
-                4. Zero overlap in study labels and site identifiers.
+                1. Missing risk tiers in training or test data.
+                2. Distance from the target 20% test fraction.
+                3. Difference between test and full class shares.
 
-                This produces a deterministic study-level holdout
-                from the current
-                data. The test studies must remain untouched during
-                scaling, encoding,
-                feature selection, and hyperparameter tuning.
+                The missing-tier penalty receives a weight of 10, so
+                preserving every class is prioritized before test size
+                and distribution similarity.
                 """
             ),
+            mo.md("#### Exhaustive versus sklearn comparison"),
+            mo.ui.table(method_best_summary),
+            mo.md(comparison_result),
+            mo.md(
+                """
+                The table below shows the 20 highest-ranked candidates
+                from the combined comparison. The complete comparison
+                remains available as `split_comparison_df`.
+                """
+            ),
+            mo.ui.table(split_comparison_preview),
+            mo.md("#### Selected partition"),
             mo.ui.table(partition_summary),
             mo.md("#### Risk-tier counts by partition"),
             mo.ui.table(partition_class_summary),
@@ -406,12 +627,9 @@ def _(mo, ss_scored_df, task_callout):
                 #### Model optimization inside the training partition
 
                 Hyperparameter selection will use grouped
-                cross-validation only within
-                `tapwater_train_df`. `StratifiedGroupKFold` is
-                appropriate because it
-                attempts to preserve the risk-tier distribution
-                while still keeping
-                every study intact:
+                cross-validation only within `tapwater_train_df`.
+                `StratifiedGroupKFold` attempts to preserve the
+                risk-tier distribution while keeping each study intact:
 
                 ```python
                 from sklearn.model_selection import StratifiedGroupKFold
@@ -434,30 +652,27 @@ def _(mo, ss_scored_df, task_callout):
                 ```
 
                 Study labels, site identifiers, PFAS concentrations,
-                `sum_tq_epa`, and `pfas_risk_tier` are grouping,
-                identification,
-                or outcome fields—not model predictors. All
-                preprocessing must be
-                fitted inside each training fold through one pipeline.
+                `sum_tq_epa`, and `pfas_risk_tier` are not model
+                predictors. All preprocessing must be fitted inside
+                each training fold through one pipeline.
 
                 #### McMahon treatment
 
-                `mc_scored_df` is provisionally excluded from this
-                tap-water split.
-                McMahon contains groundwater observations, omits
-                GenX, and applies a
-                different non-detect convention. Under the current
-                construction its
-                target distribution is therefore not on the same footing as
-                Smalling/Seawolf. Task 3.4 will decide whether it
-                should support a
-                separate groundwater model or serve as a qualified external
-                evaluation slice.
+                `mc_scored_df` remains outside this tap-water split.
+                McMahon represents groundwater, omits GenX, and uses a
+                different non-detect convention. Task 3.4 will decide
+                whether it supports a separate groundwater model or a
+                qualified external evaluation slice.
                 """
             ),
         ]
     )
-    return
+    return (
+        split_comparison_df,
+        tapwater_split_df,
+        tapwater_test_df,
+        tapwater_train_df,
+    )
 
 
 @app.cell(hide_code=True)
