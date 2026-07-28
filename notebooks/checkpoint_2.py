@@ -54,6 +54,33 @@ async def _(checkpoint_1_app):
 
 
 @app.cell(hide_code=True)
+def _():
+    # Shared third-party imports for this notebook, defined once so
+    # downstream cells take them as parameters instead of each
+    # re-importing pandas/sklearn locally.
+    from itertools import combinations
+
+    import pandas as pd
+    from sklearn.metrics import (
+        classification_report,
+        confusion_matrix,
+        f1_score,
+        recall_score,
+    )
+    from sklearn.model_selection import StratifiedGroupKFold
+
+    return (
+        StratifiedGroupKFold,
+        classification_report,
+        combinations,
+        confusion_matrix,
+        f1_score,
+        pd,
+        recall_score,
+    )
+
+
+@app.cell(hide_code=True)
 def _(mc_clean_df, mc_scored_df, mo, ss_scored_df):
     mo.md(f"""
     # Step 3-4: Model Selection, Training & Evaluation Design (Checkpoint 2)
@@ -220,14 +247,14 @@ def _(pd):
 
 
 @app.cell
-def _(TIER_ORDER, pd):
-    from sklearn.metrics import (
-        classification_report,
-        confusion_matrix,
-        f1_score,
-        recall_score,
-    )
-
+def _(
+    TIER_ORDER,
+    classification_report,
+    confusion_matrix,
+    f1_score,
+    pd,
+    recall_score,
+):
     def evaluate_tier_model(y_true, y_pred, model_name, recall_floor=None):
         """Standard Task 3.1 evaluation for any ∑TQ tier classifier.
 
@@ -330,12 +357,7 @@ def _(mo, task_callout):
 
 
 @app.cell(hide_code=True)
-def _(mo, ss_scored_df):
-    from itertools import combinations
-
-    import pandas as pd
-    from sklearn.model_selection import StratifiedGroupKFold
-
+def _(StratifiedGroupKFold, combinations, mo, pd, ss_scored_df):
     risk_labels = [
         "within_reduced_monitoring",
         "above_trigger",
