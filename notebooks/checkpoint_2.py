@@ -142,7 +142,7 @@ def _(mo, task_callout):
 
 
 @app.cell(hide_code=True)
-def _(mo, ss_scored_df, task_callout):
+def _(mo, ss_scored_df):
     from itertools import combinations
 
     import pandas as pd
@@ -379,31 +379,30 @@ def _(mo, ss_scored_df, task_callout):
         best_sklearn_candidate["selection_score"]
     )
 
-    if (
-        exhaustive_penalty < sklearn_penalty
-        or (
-            exhaustive_penalty == sklearn_penalty
-            and exhaustive_score < sklearn_score - 1e-12
-        )
-    ):
-        comparison_result = (
+    penalty_diff = exhaustive_penalty - sklearn_penalty
+    score_diff = exhaustive_score - sklearn_score
+    if penalty_diff < 0 or (penalty_diff == 0 and score_diff < -1e-12):
+        comparison_outcome = "better"
+    elif penalty_diff == 0 and abs(score_diff) <= 1e-12:
+        comparison_outcome = "tie"
+    else:
+        comparison_outcome = "worse"
+
+    comparison_result = {
+        "better": (
             "The exhaustive winner strictly outperforms every "
             "StratifiedGroupKFold fold under the shared rubric."
-        )
-    elif (
-        exhaustive_penalty == sklearn_penalty
-        and abs(exhaustive_score - sklearn_score) <= 1e-12
-    ):
-        comparison_result = (
+        ),
+        "tie": (
             "The exhaustive winner ties the best "
             "StratifiedGroupKFold fold under the shared rubric."
-        )
-    else:
-        comparison_result = (
+        ),
+        "worse": (
             "A StratifiedGroupKFold fold outperforms the exhaustive "
             "winner under the shared rubric; the selection logic "
             "should be reviewed."
-        )
+        ),
+    }[comparison_outcome]
 
     method_best_summary = pd.DataFrame(
         [
@@ -551,20 +550,17 @@ def _(mo, ss_scored_df, task_callout):
 
     mo.vstack(
         [
-            mo.md("### Split strategy - group by study"),
-            task_callout(
-                "3.3",
-                category="Step 3 - Evaluation Plan",
-                lead="Raj",
-                summary=(
-                    "Use the completed `ss_scored_df` target to "
-                    "create a study-grouped train/test split for the "
-                    "tap-water model. All sites from a contributing "
-                    "study remain together, preventing study-design "
-                    "and geographic leakage. Benchmark the custom "
-                    "exhaustive search against "
-                    "`StratifiedGroupKFold` using the same rubric."
-                ),
+            mo.md(
+                """
+                ### Split strategy - group by study
+
+                A study-grouped train/test split for the tap-water
+                model uses the completed `ss_scored_df` target: all
+                sites from a contributing study remain together,
+                preventing study-design and geographic leakage. The
+                custom exhaustive search below is benchmarked against
+                `StratifiedGroupKFold` using the same rubric.
+                """
             ),
             mo.md(
                 f"""
