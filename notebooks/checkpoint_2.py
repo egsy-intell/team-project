@@ -142,7 +142,7 @@ def _(mo, task_callout):
 
 
 @app.cell(hide_code=True)
-def _(mc_scored_df, mo, ss_scored_df, task_callout):
+def _(mo, ss_scored_df, task_callout):
     from itertools import combinations
 
     import pandas as pd
@@ -668,12 +668,7 @@ def _(mc_scored_df, mo, ss_scored_df, task_callout):
             ),
         ]
     )
-    return (
-        split_comparison_df,
-        tapwater_split_df,
-        tapwater_test_df,
-        tapwater_train_df,
-    )
+    return
 
 
 @app.cell(hide_code=True)
