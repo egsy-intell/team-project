@@ -15,7 +15,10 @@ app = marimo.App(width="medium")
 
 @app.cell(hide_code=True)
 def _():
+    from itertools import combinations
+
     import marimo as mo
+    import pandas as pd
 
     # When this notebook is opened from a local checkout, checkpoint_1.py
     # sits right next to it. When marimo downloads it standalone from a URL
@@ -39,7 +42,7 @@ def _():
         _sys.path.insert(0, _tmp_dir)
 
         from checkpoint_1 import app as checkpoint_1_app
-    return checkpoint_1_app, mo
+    return checkpoint_1_app, combinations, mo, pd
 
 
 @app.cell(hide_code=True)

@@ -1,7 +1,7 @@
 Task ID,Task Name,Category,Owner,Depends On,Start Date,End Date,Status
 PW,"Reshape to one row per site/compound, join benchmarks, compute per-compound & summed TQ",Pre-work,Yai,None,2026-07-26,2026-07-27,Not started
 3.1,Define per-class metrics (precision/recall/F1, confusion matrix),Step 3 - Evaluation Plan,Somyaranjan,None,2026-07-26,2026-07-27,Not started
-3.3,Design the split strategy (group by study),Step 3 - Evaluation Plan,Raj,None,2026-07-26,2026-07-27,Not started
+3.3,Design the split strategy (group by study),Step 3 - Evaluation Plan,Raj,None,2026-07-26,2026-07-27,Complete
 3.5,Scalability / deployment metric (optional 3rd proposal),Step 3 - Evaluation Plan,Emir,None,2026-07-26,2026-07-27,Not started
 4.2,Tooling & compute plan for baseline,Step 4 - Modeling Techniques,"Raj, Yai",None,2026-07-27,2026-07-28,Not started
 3.4,Decide groundwater's role (held-out vs combined),Step 3 - Evaluation Plan,"Raj, Yai",3.3,2026-07-27,2026-07-28,Not started

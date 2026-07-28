@@ -69,7 +69,7 @@ def _(mo):
             kind="info",
         )
 
-    return print_sections, task_callout # Return the utility functions
+    return (print_sections,)
 
 
 @app.cell(hide_code=True)
