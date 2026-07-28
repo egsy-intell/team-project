@@ -107,9 +107,9 @@ def _(mo, task_callout):
                     lead="Somyaranjan",
                     summary=(
                         "Define the primary classification metrics for the "
-                        "∑TQ risk-tier target: per-class precision/recall/F1 and "
+                        "∑TQ risk-tier target: per-class precision/recall and "
                         "a confusion matrix, with an explanation of why these "
-                        "matter more here than plain accuracy (class imbalance "
+                        "matter more than plain accuracy (class imbalance "
                         "across risk tiers, and asymmetric cost of missing a "
                         "high-risk site vs. a false alarm)."
                     ),
