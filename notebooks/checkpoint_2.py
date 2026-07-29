@@ -334,6 +334,71 @@ def _(mo, task_callout):
     return
 
 
+@app.cell
+def _(mo):
+    mo.md(r"""
+    ### Task 3.2: Model Success Criteria & Operational Benchmarks
+    **Lead:** Somyaranjan Sahu & Team | **Target Tiers:** `within_reduced_monitoring`, `above_trigger`, `mcl_exceedance`
+
+    To determine whether our land-use classification models provide actionable value for water-resource managers, we establish formal quantitative benchmarks prior to model training.
+
+    #### 1. Baseline Benchmark Comparison
+    Our models must significantly outperform two naive reference baselines:
+    * **Random Uniform Classifier:** Yields an expected Macro F1-Score of $\approx 0.33$.
+    * **Majority Class Classifier (Zero-Rule):** Always predicts `within_reduced_monitoring`. While achieving high raw accuracy due to class skew, it yields **$0.0$ Recall on `mcl_exceedance`** and a low **Macro F1 of $\approx 0.22$**.
+
+    #### 2. Quantitative Operational Thresholds
+    We establish three core success thresholds for evaluating our models on held-out test data:
+
+    1. **High-Risk Class Recall ($\ge 70.0\%$):**
+       * **Criterion:** $\text{Recall}_{\text{mcl\_exceedance}} \ge 0.70$
+       * **Rationale:** In environmental risk screening, Type II errors (missing a contaminated well) present severe public health hazards. Catching at least 70% of actual exceedance sites ensures our model serves as an effective screening tool for water operators.
+    2. **Macro-Averaged F1-Score ($\ge 0.55$):**
+       * **Criterion:** $\text{Macro F1} = \frac{F1_{\text{reduced}} + F1_{\text{trigger}} + F1_{\text{mcl}}}{3} \ge 0.55$
+       * **Rationale:** Since Macro F1 weights all classes equally regardless of support count, achieving $\ge 0.55$ proves our model is actively learning features across all three risk tiers rather than defaulting to the majority class.
+    3. **High-Risk Precision Floor ($\ge 40.0\%$):**
+       * **Criterion:** $\text{Precision}_{\text{mcl\_exceedance}} \ge 0.40$
+       * **Rationale:** While false alarms only incur re-testing costs, an extremely low precision ($< 0.20$) would cause severe "alert fatigue" and waste limited testing budgets. Setting a 40% floor ensures at least 4 out of 10 flagged high-risk sites are true exceedances.
+    """)
+    return
+
+
+@app.cell
+def _(mo, pd):
+    # Defining our explicit model success targets for Task 3.2
+    success_targets_df = pd.DataFrame([
+        {
+            "Metric": "High-Risk Tier Recall",
+            "Target Class": "mcl_exceedance",
+            "Naive Baseline": "0.00",
+            "Minimum Passing Threshold": "≥ 0.70 (70%)",
+            "Operational Rationale": "Minimize missed high-risk contamination sites"
+        },
+        {
+            "Metric": "Macro-Averaged F1-Score",
+            "Target Class": "All Tiers (Unweighted)",
+            "Naive Baseline": "~ 0.22",
+            "Minimum Passing Threshold": "≥ 0.55",
+            "Operational Rationale": "Ensure active learning across imbalanced classes"
+        },
+        {
+            "Metric": "High-Risk Tier Precision",
+            "Target Class": "mcl_exceedance",
+            "Naive Baseline": "0.00",
+            "Minimum Passing Threshold": "≥ 0.40 (40%)",
+            "Operational Rationale": "Control false alarms and preserve re-testing budgets"
+        }
+    ])
+
+    # Displaying the summary table in our marimo interface
+    mo.vstack([
+        mo.md("#### Task 3.2: Summary Table of Evaluation Targets"),
+        mo.ui.table(success_targets_df)
+    ])
+
+    return
+
+
 @app.cell(hide_code=True)
 def _(mo, ss_scored_df):
     from itertools import combinations
