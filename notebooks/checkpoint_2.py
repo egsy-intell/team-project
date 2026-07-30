@@ -2,6 +2,7 @@
 # requires-python = ">=3.14"
 # dependencies = [
 #     "marimo>=0.23.3",
+#     "numpy",
 #     "pandas>=3.0.3",
 #     "scikit-learn",
 # ]
@@ -59,7 +60,9 @@ def _():
     # re-importing pandas/sklearn locally.
     from itertools import combinations
 
+    import numpy as np
     import pandas as pd
+    from sklearn.compose import ColumnTransformer
     from sklearn.metrics import (
         classification_report,
         confusion_matrix,
@@ -67,13 +70,18 @@ def _():
         recall_score,
     )
     from sklearn.model_selection import StratifiedGroupKFold
+    from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
     return (
+        ColumnTransformer,
+        OneHotEncoder,
+        StandardScaler,
         StratifiedGroupKFold,
         classification_report,
         combinations,
         confusion_matrix,
         f1_score,
+        np,
         pd,
         recall_score,
     )
@@ -196,12 +204,12 @@ def _(pd):
         "mcl_exceedance",
     ]
 
-    RISK_TIER_BINS = [float("-inf"), 0.5, 1.0, float("inf")]
+    _RISK_TIER_BINS = [float("-inf"), 0.5, 1.0, float("inf")]
 
     def classify_pfas_risk_tier(sum_tq_epa):
         return pd.cut(
             sum_tq_epa,
-            bins=RISK_TIER_BINS,
+            bins=_RISK_TIER_BINS,
             labels=RISK_LABELS,
             right=False,
             ordered=True,
@@ -821,17 +829,15 @@ def _(
     _selected_test_mask = _tapwater_split_df["study_group"].isin(
         _selected_test_studies
     )
-    _tapwater_train_df = _tapwater_split_df.loc[~_selected_test_mask].copy()
-    _tapwater_test_df = _tapwater_split_df.loc[_selected_test_mask].copy()
+    tapwater_train_df = _tapwater_split_df.loc[~_selected_test_mask].copy()
+    tapwater_test_df = _tapwater_split_df.loc[_selected_test_mask].copy()
 
-    _train_studies = sorted(
-        _tapwater_train_df["study_group"].unique().tolist()
-    )
-    _test_studies = sorted(_tapwater_test_df["study_group"].unique().tolist())
+    _train_studies = sorted(tapwater_train_df["study_group"].unique().tolist())
+    _test_studies = sorted(tapwater_test_df["study_group"].unique().tolist())
     _study_overlap = sorted(set(_train_studies).intersection(_test_studies))
     _site_overlap = sorted(
-        set(_tapwater_train_df["Site Code"]).intersection(
-            _tapwater_test_df["Site Code"]
+        set(tapwater_train_df["Site Code"]).intersection(
+            tapwater_test_df["Site Code"]
         )
     )
 
@@ -839,13 +845,13 @@ def _(
         [
             {
                 "Partition": "Training",
-                "Sites": len(_tapwater_train_df),
+                "Sites": len(tapwater_train_df),
                 "Study groups": len(_train_studies),
                 "Studies": ", ".join(_train_studies),
             },
             {
                 "Partition": "Test",
-                "Sites": len(_tapwater_test_df),
+                "Sites": len(tapwater_test_df),
                 "Study groups": len(_test_studies),
                 "Studies": ", ".join(_test_studies),
             },
@@ -855,8 +861,8 @@ def _(
     _partition_class_summary = (
         pd.concat(
             [
-                _tapwater_train_df.assign(Partition="Training"),
-                _tapwater_test_df.assign(Partition="Test"),
+                tapwater_train_df.assign(Partition="Training"),
+                tapwater_test_df.assign(Partition="Test"),
             ]
         )
         .groupby(["Partition", "pfas_risk_tier"], observed=False)
@@ -1013,7 +1019,7 @@ def _(
             ),
         ]
     )
-    return
+    return tapwater_test_df, tapwater_train_df
 
 
 @app.cell(hide_code=True)
@@ -1174,16 +1180,18 @@ def _(mo, task_callout):
 def _(mo):
     mo.md(r"""
     <h4>Task 4.4: Feature Matrix Preprocessing — Skew Handling &
-    Categorical Encoding</h4>
+    Leakage-Free Encoding</h4>
     **Lead:** Somyaranjan Sahu | **Depends on:** Task PW (Scored
-    Dataset Pipelines: `ss_scored_df`, `mc_scored_df`)
+    Dataset Pipelines: `ss_scored_df`)
 
     Before feeding the landscape predictors into classification
     algorithms, a clean feature matrix $X$ requires resolving two
     common dataset characteristics: **extreme numerical skewness** and
-    **unencoded categorical features**.
+    **unencoded categorical features**. McMahon (`mc_scored_df`) is
+    excluded here — per the groundwater-role decision, it's held out
+    of training entirely and used only as a validation slice.
 
-    #### 1. Rationale for skew transformation ($\log_{1p}$)
+    #### Rationale for skew transformation ($\log_{1p}$)
     Environmental landscape variables — such as distances to nearest
     industrial facilities, military sites, or localized urban burn
     areas — frequently exhibit strong right-skewed distributions with
@@ -1192,131 +1200,134 @@ def _(mo):
       distort linear models (like Logistic Regression) and
       distance-based estimators by placing disproportionate weight on
       extreme outlier values.
-    * **Our solution:** Calculate the Fisher-Pearson coefficient of
+    * **Skew correction:** Calculate the Fisher-Pearson coefficient of
       skewness for all numeric predictors. For features exhibiting
       significant right-skewness ($\text{skewness} > 1.0$), apply a
       $\log_{1p}(x) = \log(1 + x)$ transformation, which compresses
       the upper tail while preserving zero values safely without
-      mathematical division errors.
+      mathematical division errors. Numeric columns are then
+      standardized with `StandardScaler`.
 
-    #### 2. Categorical variable encoding
-    Categorical flags — such as water service point types (public
-    supply vs. private wells) and aquifer region descriptors — are
-    converted into numeric format using **one-hot encoding**
-    (`pd.get_dummies(..., drop_first=True)`). Dropping the first dummy
-    column prevents perfect multicollinearity (the dummy variable
-    trap) in linear baselines.
+    #### Categorical encoding, fit on the training split only
+    Categorical flags — such as site type (public supply vs. private
+    wells) and state — are converted into numeric format using
+    **one-hot encoding**
+    (`OneHotEncoder(handle_unknown="ignore", drop="first")`) inside a
+    `ColumnTransformer`. Study identifiers (`Study_smalling`,
+    `Study_seawolf`) are excluded from $X$ entirely — retained as
+    controls, not predictors, per checkpoint 1's Step 2.5 plan.
+    Dropping the first dummy column prevents perfect multicollinearity
+    in linear baselines. The transformer is fit on `X_train` only and
+    applied to `X_test` without refitting, so no information from the
+    held-out split leaks into scaling or encoding.
     """)
     return
 
 
 @app.cell
-def _():
-    import numpy as np
+def _(ColumnTransformer, OneHotEncoder, StandardScaler, np, pd):
+    # Columns that either leak the target (raw TQ/tier fields), aren't
+    # predictors (identifiers/metadata), are study-split bookkeeping
+    # added by the split-strategy section, or are study identifiers
+    # retained as controls rather than predictors per checkpoint 1's
+    # Step 2.5 plan get excluded from X.
+    _LEAKAGE_AND_ID_COLS = [
+        "Site Code",
+        "SiteCode",
+        "NAWQA_ID",
+        "_merge",
+        "Total_PFAS",
+        "sum_TQ",
+        "sum_tq_epa",
+        "sum_tq_state_only",
+        "Contamination_Class",
+        "pfas_risk_tier",
+        "study_group",
+        "Study_smalling",
+        "Study_seawolf",
+    ]
 
-    return (np,)
-
-
-@app.cell
-def _(mc_scored_df, mo, np, pd, ss_scored_df):
-    # Helper function to transform skewed features and encode
-    # categoricals.
-    def preprocess_feature_matrix(
-        df, target_col="sum_TQ_tier", skew_threshold=1.0
-    ):
-        # Making a copy to avoid mutating the inherited scored
-        # dataframe.
-        data = df.copy()
-
-        # Separating predictor columns from metadata, identifiers,
-        # and target labels.
-        non_feature_cols = [
-            "Site Code",
-            "SiteCode",
-            "NAWQA_ID",
-            "_merge",
-            "Total_PFAS",
-            "sum_TQ",
-            target_col,
-            "Contamination_Class",
+    def preprocess_tapwater_features(train_df, test_df, skew_threshold=1.0):
+        feature_cols = [
+            c for c in train_df.columns if c not in _LEAKAGE_AND_ID_COLS
         ]
+        X_train = train_df[feature_cols].copy()
+        X_test = test_df[feature_cols].copy()
+        y_train = train_df["pfas_risk_tier"].astype(str)
+        y_test = test_df["pfas_risk_tier"].astype(str)
 
-        feature_cols = [c for c in data.columns if c not in non_feature_cols]
+        numeric_cols = X_train.select_dtypes(
+            include=[np.number]
+        ).columns.tolist()
+        categorical_cols = X_train.select_dtypes(
+            exclude=[np.number]
+        ).columns.tolist()
 
-        # Identifying numeric vs categorical feature types
-        numeric_cols = (
-            data[feature_cols]
-            .select_dtypes(include=[np.number])
-            .columns.tolist()
-        )
-        categorical_cols = (
-            data[feature_cols]
-            .select_dtypes(exclude=[np.number])
-            .columns.tolist()
-        )
-
-        # Calculating baseline skewness across numeric predictors
-        # before transformation.
-        initial_skew = data[numeric_cols].skew(numeric_only=True)
-
-        # Applying log1p transformation to highly right-skewed
-        # numeric predictors (skew > threshold).
+        # log1p right-skewed numeric predictors using training-split
+        # skewness only, so no information from the test partition
+        # informs which features get transformed.
+        initial_skew = X_train[numeric_cols].skew(numeric_only=True)
         skewed_features = initial_skew[
             initial_skew > skew_threshold
         ].index.tolist()
         for col in skewed_features:
-            # Ensuring no negative values exist prior to log transformation
-            if (data[col] >= 0).all():
-                data[col] = np.log1p(data[col])
+            if (X_train[col] >= 0).all() and (X_test[col] >= 0).all():
+                X_train[col] = np.log1p(X_train[col])
+                X_test[col] = np.log1p(X_test[col])
 
-        # Recalculating skewness post-transformation to verify reduction
-        post_skew = data[numeric_cols].skew(numeric_only=True)
+        preprocessor = ColumnTransformer(
+            transformers=[
+                ("num", StandardScaler(), numeric_cols),
+                (
+                    "cat",
+                    OneHotEncoder(handle_unknown="ignore", drop="first"),
+                    categorical_cols,
+                ),
+            ],
+            remainder="drop",
+        )
+        X_train_processed = preprocessor.fit_transform(X_train)
+        X_test_processed = preprocessor.transform(X_test)
 
-        # One-hot encoding any categorical variables
-        if categorical_cols:
-            data = pd.get_dummies(
-                data, columns=categorical_cols, drop_first=True
-            )
-
-        # Re-extracting clean X feature matrix and y target vector
-        updated_feature_cols = [
-            c for c in data.columns if c not in non_feature_cols
-        ]
-        X = data[updated_feature_cols].fillna(0)
-        y = data[target_col] if target_col in data.columns else None
-
-        # Compiling a transformation summary table for dataset profiling
-        skew_summary = pd.DataFrame(
+        skew_audit = pd.DataFrame(
             {
                 "Feature": skewed_features,
                 "Initial Skew": [
                     round(initial_skew[f], 2) for f in skewed_features
                 ],
-                "Post Log1p Skew": [
-                    round(post_skew[f], 2) for f in skewed_features
-                ],
             }
         )
 
-        return X, y, skew_summary
+        return {
+            "preprocessor": preprocessor,
+            "X_train": X_train_processed,
+            "X_test": X_test_processed,
+            "y_train": y_train,
+            "y_test": y_test,
+            "feature_names": numeric_cols + categorical_cols,
+            "skew_audit": skew_audit,
+        }
 
-    # Applying the preprocessing pipeline to both tapwater (Smalling)
-    # and groundwater (McMahon) sets.
-    X_ss, _y_ss, skew_summary_ss = preprocess_feature_matrix(ss_scored_df)
-    _X_mc, _y_mc, _skew_summary_mc = preprocess_feature_matrix(mc_scored_df)
+    return (preprocess_tapwater_features,)
 
-    # Rendering the skew transformation audit table inside marimo.
+
+@app.cell
+def _(mo, preprocess_tapwater_features, tapwater_test_df, tapwater_train_df):
+    _tapwater_model_matrices = preprocess_tapwater_features(
+        tapwater_train_df, tapwater_test_df
+    )
+
     mo.vstack(
         [
             mo.md(
                 "#### Task 4.4 audit: features transformed via "
-                "$\\log_{1p}$ (tapwater set)"
+                "$\\log_{1p}$ (tap-water set)"
             ),
-            mo.ui.table(skew_summary_ss.head(10)),
+            mo.ui.table(_tapwater_model_matrices["skew_audit"].head(10)),
             mo.md(
-                f"**Finalized tapwater feature matrix shape:** "
-                f"`{X_ss.shape[0]}` rows $\\times$ `{X_ss.shape[1]}` "
-                "features"
+                f"**Train/test feature matrix shape:** "
+                f"`{_tapwater_model_matrices['X_train'].shape}` / "
+                f"`{_tapwater_model_matrices['X_test'].shape}`"
             ),
         ]
     )
