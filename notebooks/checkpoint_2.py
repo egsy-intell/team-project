@@ -307,8 +307,9 @@ def _(mo, task_callout):
                     "Decide what constitutes success for the model against "
                     "the ∑TQ risk tiers (`within_reduced_monitoring`, "
                     "`above_trigger`, `mcl_exceedance`) — e.g. minimum "
-                    "recall on the highest-risk tier — once Task PW's "
-                    "reshaped/joined ∑TQ target is available to profile."
+                    "recall on the highest-risk tier — profiled against "
+                    "the reshaped/joined ∑TQ target Task PW produced "
+                    "(`ss_scored_df`)."
                 ),
             ),
         ]
