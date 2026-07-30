@@ -199,15 +199,14 @@ def _(mo):
       and it maps directly onto the trigger-vs-MCL vocabulary
       operators already act on.
 
-    #### 3. Scope note
+    #### 3. Evaluation dataset slices & McMahon generalization benchmark
 
-    This framework is defined per evaluation slice. Checkpoint 1 found
-    that all 254 McMahon sites carry `sum_tq_epa` ≥ 1.021 under the
-    half-reporting-limit non-detect convention, placing every one of
-    them in `mcl_exceedance` by construction. Whether that data joins
-    the training target or becomes a held-out slice is Task 3.4's
-    decision; combined-target class proportions, and therefore the
-    recall floor in 3.2, cannot be finalized until it resolves.
+    Aligned with the dataset split strategy detailed in the next section, model evaluation operates across two distinct data slices:
+
+    1. **Internal Validation Slice (`ss_scored_df`):** Hyperparameter tuning, cross-validation, and primary model selection are conducted on the Smalling/Seawolf tapwater dataset.
+    2. **External Out-of-Domain Generalization Benchmark (`mc_scored_df`):** The McMahon groundwater dataset (254 sites) is held out as an external benchmark rather than combined with Smalling/Seawolf. Under the half-reporting-limit non-detect convention, all 254 McMahon sites carry $\sum TQ \ge 1.021$, placing 100% of its rows into `mcl_exceedance` by construction. This pinning is driven by imputation rules and GenX compound coverage differences between studies rather than true underlying landscape geology.
+
+    Holding McMahon out allows our evaluation framework to test model robustness under severe out-of-domain distribution shifts, auditing how well land-use predictors trained on tapwater generalize when evaluated on an external groundwater study affected by study-specific imputation artifacts.
     """)
     return
 
@@ -227,9 +226,7 @@ def _(pd):
 
 
         Cutoffs default to the EPA-anchored values from Checkpoint 1 but stay
-
         parameterized: Task 3.2 may adjust them once the reshaped target from
-
         Task PW is available to profile.
 
         """
@@ -255,7 +252,8 @@ def _(
 ):
     def evaluate_tier_model(y_true, y_pred, model_name, recall_floor=None):
         """Standard Task 3.1 evaluation for any ∑TQ tier classifier.
-
+        Evaluates performance across both internal test splits (Smalling/Seawolf)
+        and external held-out generalization benchmarks (McMahon from Task 3.4).
 
         Returns per-class precision/recall/F1, the two headline numbers the
 
@@ -410,7 +408,6 @@ def _(mo, pd):
         mo.md("#### Task 3.2: Summary Table of Evaluation Targets"),
         mo.ui.table(success_targets_df)
     ])
-
     return
 
 
@@ -973,6 +970,108 @@ def _(mo, task_callout):
                     "predictors, and finalize binary/one-hot encoding for "
                     "categorical fields, fit on training data only."
                 ),
+            ),
+        ]
+    )
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""
+    ### Task 4.4: Feature Matrix Preprocessing — Skew Handling & Categorical Encoding
+    **Lead:** Somyaranjan Sahu | **Depends on:** Scored Dataset Pipelines (`ss_scored_df`, `mc_scored_df`)
+
+    Before feeding our landscape predictors into classification algorithms, we must prepare a clean feature matrix $X$ by resolving two common dataset characteristics: **extreme numerical skewness** and **unencoded categorical features**.
+
+    #### 1. Rationale for Skew Transformation ($\log_{1p}$)
+    Environmental landscape variables—such as distances to nearest industrial facilities, military sites, or localized urban burn areas—frequently exhibit strong right-skewed distributions with long upper tails.
+    * **Why this matters:** Unscaled, highly skewed features can distort linear models (like Logistic Regression) and distance-based estimators by placing disproportionate weight on extreme outlier values.
+    * **Our Solution:** We calculate the Fisher-Pearson coefficient of skewness for all numeric predictors. For features exhibiting significant right-skewness ($\text{skewness} > 1.0$), we apply a $\log_{1p}(x) = \log(1 + x)$ transformation, which compresses the upper tail while preserving zero values safely without mathematical division errors.
+
+    #### 2. Categorical Variable Encoding
+    Categorical flags—such as water service point types (public supply vs. private wells) and aquifer region descriptors—are converted into numeric format using **One-Hot Encoding** (`pd.get_dummies(..., drop_first=True)`). Dropping the first dummy column prevents perfect multicollinearity (the dummy variable trap) in linear baselines.
+    """)
+    return
+
+
+@app.cell
+def _():
+    import numpy as np
+
+    return (np,)
+
+
+@app.cell
+def _(mc_scored_df, mo, np, pd, ss_scored_df):
+
+    # Defining a helper function to transform skewed features and encode categoricals
+    def preprocess_feature_matrix(df, target_col="sum_TQ_tier", skew_threshold=1.0):
+        # Making a copy to avoid mutating the inherited scored dataframe
+        data = df.copy()
+
+        # Separating predictor columns from metadata, identifiers, and target labels
+        non_feature_cols = [
+            "Site Code",
+            "SiteCode",
+            "NAWQA_ID",
+            "_merge",
+            "Total_PFAS",
+            "sum_TQ",
+            target_col,
+            "Contamination_Class",
+        ]
+
+        feature_cols = [c for c in data.columns if c not in non_feature_cols]
+
+        # Identifying numeric vs categorical feature types
+        numeric_cols = data[feature_cols].select_dtypes(include=[np.number]).columns.tolist()
+        categorical_cols = data[feature_cols].select_dtypes(exclude=[np.number]).columns.tolist()
+
+        # Calculating baseline skewness across numeric predictors before transformation
+        initial_skew = data[numeric_cols].skew(numeric_only=True)
+
+        # Applying log1p transformation to highly right-skewed numeric predictors (skew > threshold)
+        skewed_features = initial_skew[initial_skew > skew_threshold].index.tolist()
+        for col in skewed_features:
+            # Ensuring no negative values exist prior to log transformation
+            if (data[col] >= 0).all():
+                data[col] = np.log1p(data[col])
+
+        # Recalculating skewness post-transformation to verify reduction
+        post_skew = data[numeric_cols].skew(numeric_only=True)
+
+        # One-hot encoding any categorical variables
+        if categorical_cols:
+            data = pd.get_dummies(data, columns=categorical_cols, drop_first=True)
+
+        # Re-extracting clean X feature matrix and y target vector
+        updated_feature_cols = [c for c in data.columns if c not in non_feature_cols]
+        X = data[updated_feature_cols].fillna(0)
+        y = data[target_col] if target_col in data.columns else None
+
+        # Compiling a transformation summary table for dataset profiling
+        skew_summary = pd.DataFrame(
+            {
+                "Feature": skewed_features,
+                "Initial Skew": [round(initial_skew[f], 2) for f in skewed_features],
+                "Post Log1p Skew": [round(post_skew[f], 2) for f in skewed_features],
+            }
+        )
+
+        return X, y, skew_summary
+
+    # Applying our preprocessing pipeline to both tapwater (Smalling) and groundwater (McMahon) sets
+    X_ss, y_ss, skew_summary_ss = preprocess_feature_matrix(ss_scored_df)
+    X_mc, y_mc, skew_summary_mc = preprocess_feature_matrix(mc_scored_df)
+
+    # Rendering the skew transformation audit table inside marimo
+    mo.vstack(
+        [
+            mo.md("#### Task 4.4 Audit: Features Transformed via $\\log_{1p}$ (Tapwater Set)"),
+            mo.ui.table(skew_summary_ss.head(10)),
+            mo.md(
+                f"**Finalized Tapwater Feature Matrix Shape:** `{X_ss.shape[0]}` rows $\\times$ `{X_ss.shape[1]}` features"
             ),
         ]
     )
