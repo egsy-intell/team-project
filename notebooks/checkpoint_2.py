@@ -2,7 +2,6 @@
 # requires-python = ">=3.14"
 # dependencies = [
 #     "marimo>=0.23.3",
-#     "matplotlib>=3.11.1",
 #     "pandas>=3.0.3",
 #     "scikit-learn",
 # ]
@@ -100,9 +99,9 @@ def _(mc_clean_df, mc_scored_df, mo, ss_scored_df):
     Inherited from checkpoint 1's Step 2 cleaning and ∑TQ construction:
     `ss_scored_df` ({ss_scored_df.shape[0]} rows), `mc_scored_df`
     ({mc_scored_df.shape[0]} rows). `mc_clean_df` ({mc_clean_df.shape[0]}
-    rows) is also available unscored — McMahon's role (combined vs.
-    held-out, task `3.4`) isn't decided yet, so both are kept until
-    that's settled.
+    rows) is also available unscored — McMahon is held out of training
+    entirely and used only as a qualified validation slice, per the
+    groundwater-role decision below.
     """)
     return
 
@@ -120,50 +119,26 @@ def _(mo):
     return
 
 
-@app.cell(hide_code=True)
-def _(mo, task_callout):
-    mo.vstack(
-        [
-            mo.md(
-                "### Per-class metrics (precision/recall/F1, confusion matrix)"
-            ),
-            task_callout(
-                "3.1",
-                category="Step 3 - Evaluation Plan",
-                lead="Somyaranjan",
-                summary=(
-                    "Define the primary classification metrics for the "
-                    "∑TQ risk-tier target: per-class precision/recall/F1 and "
-                    "a confusion matrix, with an explanation of why these "
-                    "matter more here than plain accuracy (class imbalance "
-                    "across risk tiers, and asymmetric cost of missing a "
-                    "high-risk site vs. a false alarm)."
-                ),
-            ),
-        ]
-    )
-    return
-
-
 @app.cell
-def _(mo):
-    mo.md(r"""
-    ### Classification metrics and evaluation rationale
+def _(mo, tier_distribution):
+    mo.md(rf"""
+    ### Per-class metrics and evaluation rationale
 
     **Target:** the ∑TQ risk tier — `within_reduced_monitoring`
     (∑TQ < 0.5), `above_trigger` (0.5 ≤ ∑TQ < 1.0), `mcl_exceedance`
     (∑TQ ≥ 1.0).
 
-    #### 1. Why plain accuracy is the wrong headline metric
+    #### Why plain accuracy is the wrong headline metric
 
     **Class imbalance.** Checkpoint 1's `ss_scored_df` (236
-    Smalling/Seawolf sites) puts the median `sum_tq_epa` at 0.171 and
-    the 75th percentile at 1.275, so `within_reduced_monitoring` holds
-    somewhere between 50% and 75% of sites and `mcl_exceedance` at
-    least 25%. Exact proportions wait on Task 3.2's cutoff profiling,
-    but the direction is already clear: a classifier that predicts the
-    majority tier for every site scores well above chance on accuracy
-    while flagging no contaminated source at all.
+    Smalling/Seawolf sites) splits
+    {tier_distribution["within_reduced_monitoring"]:.1%}
+    `within_reduced_monitoring`,
+    {tier_distribution["above_trigger"]:.1%} `above_trigger`, and
+    {tier_distribution["mcl_exceedance"]:.1%} `mcl_exceedance`: a
+    classifier that predicts the majority tier for every site scores
+    well above chance on accuracy while flagging no contaminated
+    source at all.
 
     **Asymmetric error costs.** Accuracy weights every misclassification
     the same; this problem does not:
@@ -177,20 +152,20 @@ def _(mo):
       Recoverable, and consistent with the tool's stated role as
       sampling prioritization rather than a compliance determination.
 
-    #### 2. Metric framework
+    #### Metric framework
 
     * **Per-class precision, recall, and F1** reported for all three
       tiers separately, never collapsed into a single accuracy figure.
     * **Recall on `mcl_exceedance`** as the constraint. Model selection
-      requires clearing a minimum recall floor on the highest-risk
-      tier; Task 3.2 sets that floor once the reshaped ∑TQ target from
-      Task PW is available to profile.
+      requires clearing a minimum recall floor of 0.70 on the
+      highest-risk tier, set against the actual `ss_scored_df` tier
+      distribution below.
     * **Macro-averaged F1** as the scalar comparison metric *subject
       to* that floor, so Model A and Model B (Tasks 4.1, 4.3) are
       ranked on one number without letting the majority tier dominate
       the score. Macro-averaging is chosen over weighted averaging
       precisely because the minority tier is the one that matters.
-    * **3×3 confusion matrix** (predicted × actual). The tiers are
+    * **3×3 confusion matrix** (actual × predicted). The tiers are
       ordinal, so the direction of error carries meaning that a scalar
       metric discards: a true `mcl_exceedance` site predicted as
       `above_trigger` still lands the operator in a follow-up posture,
@@ -199,51 +174,45 @@ def _(mo):
       and it maps directly onto the trigger-vs-MCL vocabulary
       operators already act on.
 
-    #### 3. Evaluation dataset slices & McMahon generalization benchmark
+    #### Scope note
 
-    Aligned with the dataset split strategy detailed in the next section, model evaluation operates across two distinct data slices:
-
-    1. **Internal Validation Slice (`ss_scored_df`):** Hyperparameter tuning, cross-validation, and primary model selection are conducted on the Smalling/Seawolf tapwater dataset.
-    2. **External Out-of-Domain Generalization Benchmark (`mc_scored_df`):** The McMahon groundwater dataset (254 sites) is held out as an external benchmark rather than combined with Smalling/Seawolf. Under the half-reporting-limit non-detect convention, all 254 McMahon sites carry $\sum TQ \ge 1.021$, placing 100% of its rows into `mcl_exceedance` by construction. This pinning is driven by imputation rules and GenX compound coverage differences between studies rather than true underlying landscape geology.
-
-    Holding McMahon out allows our evaluation framework to test model robustness under severe out-of-domain distribution shifts, auditing how well land-use predictors trained on tapwater generalize when evaluated on an external groundwater study affected by study-specific imputation artifacts.
+    This framework is defined per evaluation slice. Checkpoint 1 found
+    that all 254 McMahon sites carry `sum_tq_epa` ≥ 1.021 under the
+    half-reporting-limit non-detect convention, placing every one of
+    them in `mcl_exceedance` by construction. McMahon is held out of
+    training and reported separately as a qualified validation slice
+    (see the groundwater-role decision below), so the class
+    proportions the recall floor is set against come from
+    `ss_scored_df` alone.
     """)
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(pd):
-    # Ordinal, low -> high. Fixed order so every confusion matrix produced in
-    # Step 5 has identical axes and models can be compared cell-by-cell.
-    TIER_ORDER = [
+    RISK_LABELS = [
         "within_reduced_monitoring",
         "above_trigger",
         "mcl_exceedance",
     ]
 
-    def assign_tq_tier(sum_tq, trigger_cutoff=0.5, mcl_cutoff=1.0):
-        """Map a sum_tq_epa series to the ordinal risk tier.
+    RISK_TIER_BINS = [float("-inf"), 0.5, 1.0, float("inf")]
 
-
-        Cutoffs default to the EPA-anchored values from Checkpoint 1 but stay
-        parameterized: Task 3.2 may adjust them once the reshaped target from
-        Task PW is available to profile.
-
-        """
-
+    def classify_pfas_risk_tier(sum_tq_epa):
         return pd.cut(
-            sum_tq,
-            bins=[-float("inf"), trigger_cutoff, mcl_cutoff, float("inf")],
-            labels=TIER_ORDER,
+            sum_tq_epa,
+            bins=RISK_TIER_BINS,
+            labels=RISK_LABELS,
             right=False,
+            ordered=True,
         )
 
-    return (TIER_ORDER,)
+    return RISK_LABELS, classify_pfas_risk_tier
 
 
 @app.cell
 def _(
-    TIER_ORDER,
+    RISK_LABELS,
     classification_report,
     confusion_matrix,
     f1_score,
@@ -251,45 +220,48 @@ def _(
     recall_score,
 ):
     def evaluate_tier_model(y_true, y_pred, model_name, recall_floor=None):
-        """Standard Task 3.1 evaluation for any ∑TQ tier classifier.
-        Evaluates performance across both internal test splits (Smalling/Seawolf)
-        and external held-out generalization benchmarks (McMahon from Task 3.4).
+        """Standard evaluation for any ∑TQ tier classifier.
 
-        Returns per-class precision/recall/F1, the two headline numbers the
-
-        metric framework selects on (macro-F1 and mcl_exceedance recall), a
-
-        labeled 3x3 confusion matrix, and a count of tier-skipping misses.
-
+        Returns per-class precision/recall/F1, the two headline
+        numbers the metric framework selects on (macro-F1 and
+        mcl_exceedance recall), a labeled 3x3 confusion matrix, and a
+        count of tier-skipping misses.
         """
 
         # zero_division=0: a model that never predicts a tier yields an
-        # undefined precision. Score it 0 rather than dropping the row, or the
-        # failure mode Task 3.1 warns about disappears from the report.
+        # undefined precision. Score it 0 rather than dropping the row, or
+        # the majority-tier failure mode this framework warns about
+        # disappears from the report.
         report = pd.DataFrame(
             classification_report(
                 y_true,
                 y_pred,
-                labels=TIER_ORDER,
+                labels=RISK_LABELS,
                 output_dict=True,
                 zero_division=0,
             )
         ).T
 
-        per_class = report.loc[TIER_ORDER].assign(
+        per_class = report.loc[RISK_LABELS].assign(
             support=lambda df: df["support"].astype(int)
         )
 
         matrix = pd.DataFrame(
-            confusion_matrix(y_true, y_pred, labels=TIER_ORDER),
-            index=pd.Index(TIER_ORDER, name="actual"),
-            columns=pd.Index(TIER_ORDER, name="predicted"),
+            confusion_matrix(y_true, y_pred, labels=RISK_LABELS),
+            index=pd.Index(RISK_LABELS, name="actual"),
+            columns=pd.Index(RISK_LABELS, name="predicted"),
         )
 
         macro_f1 = f1_score(
-            y_true, y_pred, labels=TIER_ORDER, average="macro", zero_division=0
+            y_true,
+            y_pred,
+            labels=RISK_LABELS,
+            average="macro",
+            zero_division=0,
         )
 
+        # Single-element labels + average="macro" isolates recall for just
+        # mcl_exceedance rather than averaging across all three tiers.
         mcl_recall = recall_score(
             y_true,
             y_pred,
@@ -321,164 +293,320 @@ def _(
             "confusion_matrix": matrix,
         }
 
-    return
+    return (evaluate_tier_model,)
 
 
-@app.cell(hide_code=True)
-def _(mo, task_callout):
-    mo.vstack(
-        [
-            mo.md("### Success threshold - risk-tier cutoffs"),
-            task_callout(
-                "3.2",
-                category="Step 3 - Evaluation Plan",
-                lead="Somyaranjan, Team",
-                depends_on="PW",
-                summary=(
-                    "Decide what constitutes success for the model against "
-                    "the ∑TQ risk tiers (`within_reduced_monitoring`, "
-                    "`above_trigger`, `mcl_exceedance`) — e.g. minimum "
-                    "recall on the highest-risk tier — once Task PW's "
-                    "reshaped/joined ∑TQ target is available to profile."
-                ),
-            ),
-        ]
+@app.cell
+def _(RISK_LABELS, classify_pfas_risk_tier, evaluate_tier_model, ss_scored_df):
+    tier_true = classify_pfas_risk_tier(ss_scored_df["sum_tq_epa"]).astype(str)
+    tier_distribution = tier_true.value_counts(normalize=True).reindex(
+        RISK_LABELS
     )
+
+    _majority_tier = tier_distribution.idxmax()
+    _majority_pred = [_majority_tier] * len(tier_true)
+    _majority_result = evaluate_tier_model(
+        tier_true, _majority_pred, "Majority class (zero-rule)"
+    )
+    majority_baseline = {
+        **_majority_result["summary"],
+        "mcl_exceedance_precision": round(
+            _majority_result["per_class"].loc["mcl_exceedance", "precision"],
+            4,
+        ),
+    }
+
+    # Random-uniform prediction, independent of the input: recall_c = 1/k
+    # and precision_c = prevalence_c follow directly from that
+    # independence (k = number of tiers).
+    _k = len(RISK_LABELS)
+    _random_recall = 1 / _k
+    _random_f1_by_tier = {
+        _tier: 2
+        * tier_distribution[_tier]
+        * _random_recall
+        / (tier_distribution[_tier] + _random_recall)
+        for _tier in RISK_LABELS
+    }
+    random_baseline = {
+        "macro_f1": round(sum(_random_f1_by_tier.values()) / _k, 4),
+        "mcl_exceedance_recall": round(_random_recall, 4),
+        "mcl_exceedance_precision": round(
+            tier_distribution["mcl_exceedance"], 4
+        ),
+    }
+    return majority_baseline, random_baseline, tier_distribution, tier_true
+
+
+@app.cell
+def _(majority_baseline, mo, random_baseline, tier_distribution):
+    mo.md(rf"""
+    ### Model success criteria and operational benchmarks
+
+    Determining whether the land-use classification models provide
+    actionable value for water-resource managers requires formal
+    quantitative benchmarks, set against the three ∑TQ risk tiers
+    (`within_reduced_monitoring`, `above_trigger`, `mcl_exceedance`)
+    prior to model training.
+
+    #### Baseline benchmark comparison
+    Computed against `ss_scored_df`'s actual tier distribution
+    ({tier_distribution["within_reduced_monitoring"]:.1%}
+    `within_reduced_monitoring`,
+    {tier_distribution["above_trigger"]:.1%} `above_trigger`,
+    {tier_distribution["mcl_exceedance"]:.1%} `mcl_exceedance`), the
+    models must significantly outperform two naive reference
+    baselines:
+    * **Random Uniform Classifier:** predicts each tier with equal
+      1/3 probability, independent of the input. Its expected Macro
+      F1-Score is $\approx {random_baseline["macro_f1"]:.2f}$ —
+      recall on `mcl_exceedance` is exactly 1/3
+      ({random_baseline["mcl_exceedance_recall"]:.2f}) by
+      construction, but precision on `mcl_exceedance`
+      ({random_baseline["mcl_exceedance_precision"]:.2f}) tracks the
+      tier's actual prevalence, since a third of *all* predictions
+      land on that tier regardless of correctness.
+    * **Majority Class Classifier (Zero-Rule):** Always predicts
+      `within_reduced_monitoring`
+      ({tier_distribution["within_reduced_monitoring"]:.1%} of
+      sites). Achieves
+      {tier_distribution["within_reduced_monitoring"]:.1%} raw
+      accuracy from class skew alone, but yields **0.0 Recall on
+      `mcl_exceedance`** — it misses every high-risk site — and a low
+      **Macro F1 of {majority_baseline["macro_f1"]:.2f}**.
+    """)
     return
 
 
 @app.cell
 def _(mo):
     mo.md(r"""
-    ### Task 3.2: Model Success Criteria & Operational Benchmarks
-    **Lead:** Somyaranjan Sahu & Team | **Target Tiers:** `within_reduced_monitoring`, `above_trigger`, `mcl_exceedance`
-
-    To determine whether our land-use classification models provide actionable value for water-resource managers, we establish formal quantitative benchmarks prior to model training.
-
-    #### 1. Baseline Benchmark Comparison
-    Our models must significantly outperform two naive reference baselines:
-    * **Random Uniform Classifier:** Yields an expected Macro F1-Score of $\approx 0.33$.
-    * **Majority Class Classifier (Zero-Rule):** Always predicts `within_reduced_monitoring`. While achieving high raw accuracy due to class skew, it yields **$0.0$ Recall on `mcl_exceedance`** and a low **Macro F1 of $\approx 0.22$**.
-
-    #### 2. Quantitative Operational Thresholds
-    We establish three core success thresholds for evaluating our models on held-out test data:
+    #### Quantitative operational thresholds
+    Three core success thresholds apply when evaluating the models on
+    held-out test data, each pegged to a multiple of the random-
+    uniform baseline computed above rather than chosen arbitrarily:
 
     1. **High-Risk Class Recall ($\ge 70.0\%$):**
-       * **Criterion:** $\text{Recall}_{\text{mcl\_exceedance}} \ge 0.70$
-       * **Rationale:** In environmental risk screening, Type II errors (missing a contaminated well) present severe public health hazards. Catching at least 70% of actual exceedance sites ensures our model serves as an effective screening tool for water operators.
-    2. **Macro-Averaged F1-Score ($\ge 0.55$):**
-       * **Criterion:** $\text{Macro F1} = \frac{F1_{\text{reduced}} + F1_{\text{trigger}} + F1_{\text{mcl}}}{3} \ge 0.55$
-       * **Rationale:** Since Macro F1 weights all classes equally regardless of support count, achieving $\ge 0.55$ proves our model is actively learning features across all three risk tiers rather than defaulting to the majority class.
-    3. **High-Risk Precision Floor ($\ge 40.0\%$):**
-       * **Criterion:** $\text{Precision}_{\text{mcl\_exceedance}} \ge 0.40$
-       * **Rationale:** While false alarms only incur re-testing costs, an extremely low precision ($< 0.20$) would cause severe "alert fatigue" and waste limited testing budgets. Setting a 40% floor ensures at least 4 out of 10 flagged high-risk sites are true exceedances.
+       * **Criterion:** $\text{Recall}_{\text{mcl\_exceedance}} \ge
+         0.70$
+       * **Rationale:** In environmental risk screening, Type II
+         errors (missing a contaminated well) present severe public
+         health hazards, so recall gets the strictest bar of the
+         three — roughly 2x the random baseline's 1/3. Catching at
+         least 70% of actual exceedance sites ensures the model
+         serves as an effective screening tool for water operators.
+    2. **Macro-Averaged F1-Score ($\ge 0.60$):**
+       * **Criterion:** $\text{Macro F1} = \frac{F1_{\text{reduced}} +
+         F1_{\text{trigger}} + F1_{\text{mcl}}}{3} \ge 0.60$
+       * **Rationale:** Macro F1 is the overall "is it actually
+         learning, not just biased toward one tier" check, so it's
+         held to roughly the same ~2x-random bar as recall
+         (baseline $\approx 0.32$). Weighting all classes equally
+         regardless of support count means clearing 0.60 requires
+         real signal across all three risk tiers, not just the
+         majority class.
+    3. **High-Risk Precision Floor ($\ge 45.0\%$):**
+       * **Criterion:** $\text{Precision}_{\text{mcl\_exceedance}}
+         \ge 0.45$
+       * **Rationale:** False alarms here only cost a confirmatory
+         re-test, not a missed contamination event, so precision is
+         deliberately the least strict of the three — a floor against
+         a degenerate "flag everything" strategy, not a primary
+         target. A 0.45 floor sits well above the random baseline's
+         $\approx 0.30$ (which precision tracks almost for free, on
+         account of the tier's own prevalence) without demanding the
+         same ~2x margin recall and macro-F1 do, which would fight the
+         asymmetric cost structure above. It reads as "just under half
+         of every `mcl_exceedance` alert is confirmed," a step up from
+         "4 out of 10."
     """)
     return
 
 
 @app.cell
-def _(mo, pd):
-    # Defining our explicit model success targets for Task 3.2
-    success_targets_df = pd.DataFrame([
-        {
-            "Metric": "High-Risk Tier Recall",
-            "Target Class": "mcl_exceedance",
-            "Naive Baseline": "0.00",
-            "Minimum Passing Threshold": "≥ 0.70 (70%)",
-            "Operational Rationale": "Minimize missed high-risk contamination sites"
-        },
-        {
-            "Metric": "Macro-Averaged F1-Score",
-            "Target Class": "All Tiers (Unweighted)",
-            "Naive Baseline": "~ 0.22",
-            "Minimum Passing Threshold": "≥ 0.55",
-            "Operational Rationale": "Ensure active learning across imbalanced classes"
-        },
-        {
-            "Metric": "High-Risk Tier Precision",
-            "Target Class": "mcl_exceedance",
-            "Naive Baseline": "0.00",
-            "Minimum Passing Threshold": "≥ 0.40 (40%)",
-            "Operational Rationale": "Control false alarms and preserve re-testing budgets"
-        }
-    ])
+def _():
+    # Agreed model success thresholds. Each is roughly 2x the
+    # random-uniform baseline computed above, except PRECISION_FLOOR,
+    # deliberately held to a softer margin per the asymmetric cost
+    # structure in the per-class metrics rationale above (a missed
+    # exceedance is worse than a false alarm).
+    RECALL_FLOOR = 0.70
+    MACRO_F1_FLOOR = 0.60
+    PRECISION_FLOOR = 0.45
+    return MACRO_F1_FLOOR, PRECISION_FLOOR, RECALL_FLOOR
 
-    # Displaying the summary table in our marimo interface
-    mo.vstack([
-        mo.md("#### Task 3.2: Summary Table of Evaluation Targets"),
-        mo.ui.table(success_targets_df)
-    ])
+
+@app.cell
+def _(MACRO_F1_FLOOR, PRECISION_FLOOR, RECALL_FLOOR, majority_baseline, mo):
+    # Plain markdown table, not a DataFrame: this is a documentation
+    # summary, not meant to be reused in code — check_success_criteria()
+    # below is the one reusable piece.
+    _recall_row = (
+        "| High-Risk Tier Recall | `mcl_exceedance` | "
+        f"{majority_baseline['mcl_exceedance_recall']:.2f} | "
+        f"≥ {RECALL_FLOOR:.2f} ({RECALL_FLOOR:.0%}) | "
+        "Minimize missed high-risk contamination sites |"
+    )
+    _f1_row = (
+        "| Macro-Averaged F1-Score | All Tiers (Unweighted) | "
+        f"{majority_baseline['macro_f1']:.2f} | "
+        f"≥ {MACRO_F1_FLOOR:.2f} | "
+        "Ensure active learning across imbalanced classes |"
+    )
+    _precision_row = (
+        "| High-Risk Tier Precision | `mcl_exceedance` | "
+        f"{majority_baseline['mcl_exceedance_precision']:.2f} | "
+        f"≥ {PRECISION_FLOOR:.2f} ({PRECISION_FLOOR:.0%}) | "
+        "Control false alarms and preserve re-testing budgets |"
+    )
+    mo.md(f"""
+    #### Summary of evaluation targets
+
+    | Metric | Target | Naive Baseline | Threshold | Rationale |
+    |---|---|---|---|---|
+    {_recall_row}
+    {_f1_row}
+    {_precision_row}
+    """)
+    return
+
+
+@app.cell
+def _(MACRO_F1_FLOOR, PRECISION_FLOOR, RECALL_FLOOR, evaluate_tier_model, pd):
+    def check_success_criteria(y_true, y_pred, model_name):
+        """Score a model's predictions against the success thresholds.
+
+        Reuses evaluate_tier_model() for the underlying metrics, then
+        checks mcl_exceedance recall, macro F1, and mcl_exceedance
+        precision against RECALL_FLOOR/MACRO_F1_FLOOR/PRECISION_FLOOR.
+        Returns a per-metric pass/fail table, an overall pass/fail
+        flag, and a one-line summary string.
+        """
+        _result = evaluate_tier_model(
+            y_true, y_pred, model_name, recall_floor=RECALL_FLOOR
+        )
+        _summary = _result["summary"]
+        _precision = _result["per_class"].loc["mcl_exceedance", "precision"]
+
+        criteria_df = pd.DataFrame(
+            [
+                {
+                    "Metric": "mcl_exceedance recall",
+                    "Value": round(_summary["mcl_exceedance_recall"], 4),
+                    "Threshold": RECALL_FLOOR,
+                },
+                {
+                    "Metric": "macro F1",
+                    "Value": round(_summary["macro_f1"], 4),
+                    "Threshold": MACRO_F1_FLOOR,
+                },
+                {
+                    "Metric": "mcl_exceedance precision",
+                    "Value": round(_precision, 4),
+                    "Threshold": PRECISION_FLOOR,
+                },
+            ]
+        )
+        criteria_df["Passed"] = (
+            criteria_df["Value"] >= criteria_df["Threshold"]
+        )
+        criteria_df["Result"] = criteria_df.apply(
+            lambda row: (
+                f"{'PASS' if row['Passed'] else 'FAIL'} "
+                f"({row['Value']:.2f} vs ≥{row['Threshold']:.2f})"
+            ),
+            axis=1,
+        )
+
+        all_passed = bool(criteria_df["Passed"].all())
+        summary_line = f"{model_name}: " + (
+            "PASSES all success criteria"
+            if all_passed
+            else "DOES NOT meet all success criteria"
+        )
+
+        return {
+            "criteria": criteria_df,
+            "all_passed": all_passed,
+            "summary_line": summary_line,
+        }
+
+    return (check_success_criteria,)
+
+
+@app.cell
+def _(check_success_criteria, mo, tier_distribution, tier_true):
+    # Sanity check: the majority-class baseline should fail every
+    # criterion, since it never predicts mcl_exceedance at all.
+    _majority_pred = [tier_distribution.idxmax()] * len(tier_true)
+    _majority_check = check_success_criteria(
+        tier_true, _majority_pred, "Majority class (zero-rule)"
+    )
+    mo.vstack(
+        [
+            mo.md(f"**{_majority_check['summary_line']}**"),
+            mo.ui.table(_majority_check["criteria"]),
+        ]
+    )
     return
 
 
 @app.cell(hide_code=True)
-def _(StratifiedGroupKFold, combinations, mo, pd, ss_scored_df):
-    risk_labels = [
-        "within_reduced_monitoring",
-        "above_trigger",
-        "mcl_exceedance",
-    ]
-
+def _(
+    RISK_LABELS,
+    StratifiedGroupKFold,
+    classify_pfas_risk_tier,
+    combinations,
+    mo,
+    pd,
+    ss_scored_df,
+):
     # Smalling provides the measured outcome, so Study_smalling is the
     # canonical grouping field. The matched Seawolf predictor row follows the
     # same site into whichever partition that Smalling study is assigned to.
-    study_group_column = (
+    _study_group_column = (
         "Study_smalling"
         if "Study_smalling" in ss_scored_df.columns
         else "Study_seawolf"
     )
 
-    # Provisional cutoffs pending Task 3.2 (Somyaranjan/Team).
-    # Update these constants once the risk-tier thresholds are finalized.
-    WITHIN_MONITORING_CUTOFF = 0.5
-    MCL_EXCEEDANCE_CUTOFF = 1.0
-
-    tapwater_split_df = ss_scored_df.copy()
-    tapwater_split_df["pfas_risk_tier"] = pd.cut(
-        tapwater_split_df["sum_tq_epa"],
-        bins=[
-            float("-inf"),
-            WITHIN_MONITORING_CUTOFF,
-            MCL_EXCEEDANCE_CUTOFF,
-            float("inf"),
-        ],
-        labels=risk_labels,
-        right=False,
-        ordered=True,
+    _tapwater_split_df = ss_scored_df.copy()
+    _tapwater_split_df["pfas_risk_tier"] = classify_pfas_risk_tier(
+        _tapwater_split_df["sum_tq_epa"]
     )
-    tapwater_split_df["study_group"] = (
-        tapwater_split_df[study_group_column].astype("string").str.strip()
+    _tapwater_split_df["study_group"] = (
+        _tapwater_split_df[_study_group_column].astype("string").str.strip()
     )
-    tapwater_split_df = tapwater_split_df.dropna(
+    _tapwater_split_df = _tapwater_split_df.dropna(
         subset=["Site Code", "study_group", "pfas_risk_tier"]
     ).copy()
 
     # Review the number of sites and target classes available in each study
     # before selecting a holdout. Whole-study splits cannot guarantee exact
     # row-level stratification.
-    study_risk_profile = (
-        tapwater_split_df.groupby(
+    _study_risk_profile = (
+        _tapwater_split_df.groupby(
             ["study_group", "pfas_risk_tier"],
             observed=False,
         )
         .size()
         .unstack(fill_value=0)
-        .reindex(columns=risk_labels, fill_value=0)
+        .reindex(columns=RISK_LABELS, fill_value=0)
         .reset_index()
     )
-    study_risk_profile["Sites"] = study_risk_profile[risk_labels].sum(axis=1)
-    study_risk_profile = study_risk_profile[
-        ["study_group", "Sites", *risk_labels]
+    _study_risk_profile["Sites"] = _study_risk_profile[RISK_LABELS].sum(axis=1)
+    _study_risk_profile = _study_risk_profile[
+        ["study_group", "Sites", *RISK_LABELS]
     ].sort_values(["Sites", "study_group"], ascending=[False, True])
 
-    all_studies = sorted(tapwater_split_df["study_group"].unique().tolist())
-    full_distribution = (
-        tapwater_split_df["pfas_risk_tier"]
+    _all_studies = sorted(_tapwater_split_df["study_group"].unique().tolist())
+    _full_distribution = (
+        _tapwater_split_df["pfas_risk_tier"]
         .value_counts(normalize=True)
-        .reindex(risk_labels, fill_value=0.0)
+        .reindex(RISK_LABELS, fill_value=0.0)
     )
 
-    def score_split(
+    def _score_split(
         train_part,
         test_part,
         full_data,
@@ -513,90 +641,89 @@ def _(StratifiedGroupKFold, combinations, mo, pd, ss_scored_df):
             "selection_score": selection_score,
         }
 
-    candidate_rows = []
-    for held_out_count in range(1, len(all_studies)):
-        for held_out_studies in combinations(
-            all_studies,
-            held_out_count,
-        ):
-            test_mask = tapwater_split_df["study_group"].isin(held_out_studies)
-            train_part = tapwater_split_df.loc[~test_mask]
-            test_part = tapwater_split_df.loc[test_mask]
-            if train_part.empty or test_part.empty:
+    _candidate_rows = []
+    for _held_out_count in range(1, len(_all_studies)):
+        for _held_out_studies in combinations(_all_studies, _held_out_count):
+            _test_mask = _tapwater_split_df["study_group"].isin(
+                _held_out_studies
+            )
+            _train_part = _tapwater_split_df.loc[~_test_mask]
+            _test_part = _tapwater_split_df.loc[_test_mask]
+            if _train_part.empty or _test_part.empty:
                 continue
 
-            split_score = score_split(
-                train_part,
-                test_part,
-                tapwater_split_df,
-                risk_labels,
-                full_distribution,
+            _split_score = _score_split(
+                _train_part,
+                _test_part,
+                _tapwater_split_df,
+                RISK_LABELS,
+                _full_distribution,
             )
-            candidate_rows.append(
+            _candidate_rows.append(
                 {
                     "Method": "Exhaustive search",
-                    "Candidate": (f"Candidate {len(candidate_rows) + 1}"),
-                    "held_out_studies": held_out_studies,
-                    "Held-out studies": ", ".join(held_out_studies),
-                    **split_score,
+                    "Candidate": f"Candidate {len(_candidate_rows) + 1}",
+                    "held_out_studies": _held_out_studies,
+                    "Held-out studies": ", ".join(_held_out_studies),
+                    **_split_score,
                 }
             )
 
-    split_candidates_df = pd.DataFrame(candidate_rows).sort_values(
+    _split_candidates_df = pd.DataFrame(_candidate_rows).sort_values(
         [
             "missing_class_penalty",
             "selection_score",
             "Held-out studies",
         ]
     )
-    selected_candidate = split_candidates_df.iloc[0]
-    selected_test_studies = list(selected_candidate["held_out_studies"])
+    _selected_candidate = _split_candidates_df.iloc[0]
+    _selected_test_studies = list(_selected_candidate["held_out_studies"])
 
     # Benchmark the custom search against sklearn's built-in grouped and
     # stratified splitter using the exact same scoring function.
-    grouped_fold_count = min(5, len(all_studies))
-    if grouped_fold_count < 2:
+    _grouped_fold_count = min(5, len(_all_studies))
+    if _grouped_fold_count < 2:
         raise ValueError(
             "At least two study groups are required for grouped splitting."
         )
 
-    grouped_cv = StratifiedGroupKFold(
-        n_splits=grouped_fold_count,
+    _grouped_cv = StratifiedGroupKFold(
+        n_splits=_grouped_fold_count,
         shuffle=True,
         random_state=42,
     )
-    sklearn_fold_rows = []
-    for fold_num, (train_idx, test_idx) in enumerate(
-        grouped_cv.split(
-            tapwater_split_df,
-            tapwater_split_df["pfas_risk_tier"],
-            groups=tapwater_split_df["study_group"],
+    _sklearn_fold_rows = []
+    for _fold_num, (_train_idx, _test_idx) in enumerate(
+        _grouped_cv.split(
+            _tapwater_split_df,
+            _tapwater_split_df["pfas_risk_tier"],
+            groups=_tapwater_split_df["study_group"],
         ),
         start=1,
     ):
-        train_part = tapwater_split_df.iloc[train_idx]
-        test_part = tapwater_split_df.iloc[test_idx]
-        held_out_studies = tuple(
-            sorted(test_part["study_group"].unique().tolist())
+        _train_part = _tapwater_split_df.iloc[_train_idx]
+        _test_part = _tapwater_split_df.iloc[_test_idx]
+        _held_out_studies = tuple(
+            sorted(_test_part["study_group"].unique().tolist())
         )
-        split_score = score_split(
-            train_part,
-            test_part,
-            tapwater_split_df,
-            risk_labels,
-            full_distribution,
+        _split_score = _score_split(
+            _train_part,
+            _test_part,
+            _tapwater_split_df,
+            RISK_LABELS,
+            _full_distribution,
         )
-        sklearn_fold_rows.append(
+        _sklearn_fold_rows.append(
             {
                 "Method": "StratifiedGroupKFold",
-                "Candidate": f"Fold {fold_num}",
-                "held_out_studies": held_out_studies,
-                "Held-out studies": ", ".join(held_out_studies),
-                **split_score,
+                "Candidate": f"Fold {_fold_num}",
+                "held_out_studies": _held_out_studies,
+                "Held-out studies": ", ".join(_held_out_studies),
+                **_split_score,
             }
         )
 
-    sklearn_fold_scores_df = pd.DataFrame(sklearn_fold_rows).sort_values(
+    _sklearn_fold_scores_df = pd.DataFrame(_sklearn_fold_rows).sort_values(
         [
             "missing_class_penalty",
             "selection_score",
@@ -604,11 +731,8 @@ def _(StratifiedGroupKFold, combinations, mo, pd, ss_scored_df):
         ]
     )
 
-    split_comparison_df = pd.concat(
-        [
-            split_candidates_df,
-            sklearn_fold_scores_df,
-        ],
+    _split_comparison_df = pd.concat(
+        [_split_candidates_df, _sklearn_fold_scores_df],
         ignore_index=True,
     ).sort_values(
         [
@@ -619,69 +743,69 @@ def _(StratifiedGroupKFold, combinations, mo, pd, ss_scored_df):
         ]
     )
 
-    best_sklearn_candidate = sklearn_fold_scores_df.iloc[0]
-    exhaustive_penalty = int(selected_candidate["missing_class_penalty"])
-    sklearn_penalty = int(best_sklearn_candidate["missing_class_penalty"])
-    exhaustive_score = float(selected_candidate["selection_score"])
-    sklearn_score = float(best_sklearn_candidate["selection_score"])
+    _best_sklearn_candidate = _sklearn_fold_scores_df.iloc[0]
+    _exhaustive_penalty = int(_selected_candidate["missing_class_penalty"])
+    _sklearn_penalty = int(_best_sklearn_candidate["missing_class_penalty"])
+    _exhaustive_score = float(_selected_candidate["selection_score"])
+    _sklearn_score = float(_best_sklearn_candidate["selection_score"])
 
-    penalty_diff = exhaustive_penalty - sklearn_penalty
-    score_diff = exhaustive_score - sklearn_score
-    if penalty_diff < 0 or (penalty_diff == 0 and score_diff < -1e-12):
-        comparison_outcome = "better"
-    elif penalty_diff == 0 and abs(score_diff) <= 1e-12:
-        comparison_outcome = "tie"
+    _penalty_diff = _exhaustive_penalty - _sklearn_penalty
+    _score_diff = _exhaustive_score - _sklearn_score
+    if _penalty_diff < 0 or (_penalty_diff == 0 and _score_diff < -1e-12):
+        _comparison_outcome = "better"
+    elif _penalty_diff == 0 and abs(_score_diff) <= 1e-12:
+        _comparison_outcome = "tie"
     else:
-        comparison_outcome = "worse"
+        _comparison_outcome = "worse"
 
-    comparison_result = {
+    _comparison_result = {
         "better": (
             "The exhaustive winner strictly outperforms every "
             "StratifiedGroupKFold fold under the shared rubric."
         ),
         "tie": (
-            "The exhaustive winner ties the best "
-            "StratifiedGroupKFold fold under the shared rubric."
+            "The exhaustive winner ties the best StratifiedGroupKFold "
+            "fold under the shared rubric."
         ),
         "worse": (
             "A StratifiedGroupKFold fold outperforms the exhaustive "
             "winner under the shared rubric; the selection logic "
             "should be reviewed."
         ),
-    }[comparison_outcome]
+    }[_comparison_outcome]
 
-    method_best_summary = pd.DataFrame(
+    _method_best_summary = pd.DataFrame(
         [
             {
                 "Method": "Exhaustive search",
-                "Candidate": selected_candidate["Candidate"],
-                "Held-out studies": (selected_candidate["Held-out studies"]),
-                "Missing-tier penalty": exhaustive_penalty,
-                "Test fraction": float(selected_candidate["test_fraction"]),
+                "Candidate": _selected_candidate["Candidate"],
+                "Held-out studies": _selected_candidate["Held-out studies"],
+                "Missing-tier penalty": _exhaustive_penalty,
+                "Test fraction": float(_selected_candidate["test_fraction"]),
                 "Distribution gap": float(
-                    selected_candidate["distribution_gap"]
+                    _selected_candidate["distribution_gap"]
                 ),
-                "Selection score": exhaustive_score,
+                "Selection score": _exhaustive_score,
             },
             {
                 "Method": "StratifiedGroupKFold",
-                "Candidate": best_sklearn_candidate["Candidate"],
+                "Candidate": _best_sklearn_candidate["Candidate"],
                 "Held-out studies": (
-                    best_sklearn_candidate["Held-out studies"]
+                    _best_sklearn_candidate["Held-out studies"]
                 ),
-                "Missing-tier penalty": sklearn_penalty,
+                "Missing-tier penalty": _sklearn_penalty,
                 "Test fraction": float(
-                    best_sklearn_candidate["test_fraction"]
+                    _best_sklearn_candidate["test_fraction"]
                 ),
                 "Distribution gap": float(
-                    best_sklearn_candidate["distribution_gap"]
+                    _best_sklearn_candidate["distribution_gap"]
                 ),
-                "Selection score": sklearn_score,
+                "Selection score": _sklearn_score,
             },
         ]
     )
 
-    comparison_columns = [
+    _comparison_columns = [
         "Method",
         "Candidate",
         "Held-out studies",
@@ -690,82 +814,81 @@ def _(StratifiedGroupKFold, combinations, mo, pd, ss_scored_df):
         "distribution_gap",
         "selection_score",
     ]
-    split_comparison_preview = split_comparison_df[comparison_columns].head(20)
-
-    selected_test_mask = tapwater_split_df["study_group"].isin(
-        selected_test_studies
+    _split_comparison_preview = _split_comparison_df[_comparison_columns].head(
+        20
     )
-    tapwater_train_df = tapwater_split_df.loc[~selected_test_mask].copy()
-    tapwater_test_df = tapwater_split_df.loc[selected_test_mask].copy()
 
-    train_studies = sorted(tapwater_train_df["study_group"].unique().tolist())
-    test_studies = sorted(tapwater_test_df["study_group"].unique().tolist())
-    study_overlap = sorted(set(train_studies).intersection(test_studies))
-    site_overlap = sorted(
-        set(tapwater_train_df["Site Code"]).intersection(
-            tapwater_test_df["Site Code"]
+    _selected_test_mask = _tapwater_split_df["study_group"].isin(
+        _selected_test_studies
+    )
+    _tapwater_train_df = _tapwater_split_df.loc[~_selected_test_mask].copy()
+    _tapwater_test_df = _tapwater_split_df.loc[_selected_test_mask].copy()
+
+    _train_studies = sorted(
+        _tapwater_train_df["study_group"].unique().tolist()
+    )
+    _test_studies = sorted(_tapwater_test_df["study_group"].unique().tolist())
+    _study_overlap = sorted(set(_train_studies).intersection(_test_studies))
+    _site_overlap = sorted(
+        set(_tapwater_train_df["Site Code"]).intersection(
+            _tapwater_test_df["Site Code"]
         )
     )
 
-    partition_summary = pd.DataFrame(
+    _partition_summary = pd.DataFrame(
         [
             {
                 "Partition": "Training",
-                "Sites": len(tapwater_train_df),
-                "Study groups": len(train_studies),
-                "Studies": ", ".join(train_studies),
+                "Sites": len(_tapwater_train_df),
+                "Study groups": len(_train_studies),
+                "Studies": ", ".join(_train_studies),
             },
             {
                 "Partition": "Test",
-                "Sites": len(tapwater_test_df),
-                "Study groups": len(test_studies),
-                "Studies": ", ".join(test_studies),
+                "Sites": len(_tapwater_test_df),
+                "Study groups": len(_test_studies),
+                "Studies": ", ".join(_test_studies),
             },
         ]
     )
 
-    partition_class_summary = (
+    _partition_class_summary = (
         pd.concat(
             [
-                tapwater_train_df.assign(Partition="Training"),
-                tapwater_test_df.assign(Partition="Test"),
+                _tapwater_train_df.assign(Partition="Training"),
+                _tapwater_test_df.assign(Partition="Test"),
             ]
         )
-        .groupby(
-            ["Partition", "pfas_risk_tier"],
-            observed=False,
-        )
+        .groupby(["Partition", "pfas_risk_tier"], observed=False)
         .size()
         .unstack(fill_value=0)
-        .reindex(columns=risk_labels, fill_value=0)
+        .reindex(columns=RISK_LABELS, fill_value=0)
         .reset_index()
     )
 
-    leakage_summary = pd.DataFrame(
+    _leakage_summary = pd.DataFrame(
         [
             {
                 "Validation check": (
                     "Study groups appearing in both partitions"
                 ),
-                "Result": len(study_overlap),
-                "Assessment": ("Pass" if not study_overlap else "Review"),
+                "Result": len(_study_overlap),
+                "Assessment": "Pass" if not _study_overlap else "Review",
             },
             {
                 "Validation check": (
                     "Site identifiers appearing in both partitions"
                 ),
-                "Result": len(site_overlap),
-                "Assessment": ("Pass" if not site_overlap else "Review"),
+                "Result": len(_site_overlap),
+                "Assessment": "Pass" if not _site_overlap else "Review",
             },
             {
-                "Validation check": (
-                    "Risk tiers missing from either partition"
-                ),
-                "Result": exhaustive_penalty,
+                "Validation check": "Risk tiers missing from either partition",
+                "Result": _exhaustive_penalty,
                 "Assessment": (
                     "Pass"
-                    if exhaustive_penalty == 0
-                    else ("Review; grouped data could not preserve every tier")
+                    if _exhaustive_penalty == 0
+                    else "Review; grouped data could not preserve every tier"
                 ),
             },
         ]
@@ -782,7 +905,11 @@ def _(StratifiedGroupKFold, combinations, mo, pd, ss_scored_df):
                 sites from a contributing study remain together,
                 preventing study-design and geographic leakage. The
                 custom exhaustive search below is benchmarked against
-                `StratifiedGroupKFold` using the same rubric.
+                `StratifiedGroupKFold` using the same rubric. McMahon
+                is provisionally kept outside this split because its
+                groundwater target is not directly comparable to
+                Smalling/Seawolf, as the next section covers in more
+                detail.
                 """
             ),
             mo.md(
@@ -791,24 +918,21 @@ def _(StratifiedGroupKFold, combinations, mo, pd, ss_scored_df):
 
                 Checkpoint 1 supplies `ss_scored_df`, including the
                 completed `sum_tq_epa` value. That continuous score is
-                mapped to the three project classes:
+                mapped to the three project classes via the shared
+                `classify_pfas_risk_tier()` helper:
 
-                * `within_reduced_monitoring`:
-                  `sum_tq_epa < {WITHIN_MONITORING_CUTOFF:.1f}`
-                * `above_trigger`:
-                  `{WITHIN_MONITORING_CUTOFF:.1f} <= sum_tq_epa < `
-                  `{MCL_EXCEEDANCE_CUTOFF:.1f}`
-                * `mcl_exceedance`:
-                  `sum_tq_epa >= {MCL_EXCEEDANCE_CUTOFF:.1f}`
+                * `within_reduced_monitoring`: `sum_tq_epa < 0.5`
+                * `above_trigger`: `0.5 <= sum_tq_epa < 1.0`
+                * `mcl_exceedance`: `sum_tq_epa >= 1.0`
 
-                `{study_group_column}` is the canonical grouping field
+                `{_study_group_column}` is the canonical grouping field
                 because Smalling provides the measured PFAS outcome.
                 The corresponding Seawolf landscape row describes the
                 same site and follows it into the same partition.
                 """
             ),
             mo.md("#### Current tap-water risk tiers by study"),
-            mo.ui.table(study_risk_profile),
+            mo.ui.table(_study_risk_profile),
             mo.md(
                 """
                 #### Holdout-selection rules
@@ -826,22 +950,21 @@ def _(StratifiedGroupKFold, combinations, mo, pd, ss_scored_df):
                 """
             ),
             mo.md("#### Exhaustive versus sklearn comparison"),
-            mo.ui.table(method_best_summary),
-            mo.md(comparison_result),
+            mo.ui.table(_method_best_summary),
+            mo.md(_comparison_result),
             mo.md(
                 """
                 The table below shows the 20 highest-ranked candidates
-                from the combined comparison. The complete comparison
-                remains available as `split_comparison_df`.
+                from the combined comparison.
                 """
             ),
-            mo.ui.table(split_comparison_preview),
+            mo.ui.table(_split_comparison_preview),
             mo.md("#### Selected partition"),
-            mo.ui.table(partition_summary),
+            mo.ui.table(_partition_summary),
             mo.md("#### Risk-tier counts by partition"),
-            mo.ui.table(partition_class_summary),
+            mo.ui.table(_partition_class_summary),
             mo.md("#### Leakage validation"),
-            mo.ui.table(leakage_summary),
+            mo.ui.table(_leakage_summary),
             mo.md(
                 r"""
                 #### Model optimization inside the training partition
@@ -872,17 +995,20 @@ def _(StratifiedGroupKFold, combinations, mo, pd, ss_scored_df):
                 ```
 
                 Study labels, site identifiers, PFAS concentrations,
-                `sum_tq_epa`, and `pfas_risk_tier` are not model
+                `sum_tq_epa`, and `pfas_risk_tier` are grouping,
+                identification, or outcome fields — not model
                 predictors. All preprocessing must be fitted inside
                 each training fold through one pipeline.
 
                 #### McMahon treatment
 
-                `mc_scored_df` remains outside this tap-water split.
-                McMahon represents groundwater, omits GenX, and uses a
-                different non-detect convention. Task 3.4 will decide
-                whether it supports a separate groundwater model or a
-                qualified external evaluation slice.
+                `mc_scored_df` is excluded from this tap-water split
+                entirely. McMahon contains groundwater observations,
+                omits GenX, and applies a different non-detect
+                convention, so its target distribution is not on the
+                same footing as Smalling/Seawolf. It is used only as a
+                qualified external validation slice, never for
+                training — the next section covers why.
                 """
             ),
         ]
@@ -891,23 +1017,91 @@ def _(StratifiedGroupKFold, combinations, mo, pd, ss_scored_df):
 
 
 @app.cell(hide_code=True)
-def _(mo, task_callout):
+def _(mo):
+    mo.md("""
+    ### Groundwater's role - held-out vs. combined
+    """)
+    return
+
+
+@app.cell
+def _(RISK_LABELS, classify_pfas_risk_tier, mc_scored_df, pd, ss_scored_df):
+    def _tier_distribution(scored_df):
+        tiers = classify_pfas_risk_tier(scored_df["sum_tq_epa"])
+        return tiers.value_counts(normalize=True).reindex(
+            RISK_LABELS, fill_value=0.0
+        )
+
+    groundwater_comparison_df = pd.DataFrame(
+        [
+            {
+                "Study": "Smalling/Seawolf (tap water)",
+                "Sites": len(ss_scored_df),
+                "Compounds summed": 6,
+                "Non-detect convention": "0",
+                "sum_tq_epa median": ss_scored_df["sum_tq_epa"].median(),
+                **_tier_distribution(ss_scored_df).round(3).to_dict(),
+            },
+            {
+                "Study": "McMahon (groundwater)",
+                "Sites": len(mc_scored_df),
+                "Compounds summed": 5,
+                "Non-detect convention": "½ reporting limit",
+                "sum_tq_epa median": mc_scored_df["sum_tq_epa"].median(),
+                **_tier_distribution(mc_scored_df).round(3).to_dict(),
+            },
+        ]
+    )
+    return (groundwater_comparison_df,)
+
+
+@app.cell(hide_code=True)
+def _(groundwater_comparison_df, mo):
     mo.vstack(
         [
-            mo.md("### Groundwater's role - held-out vs. combined"),
-            task_callout(
-                "3.4",
-                category="Step 3 - Evaluation Plan",
-                lead="Raj, Yai",
-                depends_on="3.3",
-                summary=(
-                    "Decide whether McMahon's groundwater data trains "
-                    "alongside Smalling/Seawolf's surface-water data or is "
-                    "held out as a separate evaluation slice, given "
-                    "McMahon's already-noted join-ability and coverage "
-                    "differences from Step 2, once the study-grouped split "
-                    "strategy (3.3) is settled."
-                ),
+            mo.md(
+                """
+                #### Structural comparison
+
+                McMahon's ∑TQ isn't on the same footing as
+                Smalling/Seawolf's, for two compounding reasons: it sums
+                5 of the 6 regulated compounds instead of 6 (no GenX
+                column at all), and its non-detects are imputed as half
+                the reporting limit instead of 0. That second difference
+                dominates — it gives every McMahon site a non-zero
+                baseline TQ, so `sum_tq_epa` never drops below ~1.0
+                regardless of actual site conditions. McMahon's risk-tier
+                column below is degenerate: 100% `mcl_exceedance` by
+                construction, not by geology.
+                """
+            ),
+            mo.ui.table(groundwater_comparison_df),
+            mo.md(
+                """
+                #### Decision: hold out, don't combine
+
+                Combining McMahon into the Smalling/Seawolf training set
+                would let a model achieve perfect recall on the
+                `mcl_exceedance` tier simply by learning "is this a
+                McMahon row," an artifact of imputation and compound
+                coverage, not a land-use signal — exactly the kind of
+                leakage the study-grouped split guards against for
+                cross-study effects. A single-class study also cannot
+                exercise the per-class metrics defined for the
+                classification task, which need all three tiers
+                represented.
+
+                McMahon's data will not be used for training. It stays
+                fully outside both the training and test partitions,
+                and model predictions on it are reported separately as
+                a qualified validation check — framed explicitly as
+                "does the model's *relative* ranking of McMahon sites
+                look plausible," not as a comparable accuracy number,
+                since the target itself isn't comparable across studies.
+                Revisit combining groundwater and tap-water data only if
+                a future checkpoint re-derives McMahon's ∑TQ with a
+                matched non-detect convention and a GenX estimate.
+                """
             ),
         ]
     )
@@ -979,18 +1173,39 @@ def _(mo, task_callout):
 @app.cell
 def _(mo):
     mo.md(r"""
-    ### Task 4.4: Feature Matrix Preprocessing — Skew Handling & Categorical Encoding
-    **Lead:** Somyaranjan Sahu | **Depends on:** Scored Dataset Pipelines (`ss_scored_df`, `mc_scored_df`)
+    <h4>Task 4.4: Feature Matrix Preprocessing — Skew Handling &
+    Categorical Encoding</h4>
+    **Lead:** Somyaranjan Sahu | **Depends on:** Task PW (Scored
+    Dataset Pipelines: `ss_scored_df`, `mc_scored_df`)
 
-    Before feeding our landscape predictors into classification algorithms, we must prepare a clean feature matrix $X$ by resolving two common dataset characteristics: **extreme numerical skewness** and **unencoded categorical features**.
+    Before feeding the landscape predictors into classification
+    algorithms, a clean feature matrix $X$ requires resolving two
+    common dataset characteristics: **extreme numerical skewness** and
+    **unencoded categorical features**.
 
-    #### 1. Rationale for Skew Transformation ($\log_{1p}$)
-    Environmental landscape variables—such as distances to nearest industrial facilities, military sites, or localized urban burn areas—frequently exhibit strong right-skewed distributions with long upper tails.
-    * **Why this matters:** Unscaled, highly skewed features can distort linear models (like Logistic Regression) and distance-based estimators by placing disproportionate weight on extreme outlier values.
-    * **Our Solution:** We calculate the Fisher-Pearson coefficient of skewness for all numeric predictors. For features exhibiting significant right-skewness ($\text{skewness} > 1.0$), we apply a $\log_{1p}(x) = \log(1 + x)$ transformation, which compresses the upper tail while preserving zero values safely without mathematical division errors.
+    #### 1. Rationale for skew transformation ($\log_{1p}$)
+    Environmental landscape variables — such as distances to nearest
+    industrial facilities, military sites, or localized urban burn
+    areas — frequently exhibit strong right-skewed distributions with
+    long upper tails.
+    * **Why this matters:** Unscaled, highly skewed features can
+      distort linear models (like Logistic Regression) and
+      distance-based estimators by placing disproportionate weight on
+      extreme outlier values.
+    * **Our solution:** Calculate the Fisher-Pearson coefficient of
+      skewness for all numeric predictors. For features exhibiting
+      significant right-skewness ($\text{skewness} > 1.0$), apply a
+      $\log_{1p}(x) = \log(1 + x)$ transformation, which compresses
+      the upper tail while preserving zero values safely without
+      mathematical division errors.
 
-    #### 2. Categorical Variable Encoding
-    Categorical flags—such as water service point types (public supply vs. private wells) and aquifer region descriptors—are converted into numeric format using **One-Hot Encoding** (`pd.get_dummies(..., drop_first=True)`). Dropping the first dummy column prevents perfect multicollinearity (the dummy variable trap) in linear baselines.
+    #### 2. Categorical variable encoding
+    Categorical flags — such as water service point types (public
+    supply vs. private wells) and aquifer region descriptors — are
+    converted into numeric format using **one-hot encoding**
+    (`pd.get_dummies(..., drop_first=True)`). Dropping the first dummy
+    column prevents perfect multicollinearity (the dummy variable
+    trap) in linear baselines.
     """)
     return
 
@@ -1004,13 +1219,17 @@ def _():
 
 @app.cell
 def _(mc_scored_df, mo, np, pd, ss_scored_df):
-
-    # Defining a helper function to transform skewed features and encode categoricals
-    def preprocess_feature_matrix(df, target_col="sum_TQ_tier", skew_threshold=1.0):
-        # Making a copy to avoid mutating the inherited scored dataframe
+    # Helper function to transform skewed features and encode
+    # categoricals.
+    def preprocess_feature_matrix(
+        df, target_col="sum_TQ_tier", skew_threshold=1.0
+    ):
+        # Making a copy to avoid mutating the inherited scored
+        # dataframe.
         data = df.copy()
 
-        # Separating predictor columns from metadata, identifiers, and target labels
+        # Separating predictor columns from metadata, identifiers,
+        # and target labels.
         non_feature_cols = [
             "Site Code",
             "SiteCode",
@@ -1025,14 +1244,26 @@ def _(mc_scored_df, mo, np, pd, ss_scored_df):
         feature_cols = [c for c in data.columns if c not in non_feature_cols]
 
         # Identifying numeric vs categorical feature types
-        numeric_cols = data[feature_cols].select_dtypes(include=[np.number]).columns.tolist()
-        categorical_cols = data[feature_cols].select_dtypes(exclude=[np.number]).columns.tolist()
+        numeric_cols = (
+            data[feature_cols]
+            .select_dtypes(include=[np.number])
+            .columns.tolist()
+        )
+        categorical_cols = (
+            data[feature_cols]
+            .select_dtypes(exclude=[np.number])
+            .columns.tolist()
+        )
 
-        # Calculating baseline skewness across numeric predictors before transformation
+        # Calculating baseline skewness across numeric predictors
+        # before transformation.
         initial_skew = data[numeric_cols].skew(numeric_only=True)
 
-        # Applying log1p transformation to highly right-skewed numeric predictors (skew > threshold)
-        skewed_features = initial_skew[initial_skew > skew_threshold].index.tolist()
+        # Applying log1p transformation to highly right-skewed
+        # numeric predictors (skew > threshold).
+        skewed_features = initial_skew[
+            initial_skew > skew_threshold
+        ].index.tolist()
         for col in skewed_features:
             # Ensuring no negative values exist prior to log transformation
             if (data[col] >= 0).all():
@@ -1043,10 +1274,14 @@ def _(mc_scored_df, mo, np, pd, ss_scored_df):
 
         # One-hot encoding any categorical variables
         if categorical_cols:
-            data = pd.get_dummies(data, columns=categorical_cols, drop_first=True)
+            data = pd.get_dummies(
+                data, columns=categorical_cols, drop_first=True
+            )
 
         # Re-extracting clean X feature matrix and y target vector
-        updated_feature_cols = [c for c in data.columns if c not in non_feature_cols]
+        updated_feature_cols = [
+            c for c in data.columns if c not in non_feature_cols
+        ]
         X = data[updated_feature_cols].fillna(0)
         y = data[target_col] if target_col in data.columns else None
 
@@ -1054,24 +1289,34 @@ def _(mc_scored_df, mo, np, pd, ss_scored_df):
         skew_summary = pd.DataFrame(
             {
                 "Feature": skewed_features,
-                "Initial Skew": [round(initial_skew[f], 2) for f in skewed_features],
-                "Post Log1p Skew": [round(post_skew[f], 2) for f in skewed_features],
+                "Initial Skew": [
+                    round(initial_skew[f], 2) for f in skewed_features
+                ],
+                "Post Log1p Skew": [
+                    round(post_skew[f], 2) for f in skewed_features
+                ],
             }
         )
 
         return X, y, skew_summary
 
-    # Applying our preprocessing pipeline to both tapwater (Smalling) and groundwater (McMahon) sets
-    X_ss, y_ss, skew_summary_ss = preprocess_feature_matrix(ss_scored_df)
-    X_mc, y_mc, skew_summary_mc = preprocess_feature_matrix(mc_scored_df)
+    # Applying the preprocessing pipeline to both tapwater (Smalling)
+    # and groundwater (McMahon) sets.
+    X_ss, _y_ss, skew_summary_ss = preprocess_feature_matrix(ss_scored_df)
+    _X_mc, _y_mc, _skew_summary_mc = preprocess_feature_matrix(mc_scored_df)
 
-    # Rendering the skew transformation audit table inside marimo
+    # Rendering the skew transformation audit table inside marimo.
     mo.vstack(
         [
-            mo.md("#### Task 4.4 Audit: Features Transformed via $\\log_{1p}$ (Tapwater Set)"),
+            mo.md(
+                "#### Task 4.4 audit: features transformed via "
+                "$\\log_{1p}$ (tapwater set)"
+            ),
             mo.ui.table(skew_summary_ss.head(10)),
             mo.md(
-                f"**Finalized Tapwater Feature Matrix Shape:** `{X_ss.shape[0]}` rows $\\times$ `{X_ss.shape[1]}` features"
+                f"**Finalized tapwater feature matrix shape:** "
+                f"`{X_ss.shape[0]}` rows $\\times$ `{X_ss.shape[1]}` "
+                "features"
             ),
         ]
     )
@@ -1157,9 +1402,9 @@ def _(mo):
     and modeling proposals for classifying site-level PFAS risk from
     land-use predictors: per-class metrics and a study-grouped split (Step
     3), and two competing classifiers, an interpretable baseline and a
-    non-linear ensemble (Step 4). Implementing Task PW's ∑TQ target,
-    training both models, and evaluating them against the plan above is
-    Step 5 work for the final checkpoint.
+    non-linear ensemble (Step 4), against the already-computed ∑TQ
+    target from checkpoint 1. Training both models and evaluating them
+    against the plan above is Step 5 work for the final checkpoint.
     """)
     return
 
