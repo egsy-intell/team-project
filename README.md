@@ -47,6 +47,24 @@ uvx marimo run --sandbox https://egsy-intell.github.io/team-project/notebooks/ch
 
 Install the [marimo extension](https://marketplace.visualstudio.com/items?itemName=marimo-team.vscode-marimo) for syntax support and running notebooks directly from the editor. It's already listed under recommended extensions for this workspace — VS Code should prompt you to install it when you open the project.
 
+## 6. (Optional) Build the checkpoint slide deck
+
+Presentation source lives under `preso/`: `checkpoint2_deck.md` is the deck content (pandoc slide-show markdown — `#`/`##` headings are slide breaks, `::: notes ... :::` blocks are per-slide speaker notes), and `template.pptx` is a reference-doc template (fonts, layouts, and the team logo — pandoc can only style master layouts from an existing `.pptx`, so this file is a styled copy of pandoc's stock reference doc, committed as-is; see `scripts/_bootstrap_template.py` if it ever needs regenerating).
+
+Install the presentation-build dependencies (kept out of the default environment since they're only needed by whoever's building slides):
+
+```bash
+uv sync --group preso
+```
+
+Then regenerate the `.pptx` from the latest markdown source:
+
+```bash
+uv run python scripts/build_presentation.py
+```
+
+This writes `preso/dist/checkpoint2_deck.pptx` (gitignored — a build artifact, not committed) using `pypandoc`/`pypandoc_binary`, so no system `pandoc` install is required. Pass `--output-dir` to change where it's written, or `--open` to open it automatically in PowerPoint afterward (best-effort; macOS/Windows only, no-ops elsewhere). Upload the generated file to OneDrive manually — there's no automated publish step for slides, unlike the notebook HTML exports below.
+
 # Marimo Quick Reference
 
 Marimo notebooks are just Python files — no hidden state, no `.ipynb` JSON.
