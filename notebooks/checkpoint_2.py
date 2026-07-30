@@ -188,6 +188,28 @@ def _(mo, tier_distribution):
     return
 
 
+@app.cell(hide_code=True)
+def _(pd):
+    RISK_LABELS = [
+        "within_reduced_monitoring",
+        "above_trigger",
+        "mcl_exceedance",
+    ]
+
+    RISK_TIER_BINS = [float("-inf"), 0.5, 1.0, float("inf")]
+
+    def classify_pfas_risk_tier(sum_tq_epa):
+        return pd.cut(
+            sum_tq_epa,
+            bins=RISK_TIER_BINS,
+            labels=RISK_LABELS,
+            right=False,
+            ordered=True,
+        )
+
+    return RISK_LABELS, classify_pfas_risk_tier
+
+
 @app.cell
 def _(RISK_LABELS, pd):
     def assign_tq_tier(sum_tq, trigger_cutoff=0.5, mcl_cutoff=1.0):
@@ -205,7 +227,7 @@ def _(RISK_LABELS, pd):
             right=False,
         )
 
-    return (assign_tq_tier,)
+    return
 
 
 @app.cell
@@ -320,17 +342,15 @@ def _(mo, task_callout):
 
 @app.cell
 def _(RISK_LABELS, classify_pfas_risk_tier, evaluate_tier_model, ss_scored_df):
-    _tier_true = classify_pfas_risk_tier(ss_scored_df["sum_tq_epa"]).astype(
-        str
-    )
-    tier_distribution = _tier_true.value_counts(normalize=True).reindex(
+    tier_true = classify_pfas_risk_tier(ss_scored_df["sum_tq_epa"]).astype(str)
+    tier_distribution = tier_true.value_counts(normalize=True).reindex(
         RISK_LABELS
     )
 
     _majority_tier = tier_distribution.idxmax()
-    _majority_pred = [_majority_tier] * len(_tier_true)
+    _majority_pred = [_majority_tier] * len(tier_true)
     _majority_result = evaluate_tier_model(
-        _tier_true, _majority_pred, "Majority class (zero-rule)"
+        tier_true, _majority_pred, "Majority class (zero-rule)"
     )
     majority_baseline = {
         **_majority_result["summary"],
@@ -360,21 +380,21 @@ def _(RISK_LABELS, classify_pfas_risk_tier, evaluate_tier_model, ss_scored_df):
             tier_distribution["mcl_exceedance"], 4
         ),
     }
-    return majority_baseline, random_baseline, tier_distribution
+    return majority_baseline, random_baseline, tier_distribution, tier_true
 
 
 @app.cell
 def _(majority_baseline, mo, random_baseline, tier_distribution):
     mo.md(rf"""
-    ### Task 3.2: Model Success Criteria & Operational Benchmarks
-    **Lead:** Somyaranjan Sahu & Team | **Target Tiers:**
-    `within_reduced_monitoring`, `above_trigger`, `mcl_exceedance`
+    ### Model success criteria and operational benchmarks
 
     Determining whether the land-use classification models provide
     actionable value for water-resource managers requires formal
-    quantitative benchmarks set prior to model training.
+    quantitative benchmarks, set against the three ∑TQ risk tiers
+    (`within_reduced_monitoring`, `above_trigger`, `mcl_exceedance`)
+    prior to model training.
 
-    #### 1. Baseline Benchmark Comparison
+    #### Baseline benchmark comparison
     Computed against `ss_scored_df`'s actual tier distribution
     ({tier_distribution["within_reduced_monitoring"]:.1%}
     `within_reduced_monitoring`,
@@ -406,107 +426,174 @@ def _(majority_baseline, mo, random_baseline, tier_distribution):
 @app.cell
 def _(mo):
     mo.md(r"""
-    #### 2. Quantitative Operational Thresholds
+    #### Quantitative operational thresholds
     Three core success thresholds apply when evaluating the models on
-    held-out test data:
+    held-out test data, each pegged to a multiple of the random-
+    uniform baseline computed above rather than chosen arbitrarily:
 
     1. **High-Risk Class Recall ($\ge 70.0\%$):**
        * **Criterion:** $\text{Recall}_{\text{mcl\_exceedance}} \ge
          0.70$
        * **Rationale:** In environmental risk screening, Type II
          errors (missing a contaminated well) present severe public
-         health hazards. Catching at least 70% of actual exceedance
-         sites ensures the model serves as an effective screening
-         tool for water operators.
-    2. **Macro-Averaged F1-Score ($\ge 0.55$):**
+         health hazards, so recall gets the strictest bar of the
+         three — roughly 2x the random baseline's 1/3. Catching at
+         least 70% of actual exceedance sites ensures the model
+         serves as an effective screening tool for water operators.
+    2. **Macro-Averaged F1-Score ($\ge 0.60$):**
        * **Criterion:** $\text{Macro F1} = \frac{F1_{\text{reduced}} +
-         F1_{\text{trigger}} + F1_{\text{mcl}}}{3} \ge 0.55$
-       * **Rationale:** Since Macro F1 weights all classes equally
-         regardless of support count, achieving $\ge 0.55$ shows the
-         model is actively learning features across all three risk
-         tiers rather than defaulting to the majority class.
-    3. **High-Risk Precision Floor ($\ge 40.0\%$):**
+         F1_{\text{trigger}} + F1_{\text{mcl}}}{3} \ge 0.60$
+       * **Rationale:** Macro F1 is the overall "is it actually
+         learning, not just biased toward one tier" check, so it's
+         held to roughly the same ~2x-random bar as recall
+         (baseline $\approx 0.32$). Weighting all classes equally
+         regardless of support count means clearing 0.60 requires
+         real signal across all three risk tiers, not just the
+         majority class.
+    3. **High-Risk Precision Floor ($\ge 45.0\%$):**
        * **Criterion:** $\text{Precision}_{\text{mcl\_exceedance}}
-         \ge 0.40$
-       * **Rationale:** While false alarms only incur re-testing
-         costs, an extremely low precision ($< 0.20$) would cause
-         severe "alert fatigue" and waste limited testing budgets.
-         Setting a 40% floor ensures at least 4 out of 10 flagged
-         high-risk sites are true exceedances.
+         \ge 0.45$
+       * **Rationale:** False alarms here only cost a confirmatory
+         re-test, not a missed contamination event, so precision is
+         deliberately the least strict of the three — a floor against
+         a degenerate "flag everything" strategy, not a primary
+         target. A 0.45 floor sits well above the random baseline's
+         $\approx 0.30$ (which precision tracks almost for free, on
+         account of the tier's own prevalence) without demanding the
+         same ~2x margin recall and macro-F1 do, which would fight the
+         asymmetric cost structure above. It reads as "just under half
+         of every `mcl_exceedance` alert is confirmed," a step up from
+         "4 out of 10."
     """)
     return
 
 
 @app.cell
-def _(majority_baseline, mo, pd):
-    # Naive Baseline values come from the majority-class (zero-rule)
-    # baseline computed above, against ss_scored_df's actual tier
-    # distribution.
-    success_targets_df = pd.DataFrame(
-        [
-            {
-                "Metric": "High-Risk Tier Recall",
-                "Target Class": "mcl_exceedance",
-                "Naive Baseline": (
-                    f"{majority_baseline['mcl_exceedance_recall']:.2f}"
-                ),
-                "Minimum Passing Threshold": "≥ 0.70 (70%)",
-                "Operational Rationale": (
-                    "Minimize missed high-risk contamination sites"
-                ),
-            },
-            {
-                "Metric": "Macro-Averaged F1-Score",
-                "Target Class": "All Tiers (Unweighted)",
-                "Naive Baseline": f"{majority_baseline['macro_f1']:.2f}",
-                "Minimum Passing Threshold": "≥ 0.55",
-                "Operational Rationale": (
-                    "Ensure active learning across imbalanced classes"
-                ),
-            },
-            {
-                "Metric": "High-Risk Tier Precision",
-                "Target Class": "mcl_exceedance",
-                "Naive Baseline": (
-                    f"{majority_baseline['mcl_exceedance_precision']:.2f}"
-                ),
-                "Minimum Passing Threshold": "≥ 0.40 (40%)",
-                "Operational Rationale": (
-                    "Control false alarms and preserve re-testing budgets"
-                ),
-            },
-        ]
-    )
+def _():
+    # Task 3.2's agreed success thresholds. Each is roughly 2x the
+    # random-uniform baseline computed above, except PRECISION_FLOOR,
+    # deliberately held to a softer margin per the asymmetric cost
+    # structure in the per-class metrics rationale above (a missed
+    # exceedance is worse than a false alarm).
+    RECALL_FLOOR = 0.70
+    MACRO_F1_FLOOR = 0.60
+    PRECISION_FLOOR = 0.45
+    return MACRO_F1_FLOOR, PRECISION_FLOOR, RECALL_FLOOR
 
-    mo.vstack(
-        [
-            mo.md("#### Task 3.2: Summary Table of Evaluation Targets"),
-            mo.ui.table(success_targets_df),
-        ]
+
+@app.cell
+def _(MACRO_F1_FLOOR, PRECISION_FLOOR, RECALL_FLOOR, majority_baseline, mo):
+    # Plain markdown table, not a DataFrame: this is a documentation
+    # summary, not meant to be reused in code — check_success_criteria()
+    # below is the one reusable piece.
+    _recall_row = (
+        "| High-Risk Tier Recall | `mcl_exceedance` | "
+        f"{majority_baseline['mcl_exceedance_recall']:.2f} | "
+        f"≥ {RECALL_FLOOR:.2f} ({RECALL_FLOOR:.0%}) | "
+        "Minimize missed high-risk contamination sites |"
     )
+    _f1_row = (
+        "| Macro-Averaged F1-Score | All Tiers (Unweighted) | "
+        f"{majority_baseline['macro_f1']:.2f} | "
+        f"≥ {MACRO_F1_FLOOR:.2f} | "
+        "Ensure active learning across imbalanced classes |"
+    )
+    _precision_row = (
+        "| High-Risk Tier Precision | `mcl_exceedance` | "
+        f"{majority_baseline['mcl_exceedance_precision']:.2f} | "
+        f"≥ {PRECISION_FLOOR:.2f} ({PRECISION_FLOOR:.0%}) | "
+        "Control false alarms and preserve re-testing budgets |"
+    )
+    mo.md(f"""
+    #### Summary of evaluation targets
+
+    | Metric | Target | Naive Baseline | Threshold | Rationale |
+    |---|---|---|---|---|
+    {_recall_row}
+    {_f1_row}
+    {_precision_row}
+    """)
     return
 
 
-@app.cell(hide_code=True)
-def _(pd):
-    RISK_LABELS = [
-        "within_reduced_monitoring",
-        "above_trigger",
-        "mcl_exceedance",
-    ]
+@app.cell
+def _(MACRO_F1_FLOOR, PRECISION_FLOOR, RECALL_FLOOR, evaluate_tier_model, pd):
+    def check_success_criteria(y_true, y_pred, model_name):
+        """Score a model's predictions against Task 3.2's thresholds.
 
-    RISK_TIER_BINS = [float("-inf"), 0.5, 1.0, float("inf")]
+        Reuses evaluate_tier_model() for the underlying metrics, then
+        checks mcl_exceedance recall, macro F1, and mcl_exceedance
+        precision against RECALL_FLOOR/MACRO_F1_FLOOR/PRECISION_FLOOR.
+        Returns a per-metric pass/fail table, an overall pass/fail
+        flag, and a one-line summary string.
+        """
+        _result = evaluate_tier_model(
+            y_true, y_pred, model_name, recall_floor=RECALL_FLOOR
+        )
+        _summary = _result["summary"]
+        _precision = _result["per_class"].loc["mcl_exceedance", "precision"]
 
-    def classify_pfas_risk_tier(sum_tq_epa):
-        return pd.cut(
-            sum_tq_epa,
-            bins=RISK_TIER_BINS,
-            labels=RISK_LABELS,
-            right=False,
-            ordered=True,
+        criteria_df = pd.DataFrame(
+            [
+                {
+                    "Metric": "mcl_exceedance recall",
+                    "Value": round(_summary["mcl_exceedance_recall"], 4),
+                    "Threshold": RECALL_FLOOR,
+                },
+                {
+                    "Metric": "macro F1",
+                    "Value": round(_summary["macro_f1"], 4),
+                    "Threshold": MACRO_F1_FLOOR,
+                },
+                {
+                    "Metric": "mcl_exceedance precision",
+                    "Value": round(_precision, 4),
+                    "Threshold": PRECISION_FLOOR,
+                },
+            ]
+        )
+        criteria_df["Passed"] = (
+            criteria_df["Value"] >= criteria_df["Threshold"]
+        )
+        criteria_df["Result"] = criteria_df.apply(
+            lambda row: (
+                f"{'PASS' if row['Passed'] else 'FAIL'} "
+                f"({row['Value']:.2f} vs ≥{row['Threshold']:.2f})"
+            ),
+            axis=1,
         )
 
-    return RISK_LABELS, classify_pfas_risk_tier
+        all_passed = bool(criteria_df["Passed"].all())
+        summary_line = f"{model_name}: " + (
+            "PASSES all Task 3.2 success criteria"
+            if all_passed
+            else "DOES NOT meet all Task 3.2 success criteria"
+        )
+
+        return {
+            "criteria": criteria_df,
+            "all_passed": all_passed,
+            "summary_line": summary_line,
+        }
+
+    return (check_success_criteria,)
+
+
+@app.cell
+def _(check_success_criteria, mo, tier_distribution, tier_true):
+    # Sanity check: the majority-class baseline should fail every
+    # criterion, since it never predicts mcl_exceedance at all.
+    _majority_pred = [tier_distribution.idxmax()] * len(tier_true)
+    _majority_check = check_success_criteria(
+        tier_true, _majority_pred, "Majority class (zero-rule)"
+    )
+    mo.vstack(
+        [
+            mo.md(f"**{_majority_check['summary_line']}**"),
+            mo.ui.table(_majority_check["criteria"]),
+        ]
+    )
+    return
 
 
 @app.cell(hide_code=True)
