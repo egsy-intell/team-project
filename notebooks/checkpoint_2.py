@@ -337,8 +337,7 @@ def _(RISK_LABELS, classify_pfas_risk_tier, evaluate_tier_model, ss_scored_df):
 
     # Random-uniform prediction, independent of the input: recall_c = 1/k
     # and precision_c = prevalence_c follow directly from that
-    # independence (k = number of tiers), so this is the exact
-    # expectation rather than a Monte Carlo estimate.
+    # independence (k = number of tiers).
     _k = len(RISK_LABELS)
     _random_recall = 1 / _k
     _random_f1_by_tier = {
