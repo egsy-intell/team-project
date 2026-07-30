@@ -120,35 +120,10 @@ def _(mo):
     return
 
 
-@app.cell(hide_code=True)
-def _(mo, task_callout):
-    mo.vstack(
-        [
-            mo.md(
-                "### Per-class metrics (precision/recall/F1, confusion matrix)"
-            ),
-            task_callout(
-                "3.1",
-                category="Step 3 - Evaluation Plan",
-                lead="Somyaranjan",
-                summary=(
-                    "Define the primary classification metrics for the "
-                    "∑TQ risk-tier target: per-class precision/recall/F1 and "
-                    "a confusion matrix, with an explanation of why these "
-                    "matter more here than plain accuracy (class imbalance "
-                    "across risk tiers, and asymmetric cost of missing a "
-                    "high-risk site vs. a false alarm)."
-                ),
-            ),
-        ]
-    )
-    return
-
-
 @app.cell
 def _(mo):
     mo.md(r"""
-    ### Classification metrics and evaluation rationale
+    ### Per-class metrics and evaluation rationale
 
     **Target:** the ∑TQ risk tier — `within_reduced_monitoring`
     (∑TQ < 0.5), `above_trigger` (0.5 ≤ ∑TQ < 1.0), `mcl_exceedance`
@@ -216,7 +191,7 @@ def _(mo):
 def _(pd):
     # Ordinal, low -> high. Fixed order so every confusion matrix produced in
     # Step 5 has identical axes and models can be compared cell-by-cell.
-    TIER_ORDER = [
+    RISK_LABELS = [
         "within_reduced_monitoring",
         "above_trigger",
         "mcl_exceedance",
@@ -225,28 +200,24 @@ def _(pd):
     def assign_tq_tier(sum_tq, trigger_cutoff=0.5, mcl_cutoff=1.0):
         """Map a sum_tq_epa series to the ordinal risk tier.
 
-
-        Cutoffs default to the EPA-anchored values from Checkpoint 1 but stay
-
-        parameterized: Task 3.2 may adjust them once the reshaped target from
-
-        Task PW is available to profile.
-
+        Cutoffs default to the EPA-anchored values from Checkpoint 1
+        but stay parameterized: Task 3.2 may adjust them once the
+        reshaped target from Task PW is available to profile.
         """
 
         return pd.cut(
             sum_tq,
             bins=[-float("inf"), trigger_cutoff, mcl_cutoff, float("inf")],
-            labels=TIER_ORDER,
+            labels=RISK_LABELS,
             right=False,
         )
 
-    return (TIER_ORDER,)
+    return RISK_LABELS, assign_tq_tier
 
 
 @app.cell
 def _(
-    TIER_ORDER,
+    RISK_LABELS,
     classification_report,
     confusion_matrix,
     f1_score,
@@ -254,42 +225,44 @@ def _(
     recall_score,
 ):
     def evaluate_tier_model(y_true, y_pred, model_name, recall_floor=None):
-        """Standard Task 3.1 evaluation for any ∑TQ tier classifier.
+        """Standard evaluation for any ∑TQ tier classifier.
 
-
-        Returns per-class precision/recall/F1, the two headline numbers the
-
-        metric framework selects on (macro-F1 and mcl_exceedance recall), a
-
-        labeled 3x3 confusion matrix, and a count of tier-skipping misses.
-
+        Returns per-class precision/recall/F1, the two headline
+        numbers the metric framework selects on (macro-F1 and
+        mcl_exceedance recall), a labeled 3x3 confusion matrix, and a
+        count of tier-skipping misses.
         """
 
         # zero_division=0: a model that never predicts a tier yields an
-        # undefined precision. Score it 0 rather than dropping the row, or the
-        # failure mode Task 3.1 warns about disappears from the report.
+        # undefined precision. Score it 0 rather than dropping the row, or
+        # the majority-tier failure mode this framework warns about
+        # disappears from the report.
         report = pd.DataFrame(
             classification_report(
                 y_true,
                 y_pred,
-                labels=TIER_ORDER,
+                labels=RISK_LABELS,
                 output_dict=True,
                 zero_division=0,
             )
         ).T
 
-        per_class = report.loc[TIER_ORDER].assign(
+        per_class = report.loc[RISK_LABELS].assign(
             support=lambda df: df["support"].astype(int)
         )
 
         matrix = pd.DataFrame(
-            confusion_matrix(y_true, y_pred, labels=TIER_ORDER),
-            index=pd.Index(TIER_ORDER, name="actual"),
-            columns=pd.Index(TIER_ORDER, name="predicted"),
+            confusion_matrix(y_true, y_pred, labels=RISK_LABELS),
+            index=pd.Index(RISK_LABELS, name="actual"),
+            columns=pd.Index(RISK_LABELS, name="predicted"),
         )
 
         macro_f1 = f1_score(
-            y_true, y_pred, labels=TIER_ORDER, average="macro", zero_division=0
+            y_true,
+            y_pred,
+            labels=RISK_LABELS,
+            average="macro",
+            zero_division=0,
         )
 
         # Single-element labels + average="macro" isolates recall for just
@@ -325,7 +298,7 @@ def _(
             "confusion_matrix": matrix,
         }
 
-    return
+    return (evaluate_tier_model,)
 
 
 @app.cell(hide_code=True)
@@ -358,12 +331,12 @@ def _(mo):
     **Lead:** Somyaranjan Sahu & Team | **Target Tiers:**
     `within_reduced_monitoring`, `above_trigger`, `mcl_exceedance`
 
-    To determine whether our land-use classification models provide
-    actionable value for water-resource managers, we establish formal
-    quantitative benchmarks prior to model training.
+    Determining whether the land-use classification models provide
+    actionable value for water-resource managers requires formal
+    quantitative benchmarks set prior to model training.
 
     #### 1. Baseline Benchmark Comparison
-    Our models must significantly outperform two naive reference
+    The models must significantly outperform two naive reference
     baselines:
     * **Random Uniform Classifier:** Yields an expected Macro F1-Score
       of $\approx 0.33$.
@@ -373,8 +346,8 @@ def _(mo):
       `mcl_exceedance`** and a low **Macro F1 of $\approx 0.22$**.
 
     #### 2. Quantitative Operational Thresholds
-    We establish three core success thresholds for evaluating our
-    models on held-out test data:
+    Three core success thresholds apply when evaluating the models on
+    held-out test data:
 
     1. **High-Risk Class Recall ($\ge 70.0\%$):**
        * **Criterion:** $\text{Recall}_{\text{mcl\_exceedance}} \ge
@@ -382,13 +355,13 @@ def _(mo):
        * **Rationale:** In environmental risk screening, Type II
          errors (missing a contaminated well) present severe public
          health hazards. Catching at least 70% of actual exceedance
-         sites ensures our model serves as an effective screening
+         sites ensures the model serves as an effective screening
          tool for water operators.
     2. **Macro-Averaged F1-Score ($\ge 0.55$):**
        * **Criterion:** $\text{Macro F1} = \frac{F1_{\text{reduced}} +
          F1_{\text{trigger}} + F1_{\text{mcl}}}{3} \ge 0.55$
        * **Rationale:** Since Macro F1 weights all classes equally
-         regardless of support count, achieving $\ge 0.55$ proves our
+         regardless of support count, achieving $\ge 0.55$ shows the
          model is actively learning features across all three risk
          tiers rather than defaulting to the majority class.
     3. **High-Risk Precision Floor ($\ge 40.0\%$):**
@@ -449,13 +422,7 @@ def _(mo, pd):
 
 
 @app.cell(hide_code=True)
-def _(StratifiedGroupKFold, combinations, mo, pd, ss_scored_df):
-    risk_labels = [
-        "within_reduced_monitoring",
-        "above_trigger",
-        "mcl_exceedance",
-    ]
-
+def _(RISK_LABELS, StratifiedGroupKFold, combinations, mo, pd, ss_scored_df):
     # Smalling provides the measured outcome, so Study_smalling is the
     # canonical grouping field. The matched Seawolf predictor row follows the
     # same site into whichever partition that Smalling study is assigned to.
@@ -479,7 +446,7 @@ def _(StratifiedGroupKFold, combinations, mo, pd, ss_scored_df):
             MCL_EXCEEDANCE_CUTOFF,
             float("inf"),
         ],
-        labels=risk_labels,
+        labels=RISK_LABELS,
         right=False,
         ordered=True,
     )
@@ -500,19 +467,19 @@ def _(StratifiedGroupKFold, combinations, mo, pd, ss_scored_df):
         )
         .size()
         .unstack(fill_value=0)
-        .reindex(columns=risk_labels, fill_value=0)
+        .reindex(columns=RISK_LABELS, fill_value=0)
         .reset_index()
     )
-    study_risk_profile["Sites"] = study_risk_profile[risk_labels].sum(axis=1)
+    study_risk_profile["Sites"] = study_risk_profile[RISK_LABELS].sum(axis=1)
     study_risk_profile = study_risk_profile[
-        ["study_group", "Sites", *risk_labels]
+        ["study_group", "Sites", *RISK_LABELS]
     ].sort_values(["Sites", "study_group"], ascending=[False, True])
 
     all_studies = sorted(tapwater_split_df["study_group"].unique().tolist())
     full_distribution = (
         tapwater_split_df["pfas_risk_tier"]
         .value_counts(normalize=True)
-        .reindex(risk_labels, fill_value=0.0)
+        .reindex(RISK_LABELS, fill_value=0.0)
     )
 
     def score_split(
@@ -566,7 +533,7 @@ def _(StratifiedGroupKFold, combinations, mo, pd, ss_scored_df):
                 train_part,
                 test_part,
                 tapwater_split_df,
-                risk_labels,
+                RISK_LABELS,
                 full_distribution,
             )
             candidate_rows.append(
@@ -620,7 +587,7 @@ def _(StratifiedGroupKFold, combinations, mo, pd, ss_scored_df):
             train_part,
             test_part,
             tapwater_split_df,
-            risk_labels,
+            RISK_LABELS,
             full_distribution,
         )
         sklearn_fold_rows.append(
@@ -774,7 +741,7 @@ def _(StratifiedGroupKFold, combinations, mo, pd, ss_scored_df):
         )
         .size()
         .unstack(fill_value=0)
-        .reindex(columns=risk_labels, fill_value=0)
+        .reindex(columns=RISK_LABELS, fill_value=0)
         .reset_index()
     )
 
