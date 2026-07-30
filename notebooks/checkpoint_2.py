@@ -211,25 +211,6 @@ def _(pd):
 
 
 @app.cell
-def _(RISK_LABELS, pd):
-    def assign_tq_tier(sum_tq, trigger_cutoff=0.5, mcl_cutoff=1.0):
-        """Map a sum_tq_epa series to the ordinal risk tier.
-
-        Cutoffs default to the EPA-anchored values from Checkpoint 1
-        but stay parameterized for reuse against other cutoff choices.
-        """
-
-        return pd.cut(
-            sum_tq,
-            bins=[-float("inf"), trigger_cutoff, mcl_cutoff, float("inf")],
-            labels=RISK_LABELS,
-            right=False,
-        )
-
-    return
-
-
-@app.cell
 def _(
     RISK_LABELS,
     classification_report,
