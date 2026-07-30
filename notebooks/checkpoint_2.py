@@ -128,7 +128,7 @@ def _(mo, tier_distribution):
     (∑TQ < 0.5), `above_trigger` (0.5 ≤ ∑TQ < 1.0), `mcl_exceedance`
     (∑TQ ≥ 1.0).
 
-    #### 1. Why plain accuracy is the wrong headline metric
+    #### Why plain accuracy is the wrong headline metric
 
     **Class imbalance.** Checkpoint 1's `ss_scored_df` (236
     Smalling/Seawolf sites) splits
@@ -152,7 +152,7 @@ def _(mo, tier_distribution):
       Recoverable, and consistent with the tool's stated role as
       sampling prioritization rather than a compliance determination.
 
-    #### 2. Metric framework
+    #### Metric framework
 
     * **Per-class precision, recall, and F1** reported for all three
       tiers separately, never collapsed into a single accuracy figure.
@@ -174,7 +174,7 @@ def _(mo, tier_distribution):
       and it maps directly onto the trigger-vs-MCL vocabulary
       operators already act on.
 
-    #### 3. Scope note
+    #### Scope note
 
     This framework is defined per evaluation slice. Checkpoint 1 found
     that all 254 McMahon sites carry `sum_tq_epa` ≥ 1.021 under the
