@@ -190,7 +190,7 @@ def _(mo):
       ranked on one number without letting the majority tier dominate
       the score. Macro-averaging is chosen over weighted averaging
       precisely because the minority tier is the one that matters.
-    * **3×3 confusion matrix** (predicted × actual). The tiers are
+    * **3×3 confusion matrix** (actual × predicted). The tiers are
       ordinal, so the direction of error carries meaning that a scalar
       metric discards: a true `mcl_exceedance` site predicted as
       `above_trigger` still lands the operator in a follow-up posture,
@@ -292,6 +292,8 @@ def _(
             y_true, y_pred, labels=TIER_ORDER, average="macro", zero_division=0
         )
 
+        # Single-element labels + average="macro" isolates recall for just
+        # mcl_exceedance rather than averaging across all three tiers.
         mcl_recall = recall_score(
             y_true,
             y_pred,
