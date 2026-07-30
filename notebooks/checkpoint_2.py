@@ -1171,24 +1171,61 @@ def _(mo, task_callout):
 
 
 @app.cell(hide_code=True)
-def _(mo, task_callout):
-    mo.vstack(
-        [
-            mo.md("### Tooling & compute plan for baseline"),
-            task_callout(
-                "4.2",
-                category="Step 4 - Modeling Techniques",
-                lead="Raj, Yai",
-                summary=(
-                    "Tooling (e.g. scikit-learn) and compute needs shared "
-                    "by the baseline model proposal below: expected "
-                    "dataset size, training time, and hardware "
-                    "requirements on a standard machine, no foundation "
-                    "model or GPU dependency expected."
-                ),
-            ),
-        ]
+def _(mo):
+    mo.md(r"""
+    ### Tooling and compute time for baseline model
+
+    Our models will use batteries-included, widely available Python
+    tooling (scikit-learn). Based on the size of the Smalling's,
+    McMahon's, and Seawolf's data set, we anticipate that our
+    computational load will be lightweight. Based on Scikit-learn's
+    documentation (2026), the general complexity of its decision
+    tree algorithm is
+
+    $$O(n_{\text{features}} \cdot n_{\text{samples}}
+    \log(n_{\text{samples}})) + O(n_{\text{features}} \cdot
+    n_{\text{samples}})$$
+
+    where the first term dominates (sorting), and the second is
+    negligible (linear scan). Our training will be centered in a
+    small data set of roughly 240×20 dimensions, which means that
+    the total set of computations will be
+
+    $$O(19 \times 240 \times \log_2(240)) \approx 19 \times 240 \times 7.9
+    \approx 36{,}000 \text{ operations}$$
+
+    For a rough sense of scale, a modern iPhone's GPU renders a
+    single frame of a demanding game using on the order of
+    $10^7$–$10^8$ operations, 60 times per second — these figures are
+    order-of-magnitude estimates, not benchmarked numbers. By that
+    comparison, ~36,000 operations for one training run is
+    negligible:
+    """)
+    return
+
+
+@app.cell
+def _(mo):
+    mo.center(
+        mo.md("""
+        | Task | Operations (order of magnitude) | Frequency |
+        | --- | --- | --- |
+        | ID3/sklearn (240x20) | ~36,000 | Once |
+        | One frame of a demanding iPhone game | ~10⁷–10⁸ | 60x per second |
+        | One second of gameplay | ~10⁹–10¹⁰ | Continuous |
+
+    """)
     )
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    In other words, we can retrain and experiment with
+    hyperparameters without being constrained by heavy computational
+    demands.
+    """)
     return
 
 
@@ -1252,6 +1289,9 @@ def _(mo):
     non-linear ensemble (Step 4), against the already-computed ∑TQ
     target from checkpoint 1. Training both models and evaluating them
     against the plan above is Step 5 work for the final checkpoint.
+
+    ## References
+    * Scikit-learn developers. (2026). 1.10. Decision trees. https://scikit-learn.org/stable/modules/tree.html
     """)
     return
 
