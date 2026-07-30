@@ -445,7 +445,6 @@ def _(mo, pd):
             mo.ui.table(success_targets_df),
         ]
     )
-
     return
 
 
