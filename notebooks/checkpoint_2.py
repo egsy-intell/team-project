@@ -135,10 +135,10 @@ def _(mo, tier_distribution):
     {tier_distribution["within_reduced_monitoring"]:.1%}
     `within_reduced_monitoring`,
     {tier_distribution["above_trigger"]:.1%} `above_trigger`, and
-    {tier_distribution["mcl_exceedance"]:.1%} `mcl_exceedance` (see
-    Task 3.2 below): a classifier that predicts the majority tier for
-    every site scores well above chance on accuracy while flagging no
-    contaminated source at all.
+    {tier_distribution["mcl_exceedance"]:.1%} `mcl_exceedance`: a
+    classifier that predicts the majority tier for every site scores
+    well above chance on accuracy while flagging no contaminated
+    source at all.
 
     **Asymmetric error costs.** Accuracy weights every misclassification
     the same; this problem does not:
@@ -157,9 +157,9 @@ def _(mo, tier_distribution):
     * **Per-class precision, recall, and F1** reported for all three
       tiers separately, never collapsed into a single accuracy figure.
     * **Recall on `mcl_exceedance`** as the constraint. Model selection
-      requires clearing a minimum recall floor on the highest-risk
-      tier; Task 3.2 below sets that floor against the actual
-      `ss_scored_df` tier distribution.
+      requires clearing a minimum recall floor of 0.70 on the
+      highest-risk tier, set against the actual `ss_scored_df` tier
+      distribution below.
     * **Macro-averaged F1** as the scalar comparison metric *subject
       to* that floor, so Model A and Model B (Tasks 4.1, 4.3) are
       ranked on one number without letting the majority tier dominate
@@ -182,7 +182,7 @@ def _(mo, tier_distribution):
     them in `mcl_exceedance` by construction. McMahon is held out of
     training and reported separately as a qualified validation slice
     (see the groundwater-role decision below), so the class
-    proportions Task 3.2's recall floor is set against come from
+    proportions the recall floor is set against come from
     `ss_scored_df` alone.
     """)
     return
@@ -216,8 +216,7 @@ def _(RISK_LABELS, pd):
         """Map a sum_tq_epa series to the ordinal risk tier.
 
         Cutoffs default to the EPA-anchored values from Checkpoint 1
-        but stay parameterized: Task 3.2 may adjust them once the
-        reshaped target from Task PW is available to profile.
+        but stay parameterized for reuse against other cutoff choices.
         """
 
         return pd.cut(
@@ -314,30 +313,6 @@ def _(
         }
 
     return (evaluate_tier_model,)
-
-
-@app.cell(hide_code=True)
-def _(mo, task_callout):
-    mo.vstack(
-        [
-            mo.md("### Success threshold - risk-tier cutoffs"),
-            task_callout(
-                "3.2",
-                category="Step 3 - Evaluation Plan",
-                lead="Somyaranjan, Team",
-                depends_on="PW",
-                summary=(
-                    "Decide what constitutes success for the model against "
-                    "the ∑TQ risk tiers (`within_reduced_monitoring`, "
-                    "`above_trigger`, `mcl_exceedance`) — e.g. minimum "
-                    "recall on the highest-risk tier — profiled against "
-                    "the reshaped/joined ∑TQ target Task PW produced "
-                    "(`ss_scored_df`)."
-                ),
-            ),
-        ]
-    )
-    return
 
 
 @app.cell
@@ -470,7 +445,7 @@ def _(mo):
 
 @app.cell
 def _():
-    # Task 3.2's agreed success thresholds. Each is roughly 2x the
+    # Agreed model success thresholds. Each is roughly 2x the
     # random-uniform baseline computed above, except PRECISION_FLOOR,
     # deliberately held to a softer margin per the asymmetric cost
     # structure in the per-class metrics rationale above (a missed
@@ -519,7 +494,7 @@ def _(MACRO_F1_FLOOR, PRECISION_FLOOR, RECALL_FLOOR, majority_baseline, mo):
 @app.cell
 def _(MACRO_F1_FLOOR, PRECISION_FLOOR, RECALL_FLOOR, evaluate_tier_model, pd):
     def check_success_criteria(y_true, y_pred, model_name):
-        """Score a model's predictions against Task 3.2's thresholds.
+        """Score a model's predictions against the success thresholds.
 
         Reuses evaluate_tier_model() for the underlying metrics, then
         checks mcl_exceedance recall, macro F1, and mcl_exceedance
@@ -565,9 +540,9 @@ def _(MACRO_F1_FLOOR, PRECISION_FLOOR, RECALL_FLOOR, evaluate_tier_model, pd):
 
         all_passed = bool(criteria_df["Passed"].all())
         summary_line = f"{model_name}: " + (
-            "PASSES all Task 3.2 success criteria"
+            "PASSES all success criteria"
             if all_passed
-            else "DOES NOT meet all Task 3.2 success criteria"
+            else "DOES NOT meet all success criteria"
         )
 
         return {
