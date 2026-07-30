@@ -99,9 +99,9 @@ def _(mc_clean_df, mc_scored_df, mo, ss_scored_df):
     Inherited from checkpoint 1's Step 2 cleaning and ∑TQ construction:
     `ss_scored_df` ({ss_scored_df.shape[0]} rows), `mc_scored_df`
     ({mc_scored_df.shape[0]} rows). `mc_clean_df` ({mc_clean_df.shape[0]}
-    rows) is also available unscored — McMahon's role (combined vs.
-    held-out, task `3.4`) isn't decided yet, so both are kept until
-    that's settled.
+    rows) is also available unscored — McMahon is held out of training
+    entirely and used only as a qualified validation slice, per the
+    groundwater-role decision below.
     """)
     return
 
@@ -120,27 +120,10 @@ def _(mo):
 
 
 @app.cell(hide_code=True)
-def _(mo, task_callout):
-    mo.vstack(
-        [
-            mo.md(
-                "### Per-class metrics (precision/recall/F1, confusion matrix)"
-            ),
-            task_callout(
-                "3.1",
-                category="Step 3 - Evaluation Plan",
-                lead="Somyaranjan",
-                summary=(
-                    "Define the primary classification metrics for the "
-                    "∑TQ risk-tier target: per-class precision/recall/F1 and "
-                    "a confusion matrix, with an explanation of why these "
-                    "matter more here than plain accuracy (class imbalance "
-                    "across risk tiers, and asymmetric cost of missing a "
-                    "high-risk site vs. a false alarm)."
-                ),
-            ),
-        ]
-    )
+def _(mo):
+    mo.md("""
+    ### Per-class metrics (precision/recall/F1, confusion matrix)
+    """)
     return
 
 
@@ -203,10 +186,11 @@ def _(mo):
     This framework is defined per evaluation slice. Checkpoint 1 found
     that all 254 McMahon sites carry `sum_tq_epa` ≥ 1.021 under the
     half-reporting-limit non-detect convention, placing every one of
-    them in `mcl_exceedance` by construction. Whether that data joins
-    the training target or becomes a held-out slice is Task 3.4's
-    decision; combined-target class proportions, and therefore the
-    recall floor in 3.2, cannot be finalized until it resolves.
+    them in `mcl_exceedance` by construction. McMahon is held out of
+    training and reported separately as a qualified validation slice
+    (see the groundwater-role decision below), so the class
+    proportions Task 3.2's recall floor is set against come from
+    `ss_scored_df` alone.
     """)
     return
 
@@ -253,7 +237,7 @@ def _(
     recall_score,
 ):
     def evaluate_tier_model(y_true, y_pred, model_name, recall_floor=None):
-        """Standard Task 3.1 evaluation for any ∑TQ tier classifier.
+        """Standard evaluation for any ∑TQ tier classifier.
 
 
         Returns per-class precision/recall/F1, the two headline numbers the
@@ -265,8 +249,8 @@ def _(
         """
 
         # zero_division=0: a model that never predicts a tier yields an
-        # undefined precision. Score it 0 rather than dropping the row, or the
-        # failure mode Task 3.1 warns about disappears from the report.
+        # undefined precision. Score it 0 rather than dropping the row, or
+        # that failure mode disappears from the report.
         report = pd.DataFrame(
             classification_report(
                 y_true,
@@ -831,14 +815,13 @@ def _(
 
                 #### McMahon treatment
 
-                `mc_scored_df` is provisionally excluded from this
-                tap-water split. McMahon contains groundwater
-                observations, omits GenX, and applies a different
-                non-detect convention. Under the current construction
-                its target distribution is therefore not on the same
-                footing as Smalling/Seawolf. Whether it should support
-                a separate groundwater model or serve as a qualified
-                external evaluation slice is taken up next.
+                `mc_scored_df` is excluded from this tap-water split
+                entirely. McMahon contains groundwater observations,
+                omits GenX, and applies a different non-detect
+                convention, so its target distribution is not on the
+                same footing as Smalling/Seawolf. It is used only as a
+                qualified external validation slice, never for
+                training — the next section covers why.
                 """
             ),
         ]
@@ -847,33 +830,10 @@ def _(
 
 
 @app.cell(hide_code=True)
-def _(mo, task_callout):
-    mo.vstack(
-        [
-            mo.md("### Groundwater's role - held-out vs. combined"),
-            task_callout(
-                "3.4",
-                category="Step 3 - Evaluation Plan",
-                lead="Raj, Yai",
-                depends_on="3.3",
-                summary=(
-                    "Decide whether McMahon's groundwater data trains "
-                    "alongside Smalling/Seawolf's surface-water data or is "
-                    "held out as a separate evaluation slice, given "
-                    "McMahon's already-noted join-ability and coverage "
-                    "differences from Step 2, once the study-grouped split "
-                    "strategy (3.3) is settled."
-                ),
-            ),
-            mo.md(
-                """
-                **Draft proposal below, pending Yai/Raj sign-off** —
-                left as a draft rather than a final decision since this
-                task is co-owned and Raj hasn't weighed in yet.
-                """
-            ),
-        ]
-    )
+def _(mo):
+    mo.md("""
+    ### Groundwater's role - held-out vs. combined
+    """)
     return
 
 
@@ -931,22 +891,23 @@ def _(groundwater_comparison_df, mo):
             mo.ui.table(groundwater_comparison_df),
             mo.md(
                 """
-                #### Proposed decision: hold out, don't combine
+                #### Decision: hold out, don't combine
 
                 Combining McMahon into the Smalling/Seawolf training set
                 would let a model achieve perfect recall on the
                 `mcl_exceedance` tier simply by learning "is this a
                 McMahon row," an artifact of imputation and compound
                 coverage, not a land-use signal — exactly the kind of
-                leakage the study-grouped split in 3.3 already guards
-                against for cross-study effects. A single-class study
-                also cannot exercise the per-class metrics defined in
-                3.1, which need all three tiers represented.
+                leakage the study-grouped split guards against for
+                cross-study effects. A single-class study also cannot
+                exercise the per-class metrics defined for the
+                classification task, which need all three tiers
+                represented.
 
-                Proposed treatment instead: keep `mc_scored_df` fully
-                outside both the training and 3.3 test partitions, and
-                report model predictions on it separately as a
-                qualified generalization check — framed explicitly as
+                McMahon's data will not be used for training. It stays
+                fully outside both the training and test partitions,
+                and model predictions on it are reported separately as
+                a qualified validation check — framed explicitly as
                 "does the model's *relative* ranking of McMahon sites
                 look plausible," not as a comparable accuracy number,
                 since the target itself isn't comparable across studies.
