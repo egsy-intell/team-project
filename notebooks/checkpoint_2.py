@@ -204,7 +204,7 @@ def _(RISK_LABELS, pd):
             right=False,
         )
 
-    return (assign_tq_tier,)
+    return
 
 
 @app.cell
@@ -290,7 +290,7 @@ def _(
             "confusion_matrix": matrix,
         }
 
-    return (evaluate_tier_model,)
+    return
 
 
 @app.cell(hide_code=True)
