@@ -270,10 +270,19 @@ def _(mo):
 
     1. Load Seawolf and Smalling via `pandas`
     2. Clean Smalling: the dataset uses `-` and `nd` for two specific purposes
-       (not analyzed, and non-detected above minimum detection values,
-       respectively). We decided to replace the former with `NaN` and the
-       latter with `0`. Ideally, we should know non-detected minimums, but
-       these were not found.
+       (not analyzed, and non-detected above the lab reporting limit,
+       respectively). We replace the former with `NaN` and the latter with
+       `0`. Reconstructing a per-compound reporting limit — to impute
+       non-detects as half that limit, as done for McMahon below — would
+       mean joining each sample's `Study` to its analyzing lab and year
+       (Smalling et al., 2023, Appendix A, Table S1), then to that lab's
+       detection limit (Table S3). That join has gaps the source itself
+       doesn't resolve: 2017–2018 Colorado School of Mines samples were
+       re-censored against field-blank concentrations the paper never
+       tabulates, NWQL's PFOS/PFHxS limits are split by branched/linear
+       isomer while this dataset reports only a combined value, and PFPrS
+       has no published limit at all. Treating `nd` as `0` is a deliberate
+       simplification given those gaps, not an oversight.
     3. Merge: using a left join, to report on any unmatched rows
     """)
     return
@@ -2108,8 +2117,12 @@ def _(mo):
     * McMahon's non-detects are already imputed as half the reporting limit
       (`VA/2`) during Step 2 cleaning, not treated as 0 — a different
       convention than Smalling's, inherited rather than newly introduced
-      here, but one more reason the two studies' ∑TQ values aren't
-      strictly comparable on the same footing.
+      here. Reconciling the two would mean reconstructing a per-sample
+      reporting limit for Smalling from its analyzing lab and year
+      (Smalling et al., 2023, Appendix A, Tables S1 and S3), which has
+      gaps that source doesn't resolve (see Step 2's Smalling load and
+      clean-up above); we treat this as a standing limitation rather than
+      one to close.
     """)
     return
 
@@ -2356,8 +2369,10 @@ def _(mo):
     McMahon's groundwater data is scored the same way into `mc_scored_df`,
     but its `sum_tq_epa` is not on the same footing as Smalling's — a
     missing GenX benchmark and a different non-detect convention push
-    every McMahon site above the trigger cutoff, a gap that needs
-    resolving before the two studies can share one modeling target.
+    every McMahon site above the trigger cutoff. Both stem from what each
+    source publishes rather than a cleaning choice we can revisit, so we
+    treat the two studies' ∑TQ as reported on different scales rather
+    than reconciling them into one modeling target.
 
     ## References
     * CDM Smith. (2024). EPA's final regulations: What do you

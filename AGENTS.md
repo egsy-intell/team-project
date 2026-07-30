@@ -206,6 +206,20 @@ construction section for the pattern. Leave `task_callout()` calls for
 still-open tasks (and their `depends_on=` links) alone until those tasks
 are done too.
 
+**Completing a task means updating both the notebook and the CSV in the
+same change** — the two are meant to move together, not drift.
+Alongside stripping the `task_callout()`/ID prose above, set that task's
+`Status` to `Complete` in
+`planning/checkpoint-2/checkpoint2_tasks.csv`. Prose elsewhere in the
+notebook that references the completed task only as a *dependency* (a
+still-open task's `depends_on=`, or text like "once Task PW's ... is
+available") isn't part of this cleanup — it stays until that other task
+is also done. But prose describing what the completed task itself
+produced (e.g. a conclusion cell saying its output is still pending)
+should be corrected to reflect that it's done, since a stale "not yet
+implemented" claim is misleading even without a literal task ID
+attached.
+
 ## Commands
 
 ```bash
