@@ -15,10 +15,7 @@ app = marimo.App(width="medium")
 
 @app.cell(hide_code=True)
 def _():
-    from itertools import combinations
-
     import marimo as mo
-    import pandas as pd
 
     # When this notebook is opened from a local checkout, checkpoint_1.py
     # sits right next to it. When marimo downloads it standalone from a URL
@@ -42,7 +39,7 @@ def _():
         _sys.path.insert(0, _tmp_dir)
 
         from checkpoint_1 import app as checkpoint_1_app
-    return checkpoint_1_app, combinations, mo, pd
+    return checkpoint_1_app, mo
 
 
 @app.cell(hide_code=True)
@@ -53,6 +50,33 @@ async def _(checkpoint_1_app):
     ss_scored_df = checkpoint_1_result.defs["ss_scored_df"]
     task_callout = checkpoint_1_result.defs["task_callout"]
     return mc_clean_df, mc_scored_df, ss_scored_df, task_callout
+
+
+@app.cell(hide_code=True)
+def _():
+    # Shared third-party imports for this notebook, defined once so
+    # downstream cells take them as parameters instead of each
+    # re-importing pandas/sklearn locally.
+    from itertools import combinations
+
+    import pandas as pd
+    from sklearn.metrics import (
+        classification_report,
+        confusion_matrix,
+        f1_score,
+        recall_score,
+    )
+    from sklearn.model_selection import StratifiedGroupKFold
+
+    return (
+        StratifiedGroupKFold,
+        classification_report,
+        combinations,
+        confusion_matrix,
+        f1_score,
+        pd,
+        recall_score,
+    )
 
 
 @app.cell(hide_code=True)
@@ -120,6 +144,189 @@ def _(mo, task_callout):
     return
 
 
+@app.cell
+def _(mo):
+    mo.md(r"""
+    ### Classification metrics and evaluation rationale
+
+    **Target:** the ∑TQ risk tier — `within_reduced_monitoring`
+    (∑TQ < 0.5), `above_trigger` (0.5 ≤ ∑TQ < 1.0), `mcl_exceedance`
+    (∑TQ ≥ 1.0).
+
+    #### 1. Why plain accuracy is the wrong headline metric
+
+    **Class imbalance.** Checkpoint 1's `ss_scored_df` (236
+    Smalling/Seawolf sites) puts the median `sum_tq_epa` at 0.171 and
+    the 75th percentile at 1.275, so `within_reduced_monitoring` holds
+    somewhere between 50% and 75% of sites and `mcl_exceedance` at
+    least 25%. Exact proportions wait on Task 3.2's cutoff profiling,
+    but the direction is already clear: a classifier that predicts the
+    majority tier for every site scores well above chance on accuracy
+    while flagging no contaminated source at all.
+
+    **Asymmetric error costs.** Accuracy weights every misclassification
+    the same; this problem does not:
+
+    * *False negative on `mcl_exceedance`* — an MCL-equivalent site
+      predicted into a lower tier. A site that needs monitoring never
+      reaches the operator's priority list, which is the failure the
+      screening tool exists to prevent.
+    * *False positive on `mcl_exceedance`* — a compliant site flagged
+      for follow-up. Costs a confirmatory sample and a field visit.
+      Recoverable, and consistent with the tool's stated role as
+      sampling prioritization rather than a compliance determination.
+
+    #### 2. Metric framework
+
+    * **Per-class precision, recall, and F1** reported for all three
+      tiers separately, never collapsed into a single accuracy figure.
+    * **Recall on `mcl_exceedance`** as the constraint. Model selection
+      requires clearing a minimum recall floor on the highest-risk
+      tier; Task 3.2 sets that floor once the reshaped ∑TQ target from
+      Task PW is available to profile.
+    * **Macro-averaged F1** as the scalar comparison metric *subject
+      to* that floor, so Model A and Model B (Tasks 4.1, 4.3) are
+      ranked on one number without letting the majority tier dominate
+      the score. Macro-averaging is chosen over weighted averaging
+      precisely because the minority tier is the one that matters.
+    * **3×3 confusion matrix** (actual × predicted). The tiers are
+      ordinal, so the direction of error carries meaning that a scalar
+      metric discards: a true `mcl_exceedance` site predicted as
+      `above_trigger` still lands the operator in a follow-up posture,
+      while the same site predicted as `within_reduced_monitoring`
+      does not. The matrix is how we distinguish those two failures,
+      and it maps directly onto the trigger-vs-MCL vocabulary
+      operators already act on.
+
+    #### 3. Scope note
+
+    This framework is defined per evaluation slice. Checkpoint 1 found
+    that all 254 McMahon sites carry `sum_tq_epa` ≥ 1.021 under the
+    half-reporting-limit non-detect convention, placing every one of
+    them in `mcl_exceedance` by construction. Whether that data joins
+    the training target or becomes a held-out slice is Task 3.4's
+    decision; combined-target class proportions, and therefore the
+    recall floor in 3.2, cannot be finalized until it resolves.
+    """)
+    return
+
+
+@app.cell
+def _(pd):
+    # Ordinal, low -> high. Fixed order so every confusion matrix produced in
+    # Step 5 has identical axes and models can be compared cell-by-cell.
+    TIER_ORDER = [
+        "within_reduced_monitoring",
+        "above_trigger",
+        "mcl_exceedance",
+    ]
+
+    def assign_tq_tier(sum_tq, trigger_cutoff=0.5, mcl_cutoff=1.0):
+        """Map a sum_tq_epa series to the ordinal risk tier.
+
+
+        Cutoffs default to the EPA-anchored values from Checkpoint 1 but stay
+
+        parameterized: Task 3.2 may adjust them once the reshaped target from
+
+        Task PW is available to profile.
+
+        """
+
+        return pd.cut(
+            sum_tq,
+            bins=[-float("inf"), trigger_cutoff, mcl_cutoff, float("inf")],
+            labels=TIER_ORDER,
+            right=False,
+        )
+
+    return (TIER_ORDER,)
+
+
+@app.cell
+def _(
+    TIER_ORDER,
+    classification_report,
+    confusion_matrix,
+    f1_score,
+    pd,
+    recall_score,
+):
+    def evaluate_tier_model(y_true, y_pred, model_name, recall_floor=None):
+        """Standard Task 3.1 evaluation for any ∑TQ tier classifier.
+
+
+        Returns per-class precision/recall/F1, the two headline numbers the
+
+        metric framework selects on (macro-F1 and mcl_exceedance recall), a
+
+        labeled 3x3 confusion matrix, and a count of tier-skipping misses.
+
+        """
+
+        # zero_division=0: a model that never predicts a tier yields an
+        # undefined precision. Score it 0 rather than dropping the row, or the
+        # failure mode Task 3.1 warns about disappears from the report.
+        report = pd.DataFrame(
+            classification_report(
+                y_true,
+                y_pred,
+                labels=TIER_ORDER,
+                output_dict=True,
+                zero_division=0,
+            )
+        ).T
+
+        per_class = report.loc[TIER_ORDER].assign(
+            support=lambda df: df["support"].astype(int)
+        )
+
+        matrix = pd.DataFrame(
+            confusion_matrix(y_true, y_pred, labels=TIER_ORDER),
+            index=pd.Index(TIER_ORDER, name="actual"),
+            columns=pd.Index(TIER_ORDER, name="predicted"),
+        )
+
+        macro_f1 = f1_score(
+            y_true, y_pred, labels=TIER_ORDER, average="macro", zero_division=0
+        )
+
+        # Single-element labels + average="macro" isolates recall for just
+        # mcl_exceedance rather than averaging across all three tiers.
+        mcl_recall = recall_score(
+            y_true,
+            y_pred,
+            labels=["mcl_exceedance"],
+            average="macro",
+            zero_division=0,
+        )
+
+        # The worst single error: an MCL-equivalent site predicted two tiers
+        # down, which leaves the operator with no follow-up posture at all.
+        critical_misses = int(
+            matrix.loc["mcl_exceedance", "within_reduced_monitoring"]
+        )
+
+        summary = {
+            "model": model_name,
+            "macro_f1": round(macro_f1, 4),
+            "mcl_exceedance_recall": round(mcl_recall, 4),
+            "critical_misses": critical_misses,
+            "n_evaluated": len(y_true),
+        }
+
+        if recall_floor is not None:
+            summary["meets_recall_floor"] = bool(mcl_recall >= recall_floor)
+
+        return {
+            "summary": summary,
+            "per_class": per_class,
+            "confusion_matrix": matrix,
+        }
+
+    return
+
+
 @app.cell(hide_code=True)
 def _(mo, task_callout):
     mo.vstack(
@@ -176,14 +383,13 @@ def _(RISK_LABELS, RISK_TIER_BINS, pd):
 @app.cell(hide_code=True)
 def _(
     RISK_LABELS,
+    StratifiedGroupKFold,
     classify_pfas_risk_tier,
     combinations,
     mo,
     pd,
     ss_scored_df,
 ):
-    from sklearn.model_selection import StratifiedGroupKFold
-
     # Smalling provides the measured outcome, so Study_smalling is the
     # canonical grouping field. The matched Seawolf predictor row follows the
     # same site into whichever partition that Smalling study is assigned to.

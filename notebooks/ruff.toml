@@ -15,4 +15,9 @@ extend-select = ["E501"]
 # cell's outputs are complete. Ruff's default rule set flags that same
 # statement as "useless" (PLR1711), so the two tools fight over it on
 # every autofix cycle. Defer to marimo's convention here.
-ignore = ["PLR1711"]
+#
+# PLC0415 ("import should be at top-level of file") is similarly
+# incompatible with marimo: every notebook cell is a function body, so
+# every import in every notebook lives inside one - there is no
+# module-level scope to hoist them to.
+ignore = ["PLR1711", "PLC0415"]
