@@ -18,6 +18,11 @@ dev = [
     "pytest>=8.3.5",
     "ruff>=0.14",
 ]
+preso = [
+    "pypandoc>=1.13",
+    "pypandoc_binary>=1.13",
+    "python-pptx>=1.0.2",
+]
 
 [tool.codespell]
 skip = ".git,*.lock,.venv,__marimo__"
