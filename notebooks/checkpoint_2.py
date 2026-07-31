@@ -1139,7 +1139,27 @@ def _(mo):
     assignment of each site's ∑TQ risk tier. File ingestion and one-time
     model loading are reported separately. This boundary captures the work
     repeated whenever an operator reprioritizes a PFAS sampling campaign.
+    """)
+    return
 
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.mermaid("""
+    flowchart LR
+        A[File ingestion] -.excluded.-> B[Model loading]
+        B -.excluded.-> C[Preprocessing]
+        subgraph timed["Timed boundary"]
+            C --> D[Prediction]
+            D --> E["∑TQ risk tier assignment"]
+        end
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md("""
     After model selection, benchmark batches of 250, 1,000, and 10,000 rows
     on a documented test environment with 4 GB of memory. Larger batches
     will be bootstrap samples of the held-out sites'
