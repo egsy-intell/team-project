@@ -47,8 +47,57 @@ def _():
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    # PFAS Occurrence Risk — Combined Report
+    # PFAS Occurrence Risk — Full Report
     """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.vstack(
+        [
+            mo.md("""
+    ## Team .egsy intelligence (Group #14)
+    * Emir Beg
+    * Gulshan Raj Shetty (Raj)
+    * Somyaranjan Sahu
+    * Yaisiel (Yai) Torres
+
+    ## Team roles and task delegation
+    """),
+            mo.center(
+                mo.md("""
+    | Name | Role | Superpowers |
+    |---|---|---|
+    | Yai Torres | Proposal Lead; Docs Lead | Web dev, organization, writing |
+    | Raj Shetty | Modeling Lead B | Data analysis, exploration, review |
+    | Emir Beg | Modeling Lead A | Software architecture, big data, review |
+    | Somyaranjan | Model Quality Lead | Problem-solving, testing, anomaly QA |
+    """)
+            ),
+            mo.md("""
+    * **Yai** led problem definition, data curation across all three
+      sources, and the data dictionary (Steps 1-2); has also served
+      as the team's data-platform lead and a general technical
+      resource across every workstream rather than one fixed slice;
+      leads the project write-up and slide deck through the final
+      submission.
+    * **Raj** drafted the data source and ethical-considerations
+      review and led the categorical-variable quality assessment
+      (Step 2); leads the study-grouped split strategy, groundwater
+      hold-out decision, and interpretable baseline classifier
+      (Steps 3-4), carried into its Step 5 execution and evaluation.
+    * **Emir** led the summary-statistics, outlier, and skewness
+      analysis (Step 2); leads the optional scalability/deployment
+      metric and the competing ensemble model (Steps 3-4), carried
+      into its Step 5 execution and evaluation.
+    * **Somyaranjan** leads the per-class metrics framework,
+      risk-tier threshold decision, and skew handling/encoding on the
+      finalized feature table (Steps 3-4); leads running predictions
+      and evaluation/retuning across both models (Step 5).
+    """),
+        ]
+    )
     return
 
 
@@ -61,6 +110,16 @@ async def _(checkpoint_1_app):
 @app.cell(hide_code=True)
 def _(checkpoint_1_result, mo):
     mo.vstack([checkpoint_1_result.output])
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    With the ∑TQ target constructed above, the report turns next to
+    Steps 3–4: how a classifier trained on that target would be
+    evaluated, and what modeling techniques are proposed to build it.
+    """)
     return
 
 
