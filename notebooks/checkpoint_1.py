@@ -84,14 +84,6 @@ async def _(data_dictionary_app):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    # Predicting PFAS occurrence risk based on land use features
-
-    ## Team .egsy intelligence (Group #14)
-    * Emir Beg
-    * Gulshan Raj Shetty (Raj)
-    * Somyaranjan Sahu
-    * Yaisiel (Yai) Torres
-
     ## Step 1: Problem definition
 
     ### Problem statement
@@ -685,8 +677,33 @@ def _(mo):
 
 @app.cell(hide_code=True)
 def _(mc_clean_df, mo, np, pd, ss_clean_df):
-    def _make_numeric_summary_table(df, dataset_name):
-        numeric_df = df.select_dtypes(include="number")
+    # Same key exposure/land-use variables carried through the rest of
+    # this review (skewness, outliers, exploratory plots below) - scoping
+    # the summary to them keeps this table to the ~18 rows readers
+    # actually see discussed, instead of one row per numeric column
+    # across both cleaned frames (~100+ rows for variables not otherwise
+    # referenced in this notebook).
+    ss_analysis_columns = [
+        "∑PFAS",
+        "Count Detected PFAS",
+        "∑EAR",
+        "number_pfas_sites_proximal",
+        "mean_dist_to_pfas_site",
+        "Burn_Area_5k_frac",
+        "Burn_area_50k_frac",
+        "Urbn_burn_5k_frac",
+        "Urbn_burn_50k_frac",
+    ]
+    ss_analysis_columns = [
+        col for col in ss_analysis_columns if col in ss_clean_df.columns
+    ]
+
+    mc_analysis_columns = [
+        col for col in mc_clean_df.columns if col.endswith("-VA_clean")
+    ][:6] + ["AGRI_12", "NATU_12", "URBA_12"]
+
+    def _make_numeric_summary_table(df, columns, dataset_name):
+        numeric_df = df[columns].select_dtypes(include="number")
         if numeric_df.empty:
             return pd.DataFrame(
                 {
@@ -719,27 +736,44 @@ def _(mc_clean_df, mo, np, pd, ss_clean_df):
             .rename(columns={"index": "Variable"})
         )
         summary.insert(0, "Dataset", dataset_name)
-        return summary.round(3)
+        return summary.round(4)
 
     _combined_summary = pd.concat(
         [
-            _make_numeric_summary_table(ss_clean_df, "Smalling + Seawolf"),
-            _make_numeric_summary_table(mc_clean_df, "McMahon"),
+            _make_numeric_summary_table(
+                ss_clean_df, ss_analysis_columns, "Smalling + Seawolf"
+            ),
+            _make_numeric_summary_table(
+                mc_clean_df, mc_analysis_columns, "McMahon"
+            ),
         ],
         ignore_index=True,
     )
 
     mo.vstack(
         [
-            mo.md("#### Numeric summary statistics for the cleaned datasets"),
+            mo.md(
+                "#### Numeric summary statistics for the cleaned datasets\n\n"
+                "Scoped to the key exposure and land-use variables carried "
+                "through the rest of this review; `ss_clean_df` and "
+                "`mc_clean_df` hold additional engineered and raw columns "
+                "not summarized here."
+            ),
             mo.ui.table(_combined_summary),
         ]
     )
-    return
+    return mc_analysis_columns, ss_analysis_columns
 
 
 @app.cell(hide_code=True)
-def _(mc_clean_df, mo, pd, ss_clean_df):
+def _(
+    mc_analysis_columns,
+    mc_clean_df,
+    mo,
+    pd,
+    ss_analysis_columns,
+    ss_clean_df,
+):
     def _describe_distribution(df, columns, dataset_name):
         rows = []
         for col in columns:
@@ -766,45 +800,24 @@ def _(mc_clean_df, mo, pd, ss_clean_df):
                 {
                     "Dataset": dataset_name,
                     "Variable": col,
-                    "Skewness": round(skew, 3),
+                    "Skewness": round(skew, 4),
                     "Assessment": skew_assessment,
-                    "Q1": round(q1, 3),
-                    "Q3": round(q3, 3),
-                    "IQR": round(iqr, 3),
-                    "Lower bound": round(lower, 3),
-                    "Upper bound": round(upper, 3),
+                    "Q1": round(q1, 4),
+                    "Q3": round(q3, 4),
+                    "Outlier fence": f"[{lower:.4f}, {upper:.4f}]",
                     "Potential outliers": outlier_count,
                 }
             )
 
         return pd.DataFrame(rows)
 
-    _ss_analysis_columns = [
-        "∑PFAS",
-        "Count Detected PFAS",
-        "∑EAR",
-        "number_pfas_sites_proximal",
-        "mean_dist_to_pfas_site",
-        "Burn_Area_5k_frac",
-        "Burn_area_50k_frac",
-        "Urbn_burn_5k_frac",
-        "Urbn_burn_50k_frac",
-    ]
-    _ss_analysis_columns = [
-        col for col in _ss_analysis_columns if col in ss_clean_df.columns
-    ]
-
-    _mc_analysis_columns = [
-        col for col in mc_clean_df.columns if col.endswith("-VA_clean")
-    ][:6] + ["AGRI_12", "NATU_12", "URBA_12"]
-
     _distribution_summary = pd.concat(
         [
             _describe_distribution(
-                ss_clean_df, _ss_analysis_columns, "Smalling + Seawolf"
+                ss_clean_df, ss_analysis_columns, "Smalling + Seawolf"
             ),
             _describe_distribution(
-                mc_clean_df, _mc_analysis_columns, "McMahon"
+                mc_clean_df, mc_analysis_columns, "McMahon"
             ),
         ],
         ignore_index=True,
@@ -812,14 +825,19 @@ def _(mc_clean_df, mo, pd, ss_clean_df):
 
     mo.vstack(
         [
-            mo.md("#### Skewness and IQR outlier summary"),
+            mo.md(
+                "#### Skewness and IQR outlier summary\n\n"
+                "`Outlier fence` is the 1.5×IQR range "
+                "`[Q1 - 1.5×IQR, Q3 + 1.5×IQR]`; values outside "
+                "it count toward `Potential outliers`."
+            ),
             mo.ui.table(_distribution_summary),
         ]
     )
     return
 
 
-@app.cell(hide_code=True)
+@app.cell
 def _():
     import matplotlib.pyplot as _plt
 
@@ -883,7 +901,13 @@ def _(make_plot_grid, mo, ss_clean_df):
 
     mo.vstack(
         [
-            mo.md("#### Exploratory plots for Smalling + Seawolf\n\n"),
+            mo.md(
+                "#### Exploratory plots for Smalling + Seawolf\n\n"
+                "The following matplotlib box plots and histograms, "
+                "generated by the shared `make_plot_grid()` helper "
+                "below, summarize each variable's distribution at a "
+                "glance.\n\n"
+            ),
             make_plot_grid(
                 ss_clean_df,
                 _ss_viz_columns,
@@ -910,7 +934,12 @@ def _(make_plot_grid, mc_clean_df, mo):
 
     mo.vstack(
         [
-            mo.md("#### Exploratory plots for McMahon\n\n"),
+            mo.md(
+                "#### Exploratory plots for McMahon\n\n"
+                "The same matplotlib `make_plot_grid()` helper "
+                "produces the box plots and histograms below for "
+                "McMahon's variables.\n\n"
+            ),
             make_plot_grid(
                 mc_clean_df, _mc_viz_columns, "McMahon: box plots", kind="box"
             ),
@@ -973,13 +1002,13 @@ def _(mo, pd, pfas_cols, ss_clean_df):
             {
                 "Measure": "Cumulative PFAS range (ng/L)",
                 "Result": (
-                    f"{_smalling_quality_total_pfas.min():.3f} to "
-                    f"{_smalling_quality_total_pfas.max():.3f}"
+                    f"{_smalling_quality_total_pfas.min():.4f} to "
+                    f"{_smalling_quality_total_pfas.max():.4f}"
                 ),
             },
             {
                 "Measure": "Median cumulative PFAS (ng/L)",
-                "Result": f"{_smalling_quality_total_pfas.median():.3f}",
+                "Result": f"{_smalling_quality_total_pfas.median():.4f}",
             },
             {
                 "Measure": "Detected compounds per site",
@@ -1228,13 +1257,13 @@ def _(mo, pd, print_sections, ss_clean_df):
             },
             {
                 "Measure": "Mean land-cover fraction sum",
-                "Result": f"{_seawolf_quality_landcover_total.mean():.3f}",
+                "Result": f"{_seawolf_quality_landcover_total.mean():.4f}",
             },
             {
                 "Measure": "Land-cover fraction-sum range",
                 "Result": (
-                    f"{_seawolf_quality_landcover_total.min():.3f} to "
-                    f"{_seawolf_quality_landcover_total.max():.3f}"
+                    f"{_seawolf_quality_landcover_total.min():.4f} to "
+                    f"{_seawolf_quality_landcover_total.max():.4f}"
                 ),
             },
         ]
@@ -1489,14 +1518,14 @@ def _(mc_clean_df, mo, pd, print_sections):
             {
                 "Measure": "Cleaned concentration-total range (ng/L)",
                 "Result": (
-                    f"{_mcmahon_quality_total_concentration.min():.1f} to "
-                    f"{_mcmahon_quality_total_concentration.max():.1f}"
+                    f"{_mcmahon_quality_total_concentration.min():.4f} to "
+                    f"{_mcmahon_quality_total_concentration.max():.4f}"
                 ),
             },
             {
                 "Measure": "Median cleaned concentration total (ng/L)",
                 "Result": (
-                    f"{_mcmahon_quality_total_concentration.median():.1f}"
+                    f"{_mcmahon_quality_total_concentration.median():.4f}"
                 ),
             },
             {
@@ -1510,7 +1539,7 @@ def _(mc_clean_df, mo, pd, print_sections):
         mc_clean_df[["AGRI_12", "NATU_12", "URBA_12"]]
         .describe()
         .T.reset_index(names="Land-use variable")
-        .round(2)
+        .round(4)
     )
 
     mo.vstack(
@@ -1719,7 +1748,7 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mc_clean_df, mo, pd, print_sections, ss_clean_df):
     def _categorical_profile(dataset_name, dataframe, columns):
         profile_rows = []
@@ -1958,10 +1987,9 @@ def _(mc_clean_df, mo, pd, print_sections, ss_clean_df):
 
     def _categorical_panel(profile_df, category_tables, dataset_note):
         # profile_df has 14 columns; two of them ("Recommended treatment",
-        # "Quality assessment") hold long free-text notes. All 14 together
-        # are too wide to fit a printed page (they get cropped in the PDF
-        # export), so split the free-text columns into their own narrower
-        # table instead of displaying one wide one.
+        # "Quality assessment") hold long free-text notes that read poorly
+        # next to short numeric/label columns in one wide table, so split
+        # the free-text columns into their own narrower table instead.
         text_columns = ["Recommended treatment", "Quality assessment"]
         measure_columns = [
             col for col in profile_df.columns if col not in text_columns
@@ -2101,7 +2129,7 @@ def _(mo):
     * Run against the full sample dataset (236 sites), `sum_tq_epa` ranges
       0–17.7 with a median of 0.17, well below the trigger cutoff of 0.5 for
       most sites but with a long right tail past the MCL-exceedance cutoff of
-      1.0 — Checkpoint 2's evaluation plan will formalize where those tier
+      1.0 — the Step 3 evaluation plan will formalize where those tier
       boundaries fall.
 
     McMahon's groundwater data (`mc_clean_df`) is scored the same way,
@@ -2135,7 +2163,7 @@ def _(mo):
     Reshape each study's data to one row per site per compound, join
     `all_compound_dict_df`'s EPA/state TQ benchmarks, and compute
     per-compound and summed TQ (∑TQ), producing the classified target
-    Checkpoint 2's Step 4 models will predict. Worked out first for
+    the Step 4 modeling techniques will predict. Worked out first for
     Smalling/Seawolf (`ss_clean_df` → `ss_scored_df`) below; McMahon's
     groundwater data (`mc_clean_df` → `mc_scored_df`) follows the same
     three steps and is scored further down.
@@ -2148,7 +2176,7 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mc_clean_df, pd, pfas_codes, pfas_cols, ss_clean_df):
     ss_long_df = pd.melt(
         ss_clean_df,
@@ -2246,7 +2274,7 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(calc_scored_df, ss_clean_df, ss_long_df):
     ss_scored_df = calc_scored_df(ss_clean_df, ss_long_df, "Site Code")
     return (ss_scored_df,)
@@ -2260,7 +2288,7 @@ def _(mo, ss_scored_df):
             mo.ui.table(
                 ss_scored_df[["sum_tq_epa", "sum_tq_state_only"]]
                 .describe()
-                .round(3)
+                .round(4)
                 .reset_index()
                 .rename(columns={"index": "Statistic"})
             ),
@@ -2296,7 +2324,7 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(calc_scored_df, mc_clean_df, mc_long_df):
     mc_scored_df = calc_scored_df(mc_clean_df, mc_long_df, "NAWQA_ID_mc_env")
     return (mc_scored_df,)
@@ -2310,135 +2338,12 @@ def _(mc_scored_df, mo):
             mo.ui.table(
                 mc_scored_df[["sum_tq_epa", "sum_tq_state_only"]]
                 .describe()
-                .round(3)
+                .round(4)
                 .reset_index()
                 .rename(columns={"index": "Statistic"})
             ),
         ]
     )
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md("""
-    ## Conclusion
-
-    This checkpoint's biggest lesson was that intuition can mislead once real
-    data is in front of you. We set out to clarify a single variable,
-    cumulative PFAS concentration, expecting a straightforward low/medium/high
-    split. Instead, the data's own properties argued against that plan:
-    non-detected values and not-analyzed values are recorded identically low
-    but mean different things (see Step 2's Smalling load and clean-up above),
-    and several of the variables we care about are right-skewed rather than
-    symmetric (see Skewness and IQR outlier summary above). Weighting every
-    compound equally per ng/L, and cutting at our own sample's median, never
-    reflected how differently PFAS compounds are actually regulated. That
-    combination of findings is what moved us off the original classification
-    and onto the toxicity quotient (∑TQ) target instead.
-
-    The same distribution review also pointed to candidate predictors worth
-    carrying into modeling. Seawolf's `mean_dist_to_pfas_site` and
-    `number_pfas_sites_proximal`, i.e., proximity and exposure to
-    PFAS-associated sites such as fire stations and military facilities, stood
-    out in the box-plot and skewness review as geographically meaningful and
-    were retained through cleaning for that reason. We have not yet tested
-    their relationship to ∑TQ directly; that remains a next step once the
-    toxicity-quotient features described below are built.
-
-    Even though the pivot moved us away from our original plan, it left us
-    better aligned with our underlying goal. We set out to build a tool that
-    could help water-resource operators anticipate compliance with EPA's PFAS
-    drinking-water rule ahead of its phased deadlines. Anchoring the target on
-    ∑TQ, and on the same trigger/MCL vocabulary operators already track, gets
-    us closer to that goal than a sample-relative median cutoff ever could.
-
-    That pivot has a cost: some of the compounds in the original dataset will
-    not be part of the core ∑TQ analysis. Of the 17 PFAS compounds Smalling et
-    al. (2023) report, EPA has set Maximum Contaminant Levels (MCLs) for only
-    six: PFOA, PFOS, PFHxS, PFNA, PFBS, and HFPO-DA (GenX). The remaining 11
-    compounds have, at best, a state-level benchmark rather than an EPA one,
-    and two (PFPeS, PFPrS) have no benchmark identified in either source. Those
-    compounds stay in the dataset as a descriptive slice rather than feeding
-    the classified ∑TQ target.
-
-    That additional processing, worked out in the ∑TQ construction section
-    above, is now complete: `ss_scored_df` carries the classified
-    `sum_tq_epa` alongside `ss_clean_df`'s predictors, ready for Checkpoint
-    2's evaluation plan to set the risk-tier cutoffs ahead of modeling.
-    McMahon's groundwater data is scored the same way into `mc_scored_df`,
-    but its `sum_tq_epa` is not on the same footing as Smalling's — a
-    missing GenX benchmark and a different non-detect convention push
-    every McMahon site above the trigger cutoff. Both stem from what each
-    source publishes rather than a cleaning choice we can revisit, so we
-    treat the two studies' ∑TQ as reported on different scales rather
-    than reconciling them into one modeling target.
-
-    ## References
-    * CDM Smith. (2024). EPA's final regulations: What do you
-      need to know? https://oldcolonyplanning.org/wp-content/uploads/2024/04/EPAs-Final-PFAS-Regulations-Fact-Sheet.pdf
-    * McMahon, P. B., Tokranov, A. K., Bexfield, L. M., Lindsey, B. D.,
-      Johnson, T. D., Lombard, M. A., & Watson, E. (2022). Perfluoroalkyl and
-      polyfluoroalkyl substances in groundwater used as a source of drinking
-      water in the Eastern United States. *Environmental Science & Technology*,
-      *56*(4), 2279–2288. https://doi.org/10.1021/acs.est.1c04795
-    * Seawolf, S. M., Williams, B. M., Gordon, S. E., Romanok, K., Smalling,
-      K., Bradley, P. M., & Morriss, M. C. (2023). *PFAS reconnaissance
-      landscape data* [Dataset]. U.S. Geological Survey.
-      https://doi.org/10.5066/P9JF1EXH
-    * Smalling, K. L., Romanok, K. M., Bradley, P. M., Morriss, M. C., Gray, J.
-      L., Kanagy, L. K., Gordon, S. E., Williams, B. M., Breitmeyer, S. E.,
-      Jones, D. K., DeCicco, L. A., Eagles-Smith, C. A., & Wagner, T. (2023).
-      Per- and polyfluoroalkyl substances (PFAS) in United States tapwater:
-      Comparison of underserved private-well and public-supply exposures and
-      associated health implications. *Environment International*, *178*,
-      108033. https://doi.org/10.1016/j.envint.2023.108033
-    * U.S. Environmental Protection Agency. (2016, May 25). Lifetime health
-      advisories and health effects support documents for perfluorooctanoic
-      acid and perfluorooctane sulfonate. *Federal Register*, *81*(101),
-      33250–33251.
-      https://www.govinfo.gov/content/pkg/FR-2016-05-25/pdf/2016-12361.pdf
-    * U.S. Environmental Protection Agency. (2024, April 10). Per- and
-      polyfluoroalkyl substances (PFAS): PFAS national primary drinking water
-      regulation. https://www.epa.gov/sdwa/and-polyfluoroalkyl-substances-pfas
-    * U.S. Environmental Protection Agency. (2025, May 14). EPA announces it
-      will keep Maximum Contaminant Levels for PFOA, PFOS [Press release].
-      https://www.epa.gov/newsreleases/epa-announces-it-will-keep-maximum-contaminant-levels-pfoa-pfos
-    * U.S. Environmental Protection Agency. (2026, May 18). Proposed PFOA and
-      PFOS compliance extension rule.
-      https://www.epa.gov/sdwa/proposed-pfoa-and-pfos-compliance-extension-rule
-    * U.S. Environmental Protection Agency. (n.d.). Our current understanding
-      of the human health and environmental risks of PFAS.
-      https://www.epa.gov/pfas/our-current-understanding-human-health-and-environmental-risks-pfas
-
-    ## AI usage appendix
-
-    * Perplexity ([thread ref](https://www.perplexity.ai/search/fe48e31f-abdb-43ae-adde-5d36d3e34970)):
-      The team used this thread to identify and narrow potential prediction
-      problems, ultimately selecting PFAS occurrence risk because of its public
-      health relevance and strong U.S. federal data support. The team then
-      co-designed the project scope here, deciding to model tapwater PFAS
-      occurrence from landscape and land-use features while using McMahon et
-      al. and related USGS/EPA studies primarily as scientific background
-      rather than as core modeling datasets. Finally, the team relied on this
-      thread to plan datasets, hypotheses, and timelines—including a decision
-      aid and title options—so the project would be feasible within a 2–3 week
-      window and remain grounded in current PFAS research.
-    * Claude.ai ([thread ref](https://claude.ai/share/ccd96f8c-b3f9-45d0-b2b4-57b1e68b62c1)):
-      The team used Claude (via Claude.ai) to copyedit the markdown prose in
-      the checkpoint notebook, correcting grammar, subject-verb agreement, and
-      word-choice errors across the problem statement, data source
-      descriptions, and references. Claude also verified the currency of a
-      regulatory claim in the "why this problem matters" section, flagging that
-      EPA's PFAS drinking-water rule had changed since the original draft, and
-      helped the team iteratively reframe that justification around the
-      shifting compliance timeline and its implications for water-system
-      operators. Additional editorial passes reordered the reference list per
-      APA style, added supporting citations for the updated regulatory claims,
-      and introduced a new justification, developed during this conversation,
-      around private-well populations falling outside EPA's public-water-system
-      rule.
-    """)
     return
 
 
