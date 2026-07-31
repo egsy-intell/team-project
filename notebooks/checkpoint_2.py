@@ -90,21 +90,21 @@ def _():
 @app.cell(hide_code=True)
 def _(mc_clean_df, mc_scored_df, mo, ss_scored_df):
     mo.md(f"""
-    # Step 3-4: Model Selection, Training & Evaluation Design (Checkpoint 2)
+    # Step 3-4: Model Selection, Training & Evaluation Design
 
-    This notebook is Check-In #2's deliverable: a formal evaluation plan
+    This section is Check-In #2's deliverable: a formal evaluation plan
     (Step 3) and a set of proposed modeling techniques (Step 4), per
     `specs/checkpoint-2/GRAD 50400 - Project Checkpoint-2.pdf`. It's a
     **design/proposal document** — each section below states what a task
     lead will argue and how, not yet an executed evaluation. Execution and
     retuning (Step 5, task `EVAL`) is out of scope here and belongs to the
-    final checkpoint.
+    project's final write-up and presentation.
 
     Every section carries a callout naming its task ID, category, lead, and
     dependencies, tied to `planning/checkpoint-2/checkpoint2_tasks.csv`; use
     the task ID to cross-reference the task board.
 
-    Inherited from checkpoint 1's Step 2 cleaning and ∑TQ construction:
+    Inherited from the Step 2 cleaning and ∑TQ construction sections above:
     `ss_scored_df` ({ss_scored_df.shape[0]} rows), `mc_scored_df`
     ({mc_scored_df.shape[0]} rows). `mc_clean_df` ({mc_clean_df.shape[0]}
     rows) is also available unscored — McMahon is held out of training
@@ -127,7 +127,7 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo, tier_distribution):
     mo.md(rf"""
     ### Per-class metrics and evaluation rationale
@@ -138,7 +138,7 @@ def _(mo, tier_distribution):
 
     #### Why plain accuracy is the wrong headline metric
 
-    **Class imbalance.** Checkpoint 1's `ss_scored_df` (236
+    **Class imbalance.** The ∑TQ construction's `ss_scored_df` (236
     Smalling/Seawolf sites) splits
     {tier_distribution["within_reduced_monitoring"]:.1%}
     `within_reduced_monitoring`,
@@ -184,10 +184,11 @@ def _(mo, tier_distribution):
 
     #### Scope note
 
-    This framework is defined per evaluation slice. Checkpoint 1 found
-    that all 254 McMahon sites carry `sum_tq_epa` ≥ 1.021 under the
-    half-reporting-limit non-detect convention, placing every one of
-    them in `mcl_exceedance` by construction. McMahon is held out of
+    This framework is defined per evaluation slice. The McMahon ∑TQ
+    scoring found that all 254 McMahon sites carry `sum_tq_epa` ≥
+    1.021 under the half-reporting-limit non-detect convention,
+    placing every one of them in `mcl_exceedance` by construction.
+    McMahon is held out of
     training and reported separately as a qualified validation slice
     (see the groundwater-role decision below), so the class
     proportions the recall floor is set against come from
@@ -346,7 +347,7 @@ def _(RISK_LABELS, classify_pfas_risk_tier, evaluate_tier_model, ss_scored_df):
     return majority_baseline, random_baseline, tier_distribution, tier_true
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(majority_baseline, mo, random_baseline, tier_distribution):
     mo.md(rf"""
     ### Model success criteria and operational benchmarks
@@ -386,7 +387,7 @@ def _(majority_baseline, mo, random_baseline, tier_distribution):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
     #### Quantitative operational thresholds
@@ -444,7 +445,7 @@ def _():
     return MACRO_F1_FLOOR, PRECISION_FLOOR, RECALL_FLOOR
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(MACRO_F1_FLOOR, PRECISION_FLOOR, RECALL_FLOOR, majority_baseline, mo):
     # Plain markdown table, not a DataFrame: this is a documentation
     # summary, not meant to be reused in code — check_success_criteria()
@@ -542,7 +543,7 @@ def _(MACRO_F1_FLOOR, PRECISION_FLOOR, RECALL_FLOOR, evaluate_tier_model, pd):
     return (check_success_criteria,)
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(check_success_criteria, mo, tier_distribution, tier_true):
     # Sanity check: the majority-class baseline should fail every
     # criterion, since it never predicts mcl_exceedance at all.
@@ -811,7 +812,7 @@ def _(
                 "Selection score": _sklearn_score,
             },
         ]
-    )
+    ).round({"Test fraction": 4, "Distribution gap": 4, "Selection score": 4})
 
     _comparison_columns = [
         "Method",
@@ -822,8 +823,12 @@ def _(
         "distribution_gap",
         "selection_score",
     ]
-    _split_comparison_preview = _split_comparison_df[_comparison_columns].head(
-        20
+    _split_comparison_preview = (
+        _split_comparison_df[_comparison_columns]
+        .head(20)
+        .round(
+            {"test_fraction": 4, "distribution_gap": 4, "selection_score": 4}
+        )
     )
 
     _selected_test_mask = _tapwater_split_df["study_group"].isin(
@@ -922,8 +927,8 @@ def _(
                 f"""
                 #### Target and grouping definition
 
-                Checkpoint 1 supplies `ss_scored_df`, including the
-                completed `sum_tq_epa` value. That continuous score is
+                The ∑TQ construction supplies `ss_scored_df`, including
+                the completed `sum_tq_epa` value. That continuous score is
                 mapped to the three project classes via the shared
                 `classify_pfas_risk_tier()` helper:
 
@@ -1030,7 +1035,7 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(RISK_LABELS, classify_pfas_risk_tier, mc_scored_df, pd, ss_scored_df):
     def _tier_distribution(scored_df):
         tiers = classify_pfas_risk_tier(scored_df["sum_tq_epa"])
@@ -1045,16 +1050,20 @@ def _(RISK_LABELS, classify_pfas_risk_tier, mc_scored_df, pd, ss_scored_df):
                 "Sites": len(ss_scored_df),
                 "Compounds summed": 6,
                 "Non-detect convention": "0",
-                "sum_tq_epa median": ss_scored_df["sum_tq_epa"].median(),
-                **_tier_distribution(ss_scored_df).round(3).to_dict(),
+                "sum_tq_epa median": round(
+                    ss_scored_df["sum_tq_epa"].median(), 4
+                ),
+                **_tier_distribution(ss_scored_df).round(4).to_dict(),
             },
             {
                 "Study": "McMahon (groundwater)",
                 "Sites": len(mc_scored_df),
                 "Compounds summed": 5,
                 "Non-detect convention": "½ reporting limit",
-                "sum_tq_epa median": mc_scored_df["sum_tq_epa"].median(),
-                **_tier_distribution(mc_scored_df).round(3).to_dict(),
+                "sum_tq_epa median": round(
+                    mc_scored_df["sum_tq_epa"].median(), 4
+                ),
+                **_tier_distribution(mc_scored_df).round(4).to_dict(),
             },
         ]
     )
@@ -1081,7 +1090,7 @@ def _(groundwater_comparison_df, mo):
                 construction, not by geology.
                 """
             ),
-            mo.ui.table(groundwater_comparison_df),
+            mo.ui.table(groundwater_comparison_df.set_index("Study").T),
             mo.md(
                 """
                 #### Decision: hold out, don't combine
@@ -1105,8 +1114,9 @@ def _(groundwater_comparison_df, mo):
                 look plausible," not as a comparable accuracy number,
                 since the target itself isn't comparable across studies.
                 Revisit combining groundwater and tap-water data only if
-                a future checkpoint re-derives McMahon's ∑TQ with a
-                matched non-detect convention and a GenX estimate.
+                a future revision of this analysis re-derives McMahon's
+                ∑TQ with a matched non-detect convention and a GenX
+                estimate.
                 """
             ),
         ]
@@ -1115,26 +1125,62 @@ def _(groundwater_comparison_df, mo):
 
 
 @app.cell(hide_code=True)
-def _(mo, task_callout):
-    mo.vstack(
-        [
-            mo.md(
-                "### Scalability / deployment metric (optional third proposal)"
-            ),
-            task_callout(
-                "3.5",
-                category="Step 3 - Evaluation Plan",
-                lead="Emir",
-                summary=(
-                    "Optional third evaluation proposal beyond predictive "
-                    "accuracy: whether the model runs fast enough and "
-                    "scales to the number of sites an operator would "
-                    "realistically screen, per the spec's note that "
-                    "metrics can extend past task accuracy alone."
-                ),
-            ),
-        ]
-    )
+def _(mo):
+    mo.md("""
+    ### Deployment evaluation: batch-scoring throughput
+
+    The PFAS model is intended to help water-resource operators and
+    researchers prioritize locations for confirmatory sampling. Predictive
+    performance alone does not show whether it can screen a practical number
+    of candidate drinking-water sites. The deployment metric will therefore
+    be end-to-end batch-scoring throughput, in sites per second. Timing
+    starts when a table of land-use and potential PFAS-source features is
+    passed to the saved pipeline and includes preprocessing, prediction, and
+    assignment of each site's ∑TQ risk tier. File ingestion and one-time
+    model loading are reported separately. This boundary captures the work
+    repeated whenever an operator reprioritizes a PFAS sampling campaign.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.mermaid("""
+    flowchart LR
+        A[File ingestion] -.excluded.-> B[Model loading]
+        B -.excluded.-> C[Preprocessing]
+        subgraph timed["Timed boundary"]
+            C --> D[Prediction]
+            D --> E["∑TQ risk tier assignment"]
+        end
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md("""
+    After model selection, benchmark batches of 250, 1,000, and 10,000 rows
+    on a documented test environment with 4 GB of memory. Larger batches
+    will be bootstrap samples of the held-out sites'
+    landscape and PFAS-source features, preserving the observed schema and
+    missing-value patterns. Repeated rows do not represent new PFAS evidence;
+    they test computational scaling only and will not be reused for
+    predictive metrics. Run one untimed warm-up followed by 10 timed
+    repetitions at each size, and report median throughput, the
+    95th-percentile elapsed time, peak memory, software versions, and
+    hardware.
+
+    The deployment check passes when a 10,000-site batch completes in at
+    most 60 seconds at the 95th percentile, uses no more than 1 GB of peak
+    memory, and produces exactly the same predictions as scoring the same
+    rows individually. Ten thousand candidate sites per minute is
+    comfortably above the current 236-site PFAS modeling dataset while
+    remaining a reproducible, hardware-qualified target rather than an
+    unsupported claim of unlimited scalability. If either candidate fails,
+    profile the land-use feature preprocessing and score sites in chunks
+    before accepting any reduction in recall for the `mcl_exceedance` tier.
+    """)
     return
 
 
@@ -1159,7 +1205,7 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
     Before feeding the landscape predictors into classification
@@ -1193,7 +1239,7 @@ def _(mo):
     (`OneHotEncoder(handle_unknown="ignore", drop="first")`) inside a
     `ColumnTransformer`. Study identifiers (`Study_smalling`,
     `Study_seawolf`) are excluded from $X$ entirely — retained as
-    controls, not predictors, per checkpoint 1's Step 2.5 plan.
+    controls, not predictors, per the Step 2.5 plan above.
     Dropping the first dummy column prevents perfect multicollinearity
     in linear baselines. The transformer is fit on `X_train` only and
     applied to `X_test` without refitting, so no information from the
@@ -1207,8 +1253,8 @@ def _(ColumnTransformer, OneHotEncoder, StandardScaler, np, pd):
     # Columns that either leak the target (raw TQ/tier fields), aren't
     # predictors (identifiers/metadata), are study-split bookkeeping
     # added by the split-strategy section, or are study identifiers
-    # retained as controls rather than predictors per checkpoint 1's
-    # Step 2.5 plan get excluded from X.
+    # retained as controls rather than predictors per the Step 2.5
+    # plan get excluded from X.
     _LEAKAGE_AND_ID_COLS = [
         "Site Code",
         "SiteCode",
@@ -1271,7 +1317,7 @@ def _(ColumnTransformer, OneHotEncoder, StandardScaler, np, pd):
             {
                 "Feature": skewed_features,
                 "Initial Skew": [
-                    round(initial_skew[f], 2) for f in skewed_features
+                    round(initial_skew[f], 4) for f in skewed_features
                 ],
             }
         )
@@ -1289,7 +1335,7 @@ def _(ColumnTransformer, OneHotEncoder, StandardScaler, np, pd):
     return (preprocess_tapwater_features,)
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo, preprocess_tapwater_features, tapwater_test_df, tapwater_train_df):
     _tapwater_model_matrices = preprocess_tapwater_features(
         tapwater_train_df, tapwater_test_df
@@ -1554,22 +1600,6 @@ def _(mo, task_callout):
             ),
         ]
     )
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md("""
-    ## Conclusion
-
-    Checkpoint 2 establishes, but does not yet execute, the evaluation plan
-    and modeling proposals for classifying site-level PFAS risk from
-    land-use predictors: per-class metrics and a study-grouped split (Step
-    3), and two competing classifiers, an interpretable baseline and a
-    non-linear ensemble (Step 4), against the already-computed ∑TQ
-    target from checkpoint 1. Training both models and evaluating them
-    against the plan above is Step 5 work for the final checkpoint.
-    """)
     return
 
 

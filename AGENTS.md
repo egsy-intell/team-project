@@ -30,6 +30,54 @@ person currently prompting you.
   single source of truth — the same way `print_sections()` and
   `make_plot_grid()` already got consolidated (see below).
 
+## Editorial conventions for the published report
+
+These apply whenever you touch reader-facing prose or numeric output in
+`notebooks/` — not just when a task explicitly asks for an editorial
+pass. Check for them as part of any edit, the same way you'd run ruff.
+
+**`index.py` must always read as a single flowing document, not
+concatenated notebooks.** `checkpoint_1.py`'s and `checkpoint_2.py`'s
+own body content starts directly at their first `## Step N` heading —
+`index.py` owns the report-level metadata (title, team roster, roles
+table) so there's no duplicate title/header when the checkpoints are
+embedded and stacked. When adding a new checkpoint (see "Multi-notebook
+checkpoint workflow" below) or editing `index.py`'s embed/vstack cells,
+check that: there's exactly one H1 for the whole report (in `index.py`,
+not repeated per checkpoint), each embedded section flows into the next
+without an abrupt jump, and no checkpoint re-introduces its own
+title/team block. This is a standing requirement, not a one-time fix —
+re-verify it any time `index.py` or a checkpoint's opening cells change.
+
+**No "checkpoint" in reader-facing prose.** Per the course spec (`GRAD
+50400 - Project Checkpoint-1.pdf`), the document's own vocabulary is
+"Step 1" ... "Step 5" for sections and "Check-In #1/#2" for the graded
+milestones — "checkpoint" is only the internal course-milestone label
+used in casual conversation and in this repo's own filenames/module
+names. Use, depending on context: **"Step N"** for a section or
+deliverable slice, **"report"** for the whole combined document, or
+**"writeup"** when referring to the submission artifact itself (the
+spec's own term). This rule is about prose only — module filenames
+(`checkpoint_1.py`, `checkpoint_2.py`), their imports/variable names,
+and internal repo paths (e.g. `planning/checkpoint-2/...`) are unaffected
+and stay as-is.
+
+**Numeric display: round to 4 decimal places, for raw computed
+statistics only.** Medians, means, skewness, TQ scores, thresholds
+derived from data, and similar computed floats should be rounded to 4
+decimal places at the point they're displayed (`.round(4)` on a
+DataFrame column being ` mo.ui.table()`'d, or `:.4f` in an f-string) —
+not left unrounded (Python float repr can produce noise like
+`0.17099999999999999`) and not rounded to some other inconsistent
+precision. This does **not** apply to percentages (`:.1%`-style
+displays, "Missing (%)" columns) or hand-picked policy thresholds
+(`RECALL_FLOOR = 0.70` and similar, shown as `≥ 0.70 (70%)`) — those
+keep their existing, deliberately coarser format since they're a
+different kind of value than a computed statistic. See
+`_make_numeric_summary_table()` and the skew/IQR `Outlier fence` column
+in `checkpoint_1.py`, and `groundwater_comparison_df`'s `sum_tq_epa
+median` in `checkpoint_2.py`, for the pattern.
+
 ## Printing / PDF output
 
 We do not generate PDFs from this repo. An earlier version of this
@@ -185,9 +233,55 @@ followed by `checkpoint_2.py`:
   whole project.
 - When adding checkpoint 3+: create `checkpoint_3.py` following the
   embed pattern above, then add its embed-and-stack cells to
-  `notebooks/index.py`. Nothing in `scripts/export_notebooks.py` or
-  `tests/test_notebooks.py` needs to change — both glob `notebooks/*.py`
-  and pick up new notebooks automatically.
+  `notebooks/index.py`, positioned after checkpoint 2's pair and before
+  `footer`'s (see "Trailing content lives in `footer.py`, not in the
+  checkpoint notebooks" below for what to do with any Conclusion/
+  References/AI-usage content the new checkpoint itself ends with).
+  Nothing in `scripts/export_notebooks.py` or `tests/test_notebooks.py`
+  needs to change — both glob `notebooks/*.py` and pick up new notebooks
+  automatically.
+
+## Trailing content lives in `footer.py`, not in the checkpoint notebooks
+
+`App.embed()` returns one monolithic `Html` blob per notebook (see
+`AppEmbedResult.output` in marimo's `_ast/app.py`) — there's no way for
+`index.py` to pull out or reorder individual cells from an embedded
+checkpoint's output. That's a problem for content that's logically
+project-wide rather than specific to one checkpoint: a Conclusion,
+References, and an AI usage appendix need to render *last*, after every
+checkpoint's body, but if each `checkpoint_N.py` ended with its own copy
+of that content, embedding it wholesale would place it wherever that
+checkpoint falls in the stack — not necessarily last.
+
+The fix is structural, not a change to `index.py` alone:
+`notebooks/footer.py` is a small notebook (no sibling-notebook import
+fallback needed — it's pure `mo.md()` prose with no data dependency,
+just `import marimo as mo`) that holds all of this trailing content, and
+`index.py` embeds it last, after every checkpoint. Checkpoint notebooks
+themselves should contain only their own body content once integrated —
+no trailing Conclusion/References/AI-usage cell of their own.
+
+`footer.py` has two kinds of content that get updated differently as
+checkpoints are added:
+
+- **Conclusion**: replaced, not appended to. It's a single running
+  narrative reflecting the project's current state, not a per-checkpoint
+  log. When integrating a newly-finished `checkpoint_N.py` that ends
+  with its own Conclusion cell, fold that content into `footer.py`'s
+  existing Conclusion — merge the new substance into one coherent
+  section (this is the one step in the recipe that isn't pure
+  copy-paste; some light editorial rewriting to keep it coherent as a
+  single narrative is expected) — then delete the cell from
+  `checkpoint_N.py`.
+- **References / AI usage appendix**: appended to, not replaced, as new
+  sources or AI threads are used. Move new entries verbatim from
+  `checkpoint_N.py` into `footer.py`'s existing lists, then delete them
+  from `checkpoint_N.py`.
+
+In both cases, also add `checkpoint_N.py` to the sibling-fetch fallback
+list in `index.py`'s first cell (and in any later checkpoint that embeds
+it for data, the same way `checkpoint_2.py` currently embeds
+`checkpoint_1.py`).
 
 ## Task-tracking prose is scaffolding, not published content
 
