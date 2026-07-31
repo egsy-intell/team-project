@@ -1115,26 +1115,42 @@ def _(groundwater_comparison_df, mo):
 
 
 @app.cell(hide_code=True)
-def _(mo, task_callout):
-    mo.vstack(
-        [
-            mo.md(
-                "### Scalability / deployment metric (optional third proposal)"
-            ),
-            task_callout(
-                "3.5",
-                category="Step 3 - Evaluation Plan",
-                lead="Emir",
-                summary=(
-                    "Optional third evaluation proposal beyond predictive "
-                    "accuracy: whether the model runs fast enough and "
-                    "scales to the number of sites an operator would "
-                    "realistically screen, per the spec's note that "
-                    "metrics can extend past task accuracy alone."
-                ),
-            ),
-        ]
-    )
+def _(mo):
+    mo.md("""
+    ### Deployment evaluation: batch-scoring throughput
+
+    The PFAS model is intended to help water-resource operators and
+    researchers prioritize locations for confirmatory sampling. Predictive
+    performance alone does not show whether it can screen a practical number
+    of candidate drinking-water sites. The deployment metric will therefore
+    be end-to-end batch-scoring throughput, in sites per second. Timing
+    starts when a table of land-use and potential PFAS-source features is
+    passed to the saved pipeline and includes preprocessing, prediction, and
+    assignment of each site's ∑TQ risk tier. File ingestion and one-time
+    model loading are reported separately. This boundary captures the work
+    repeated whenever an operator reprioritizes a PFAS sampling campaign.
+
+    After model selection, benchmark batches of 250, 1,000, and 10,000 rows
+    on a documented test environment with 4 GB of memory. Larger batches
+    will be bootstrap samples of the held-out sites'
+    landscape and PFAS-source features, preserving the observed schema and
+    missing-value patterns. Repeated rows do not represent new PFAS evidence;
+    they test computational scaling only and will not be reused for
+    predictive metrics. Run one untimed warm-up followed by 10 timed
+    repetitions at each size, and report median throughput, the
+    95th-percentile elapsed time, peak memory, software versions, and
+    hardware.
+
+    The deployment check passes when a 10,000-site batch completes in at
+    most 60 seconds at the 95th percentile, uses no more than 1 GB of peak
+    memory, and produces exactly the same predictions as scoring the same
+    rows individually. Ten thousand candidate sites per minute is
+    comfortably above the current 236-site PFAS modeling dataset while
+    remaining a reproducible, hardware-qualified target rather than an
+    unsupported claim of unlimited scalability. If either candidate fails,
+    profile the land-use feature preprocessing and score sites in chunks
+    before accepting any reduction in recall for the `mcl_exceedance` tier.
+    """)
     return
 
 
