@@ -1152,38 +1152,16 @@ def _(mo):
 
 
 @app.cell(hide_code=True)
-def _(mo, task_callout):
-    mo.vstack(
-        [
-            mo.md(
-                "### Handling skew & encoding on the finalized feature table"
-            ),
-            task_callout(
-                "4.4",
-                category="Step 4 - Modeling Techniques",
-                lead="Somyaranjan",
-                depends_on="PW",
-                summary=(
-                    "Apply the scaling/encoding plan from checkpoint 1's "
-                    "Step 2.5 to the finalized feature table produced by "
-                    "Task PW: transform right-skewed geospatial/land-use "
-                    "predictors, and finalize binary/one-hot encoding for "
-                    "categorical fields, fit on training data only."
-                ),
-            ),
-        ]
-    )
+def _(mo):
+    mo.md("""
+    ### Handling skew & encoding on the finalized feature table
+    """)
     return
 
 
 @app.cell
 def _(mo):
     mo.md(r"""
-    <h4>Task 4.4: Feature Matrix Preprocessing — Skew Handling &
-    Leakage-Free Encoding</h4>
-    **Lead:** Somyaranjan Sahu | **Depends on:** Task PW (Scored
-    Dataset Pipelines: `ss_scored_df`)
-
     Before feeding the landscape predictors into classification
     algorithms, a clean feature matrix $X$ requires resolving two
     common dataset characteristics: **extreme numerical skewness** and
@@ -1320,8 +1298,8 @@ def _(mo, preprocess_tapwater_features, tapwater_test_df, tapwater_train_df):
     mo.vstack(
         [
             mo.md(
-                "#### Task 4.4 audit: features transformed via "
-                "$\\log_{1p}$ (tap-water set)"
+                "#### Feature-preprocessing audit: features transformed "
+                "via $\\log_{1p}$ (tap-water set)"
             ),
             mo.ui.table(_tapwater_model_matrices["skew_audit"].head(10)),
             mo.md(
