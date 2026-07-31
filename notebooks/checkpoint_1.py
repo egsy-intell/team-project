@@ -767,7 +767,12 @@ def _(mc_clean_df, mo, np, pd, ss_clean_df):
 
 @app.cell(hide_code=True)
 def _(
-    mc_analysis_columns, mc_clean_df, mo, pd, ss_analysis_columns, ss_clean_df
+    mc_analysis_columns,
+    mc_clean_df,
+    mo,
+    pd,
+    ss_analysis_columns,
+    ss_clean_df,
 ):
     def _describe_distribution(df, columns, dataset_name):
         rows = []
