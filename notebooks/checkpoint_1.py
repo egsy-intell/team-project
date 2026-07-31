@@ -83,50 +83,7 @@ async def _(data_dictionary_app):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.vstack(
-        [
-            mo.md("""
-    # Predicting PFAS occurrence risk based on land use features
-
-    ## Team .egsy intelligence (Group #14)
-    * Emir Beg
-    * Gulshan Raj Shetty (Raj)
-    * Somyaranjan Sahu
-    * Yaisiel (Yai) Torres
-
-    ## Team roles and task delegation
-    """),
-            mo.center(
-                mo.md("""
-    | Name | Role | Superpowers |
-    |---|---|---|
-    | Yai Torres | Proposal Lead; Docs Lead | Web dev, organization, writing |
-    | Raj Shetty | Modeling Lead B | Data analysis, exploration, review |
-    | Emir Beg | Modeling Lead A | Software architecture, big data, review |
-    | Somyaranjan | Model Quality Lead | Problem-solving, testing, anomaly QA |
-    """)
-            ),
-            mo.md("""
-    * **Yai** led problem definition, data curation across all three
-      sources, and the data dictionary (Steps 1-2); has also served
-      as the team's data-platform lead and a general technical
-      resource across every workstream rather than one fixed slice;
-      leads the project write-up and slide deck through the final
-      submission.
-    * **Raj** drafted the data source and ethical-considerations
-      review and led the categorical-variable quality assessment
-      (Step 2); leads the study-grouped split strategy, groundwater
-      hold-out decision, and interpretable baseline classifier
-      (Steps 3-4), carried into its Step 5 execution and evaluation.
-    * **Emir** led the summary-statistics, outlier, and skewness
-      analysis (Step 2); leads the optional scalability/deployment
-      metric and the competing ensemble model (Steps 3-4), carried
-      into its Step 5 execution and evaluation.
-    * **Somyaranjan** leads the per-class metrics framework,
-      risk-tier threshold decision, and skew handling/encoding on the
-      finalized feature table (Steps 3-4); leads running predictions
-      and evaluation/retuning across both models (Step 5).
-
+    mo.md("""
     ## Step 1: Problem definition
 
     ### Problem statement
@@ -289,9 +246,7 @@ def _(mo):
     USGS anonymized the sampling locations to protect participant privacy. The
     project will retain the anonymized identifiers and will not attempt to
     infer exact home addresses or private-well locations.
-    """),
-        ]
-    )
+    """)
     return
 
 
@@ -722,8 +677,33 @@ def _(mo):
 
 @app.cell(hide_code=True)
 def _(mc_clean_df, mo, np, pd, ss_clean_df):
-    def _make_numeric_summary_table(df, dataset_name):
-        numeric_df = df.select_dtypes(include="number")
+    # Same key exposure/land-use variables carried through the rest of
+    # this review (skewness, outliers, exploratory plots below) - scoping
+    # the summary to them keeps this table to the ~18 rows readers
+    # actually see discussed, instead of one row per numeric column
+    # across both cleaned frames (~100+ rows for variables not otherwise
+    # referenced in this notebook).
+    ss_analysis_columns = [
+        "∑PFAS",
+        "Count Detected PFAS",
+        "∑EAR",
+        "number_pfas_sites_proximal",
+        "mean_dist_to_pfas_site",
+        "Burn_Area_5k_frac",
+        "Burn_area_50k_frac",
+        "Urbn_burn_5k_frac",
+        "Urbn_burn_50k_frac",
+    ]
+    ss_analysis_columns = [
+        col for col in ss_analysis_columns if col in ss_clean_df.columns
+    ]
+
+    mc_analysis_columns = [
+        col for col in mc_clean_df.columns if col.endswith("-VA_clean")
+    ][:6] + ["AGRI_12", "NATU_12", "URBA_12"]
+
+    def _make_numeric_summary_table(df, columns, dataset_name):
+        numeric_df = df[columns].select_dtypes(include="number")
         if numeric_df.empty:
             return pd.DataFrame(
                 {
@@ -756,27 +736,39 @@ def _(mc_clean_df, mo, np, pd, ss_clean_df):
             .rename(columns={"index": "Variable"})
         )
         summary.insert(0, "Dataset", dataset_name)
-        return summary.round(3)
+        return summary.round(4)
 
     _combined_summary = pd.concat(
         [
-            _make_numeric_summary_table(ss_clean_df, "Smalling + Seawolf"),
-            _make_numeric_summary_table(mc_clean_df, "McMahon"),
+            _make_numeric_summary_table(
+                ss_clean_df, ss_analysis_columns, "Smalling + Seawolf"
+            ),
+            _make_numeric_summary_table(
+                mc_clean_df, mc_analysis_columns, "McMahon"
+            ),
         ],
         ignore_index=True,
     )
 
     mo.vstack(
         [
-            mo.md("#### Numeric summary statistics for the cleaned datasets"),
+            mo.md(
+                "#### Numeric summary statistics for the cleaned datasets\n\n"
+                "Scoped to the key exposure and land-use variables carried "
+                "through the rest of this review; `ss_clean_df` and "
+                "`mc_clean_df` hold additional engineered and raw columns "
+                "not summarized here."
+            ),
             mo.ui.table(_combined_summary),
         ]
     )
-    return
+    return mc_analysis_columns, ss_analysis_columns
 
 
 @app.cell(hide_code=True)
-def _(mc_clean_df, mo, pd, ss_clean_df):
+def _(
+    mc_analysis_columns, mc_clean_df, mo, pd, ss_analysis_columns, ss_clean_df
+):
     def _describe_distribution(df, columns, dataset_name):
         rows = []
         for col in columns:
@@ -803,45 +795,24 @@ def _(mc_clean_df, mo, pd, ss_clean_df):
                 {
                     "Dataset": dataset_name,
                     "Variable": col,
-                    "Skewness": round(skew, 3),
+                    "Skewness": round(skew, 4),
                     "Assessment": skew_assessment,
-                    "Q1": round(q1, 3),
-                    "Q3": round(q3, 3),
-                    "IQR": round(iqr, 3),
-                    "Lower bound": round(lower, 3),
-                    "Upper bound": round(upper, 3),
+                    "Q1": round(q1, 4),
+                    "Q3": round(q3, 4),
+                    "Outlier fence": f"[{lower:.4f}, {upper:.4f}]",
                     "Potential outliers": outlier_count,
                 }
             )
 
         return pd.DataFrame(rows)
 
-    _ss_analysis_columns = [
-        "∑PFAS",
-        "Count Detected PFAS",
-        "∑EAR",
-        "number_pfas_sites_proximal",
-        "mean_dist_to_pfas_site",
-        "Burn_Area_5k_frac",
-        "Burn_area_50k_frac",
-        "Urbn_burn_5k_frac",
-        "Urbn_burn_50k_frac",
-    ]
-    _ss_analysis_columns = [
-        col for col in _ss_analysis_columns if col in ss_clean_df.columns
-    ]
-
-    _mc_analysis_columns = [
-        col for col in mc_clean_df.columns if col.endswith("-VA_clean")
-    ][:6] + ["AGRI_12", "NATU_12", "URBA_12"]
-
     _distribution_summary = pd.concat(
         [
             _describe_distribution(
-                ss_clean_df, _ss_analysis_columns, "Smalling + Seawolf"
+                ss_clean_df, ss_analysis_columns, "Smalling + Seawolf"
             ),
             _describe_distribution(
-                mc_clean_df, _mc_analysis_columns, "McMahon"
+                mc_clean_df, mc_analysis_columns, "McMahon"
             ),
         ],
         ignore_index=True,
@@ -849,14 +820,19 @@ def _(mc_clean_df, mo, pd, ss_clean_df):
 
     mo.vstack(
         [
-            mo.md("#### Skewness and IQR outlier summary"),
+            mo.md(
+                "#### Skewness and IQR outlier summary\n\n"
+                "`Outlier fence` is the 1.5×IQR range "
+                "`[Q1 - 1.5×IQR, Q3 + 1.5×IQR]`; values outside "
+                "it count toward `Potential outliers`."
+            ),
             mo.ui.table(_distribution_summary),
         ]
     )
     return
 
 
-@app.cell(hide_code=True)
+@app.cell
 def _():
     import matplotlib.pyplot as _plt
 
@@ -920,7 +896,13 @@ def _(make_plot_grid, mo, ss_clean_df):
 
     mo.vstack(
         [
-            mo.md("#### Exploratory plots for Smalling + Seawolf\n\n"),
+            mo.md(
+                "#### Exploratory plots for Smalling + Seawolf\n\n"
+                "The following matplotlib box plots and histograms, "
+                "generated by the shared `make_plot_grid()` helper "
+                "below, summarize each variable's distribution at a "
+                "glance.\n\n"
+            ),
             make_plot_grid(
                 ss_clean_df,
                 _ss_viz_columns,
@@ -947,7 +929,12 @@ def _(make_plot_grid, mc_clean_df, mo):
 
     mo.vstack(
         [
-            mo.md("#### Exploratory plots for McMahon\n\n"),
+            mo.md(
+                "#### Exploratory plots for McMahon\n\n"
+                "The same matplotlib `make_plot_grid()` helper "
+                "produces the box plots and histograms below for "
+                "McMahon's variables.\n\n"
+            ),
             make_plot_grid(
                 mc_clean_df, _mc_viz_columns, "McMahon: box plots", kind="box"
             ),
@@ -1010,13 +997,13 @@ def _(mo, pd, pfas_cols, ss_clean_df):
             {
                 "Measure": "Cumulative PFAS range (ng/L)",
                 "Result": (
-                    f"{_smalling_quality_total_pfas.min():.3f} to "
-                    f"{_smalling_quality_total_pfas.max():.3f}"
+                    f"{_smalling_quality_total_pfas.min():.4f} to "
+                    f"{_smalling_quality_total_pfas.max():.4f}"
                 ),
             },
             {
                 "Measure": "Median cumulative PFAS (ng/L)",
-                "Result": f"{_smalling_quality_total_pfas.median():.3f}",
+                "Result": f"{_smalling_quality_total_pfas.median():.4f}",
             },
             {
                 "Measure": "Detected compounds per site",
@@ -1265,13 +1252,13 @@ def _(mo, pd, print_sections, ss_clean_df):
             },
             {
                 "Measure": "Mean land-cover fraction sum",
-                "Result": f"{_seawolf_quality_landcover_total.mean():.3f}",
+                "Result": f"{_seawolf_quality_landcover_total.mean():.4f}",
             },
             {
                 "Measure": "Land-cover fraction-sum range",
                 "Result": (
-                    f"{_seawolf_quality_landcover_total.min():.3f} to "
-                    f"{_seawolf_quality_landcover_total.max():.3f}"
+                    f"{_seawolf_quality_landcover_total.min():.4f} to "
+                    f"{_seawolf_quality_landcover_total.max():.4f}"
                 ),
             },
         ]
@@ -1526,14 +1513,14 @@ def _(mc_clean_df, mo, pd, print_sections):
             {
                 "Measure": "Cleaned concentration-total range (ng/L)",
                 "Result": (
-                    f"{_mcmahon_quality_total_concentration.min():.1f} to "
-                    f"{_mcmahon_quality_total_concentration.max():.1f}"
+                    f"{_mcmahon_quality_total_concentration.min():.4f} to "
+                    f"{_mcmahon_quality_total_concentration.max():.4f}"
                 ),
             },
             {
                 "Measure": "Median cleaned concentration total (ng/L)",
                 "Result": (
-                    f"{_mcmahon_quality_total_concentration.median():.1f}"
+                    f"{_mcmahon_quality_total_concentration.median():.4f}"
                 ),
             },
             {
@@ -1547,7 +1534,7 @@ def _(mc_clean_df, mo, pd, print_sections):
         mc_clean_df[["AGRI_12", "NATU_12", "URBA_12"]]
         .describe()
         .T.reset_index(names="Land-use variable")
-        .round(2)
+        .round(4)
     )
 
     mo.vstack(
@@ -1756,7 +1743,7 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mc_clean_df, mo, pd, print_sections, ss_clean_df):
     def _categorical_profile(dataset_name, dataframe, columns):
         profile_rows = []
@@ -1995,10 +1982,9 @@ def _(mc_clean_df, mo, pd, print_sections, ss_clean_df):
 
     def _categorical_panel(profile_df, category_tables, dataset_note):
         # profile_df has 14 columns; two of them ("Recommended treatment",
-        # "Quality assessment") hold long free-text notes. All 14 together
-        # are too wide to fit a printed page (they get cropped in the PDF
-        # export), so split the free-text columns into their own narrower
-        # table instead of displaying one wide one.
+        # "Quality assessment") hold long free-text notes that read poorly
+        # next to short numeric/label columns in one wide table, so split
+        # the free-text columns into their own narrower table instead.
         text_columns = ["Recommended treatment", "Quality assessment"]
         measure_columns = [
             col for col in profile_df.columns if col not in text_columns
@@ -2185,7 +2171,7 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mc_clean_df, pd, pfas_codes, pfas_cols, ss_clean_df):
     ss_long_df = pd.melt(
         ss_clean_df,
@@ -2283,7 +2269,7 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(calc_scored_df, ss_clean_df, ss_long_df):
     ss_scored_df = calc_scored_df(ss_clean_df, ss_long_df, "Site Code")
     return (ss_scored_df,)
@@ -2297,7 +2283,7 @@ def _(mo, ss_scored_df):
             mo.ui.table(
                 ss_scored_df[["sum_tq_epa", "sum_tq_state_only"]]
                 .describe()
-                .round(3)
+                .round(4)
                 .reset_index()
                 .rename(columns={"index": "Statistic"})
             ),
@@ -2333,7 +2319,7 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(calc_scored_df, mc_clean_df, mc_long_df):
     mc_scored_df = calc_scored_df(mc_clean_df, mc_long_df, "NAWQA_ID_mc_env")
     return (mc_scored_df,)
@@ -2347,7 +2333,7 @@ def _(mc_scored_df, mo):
             mo.ui.table(
                 mc_scored_df[["sum_tq_epa", "sum_tq_state_only"]]
                 .describe()
-                .round(3)
+                .round(4)
                 .reset_index()
                 .rename(columns={"index": "Statistic"})
             ),

@@ -127,7 +127,7 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo, tier_distribution):
     mo.md(rf"""
     ### Per-class metrics and evaluation rationale
@@ -347,7 +347,7 @@ def _(RISK_LABELS, classify_pfas_risk_tier, evaluate_tier_model, ss_scored_df):
     return majority_baseline, random_baseline, tier_distribution, tier_true
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(majority_baseline, mo, random_baseline, tier_distribution):
     mo.md(rf"""
     ### Model success criteria and operational benchmarks
@@ -387,7 +387,7 @@ def _(majority_baseline, mo, random_baseline, tier_distribution):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
     #### Quantitative operational thresholds
@@ -445,7 +445,7 @@ def _():
     return MACRO_F1_FLOOR, PRECISION_FLOOR, RECALL_FLOOR
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(MACRO_F1_FLOOR, PRECISION_FLOOR, RECALL_FLOOR, majority_baseline, mo):
     # Plain markdown table, not a DataFrame: this is a documentation
     # summary, not meant to be reused in code — check_success_criteria()
@@ -543,7 +543,7 @@ def _(MACRO_F1_FLOOR, PRECISION_FLOOR, RECALL_FLOOR, evaluate_tier_model, pd):
     return (check_success_criteria,)
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(check_success_criteria, mo, tier_distribution, tier_true):
     # Sanity check: the majority-class baseline should fail every
     # criterion, since it never predicts mcl_exceedance at all.
@@ -812,7 +812,7 @@ def _(
                 "Selection score": _sklearn_score,
             },
         ]
-    )
+    ).round({"Test fraction": 4, "Distribution gap": 4, "Selection score": 4})
 
     _comparison_columns = [
         "Method",
@@ -823,8 +823,12 @@ def _(
         "distribution_gap",
         "selection_score",
     ]
-    _split_comparison_preview = _split_comparison_df[_comparison_columns].head(
-        20
+    _split_comparison_preview = (
+        _split_comparison_df[_comparison_columns]
+        .head(20)
+        .round(
+            {"test_fraction": 4, "distribution_gap": 4, "selection_score": 4}
+        )
     )
 
     _selected_test_mask = _tapwater_split_df["study_group"].isin(
@@ -1031,7 +1035,7 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(RISK_LABELS, classify_pfas_risk_tier, mc_scored_df, pd, ss_scored_df):
     def _tier_distribution(scored_df):
         tiers = classify_pfas_risk_tier(scored_df["sum_tq_epa"])
@@ -1046,16 +1050,20 @@ def _(RISK_LABELS, classify_pfas_risk_tier, mc_scored_df, pd, ss_scored_df):
                 "Sites": len(ss_scored_df),
                 "Compounds summed": 6,
                 "Non-detect convention": "0",
-                "sum_tq_epa median": ss_scored_df["sum_tq_epa"].median(),
-                **_tier_distribution(ss_scored_df).round(3).to_dict(),
+                "sum_tq_epa median": round(
+                    ss_scored_df["sum_tq_epa"].median(), 4
+                ),
+                **_tier_distribution(ss_scored_df).round(4).to_dict(),
             },
             {
                 "Study": "McMahon (groundwater)",
                 "Sites": len(mc_scored_df),
                 "Compounds summed": 5,
                 "Non-detect convention": "½ reporting limit",
-                "sum_tq_epa median": mc_scored_df["sum_tq_epa"].median(),
-                **_tier_distribution(mc_scored_df).round(3).to_dict(),
+                "sum_tq_epa median": round(
+                    mc_scored_df["sum_tq_epa"].median(), 4
+                ),
+                **_tier_distribution(mc_scored_df).round(4).to_dict(),
             },
         ]
     )
@@ -1082,7 +1090,7 @@ def _(groundwater_comparison_df, mo):
                 construction, not by geology.
                 """
             ),
-            mo.ui.table(groundwater_comparison_df),
+            mo.ui.table(groundwater_comparison_df.set_index("Study").T),
             mo.md(
                 """
                 #### Decision: hold out, don't combine
@@ -1161,7 +1169,7 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
     Before feeding the landscape predictors into classification
@@ -1273,7 +1281,7 @@ def _(ColumnTransformer, OneHotEncoder, StandardScaler, np, pd):
             {
                 "Feature": skewed_features,
                 "Initial Skew": [
-                    round(initial_skew[f], 2) for f in skewed_features
+                    round(initial_skew[f], 4) for f in skewed_features
                 ],
             }
         )
@@ -1291,7 +1299,7 @@ def _(ColumnTransformer, OneHotEncoder, StandardScaler, np, pd):
     return (preprocess_tapwater_features,)
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo, preprocess_tapwater_features, tapwater_test_df, tapwater_train_df):
     _tapwater_model_matrices = preprocess_tapwater_features(
         tapwater_train_df, tapwater_test_df

@@ -23,6 +23,8 @@ def _(mo):
     mo.md("""
     ## Conclusion
 
+    #### Rethinking the target
+
     This project's biggest lesson from the Step 1-2 data exploration
     was that intuition can mislead once real data is in front of you.
     We set out to
@@ -39,6 +41,8 @@ def _(mo):
     original classification and onto the toxicity quotient (∑TQ) target
     instead.
 
+    #### Predictors carried forward
+
     The same distribution review also pointed to candidate predictors
     worth carrying into modeling. Seawolf's `mean_dist_to_pfas_site` and
     `number_pfas_sites_proximal`, i.e., proximity and exposure to
@@ -54,6 +58,8 @@ def _(mo):
     Anchoring the target on ∑TQ, and on the same trigger/MCL vocabulary
     operators already track, gets us closer to that goal than a
     sample-relative median cutoff ever could.
+
+    #### Scope cost
 
     That pivot has a cost: some of the compounds in the original
     dataset are not part of the core ∑TQ analysis. Of the 17 PFAS
@@ -75,6 +81,8 @@ def _(mo):
     each source publishes rather than a cleaning choice we can revisit,
     so we treat the two studies' ∑TQ as reported on different scales
     rather than reconciling them into one modeling target.
+
+    #### Looking ahead to Step 5
 
     The Step 3-4 evaluation and modeling design built directly on that
     output: it set the risk-tier cutoffs against `ss_scored_df`'s ∑TQ
@@ -130,7 +138,13 @@ def _(mo):
     * U.S. Environmental Protection Agency. (n.d.). Our current understanding
       of the human health and environmental risks of PFAS.
       https://www.epa.gov/pfas/our-current-understanding-human-health-and-environmental-risks-pfas
+    """)
+    return
 
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md("""
     ## AI usage appendix
 
     * Perplexity ([thread ref](https://www.perplexity.ai/search/fe48e31f-abdb-43ae-adde-5d36d3e34970)):
