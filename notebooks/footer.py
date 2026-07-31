@@ -23,8 +23,9 @@ def _(mo):
     mo.md("""
     ## Conclusion
 
-    This project's biggest lesson from Checkpoint 1 was that intuition
-    can mislead once real data is in front of you. We set out to
+    This project's biggest lesson from the Step 1-2 data exploration
+    was that intuition can mislead once real data is in front of you.
+    We set out to
     clarify a single variable, cumulative PFAS concentration, expecting
     a straightforward low/medium/high split. Instead, the data's own
     properties argued against that plan: non-detected values and
@@ -75,14 +76,15 @@ def _(mo):
     so we treat the two studies' ∑TQ as reported on different scales
     rather than reconciling them into one modeling target.
 
-    Checkpoint 2 built directly on that output: it set the risk-tier
-    cutoffs against `ss_scored_df`'s ∑TQ (Step 3), designed a
-    study-grouped split and per-class evaluation metrics, decided to
-    hold McMahon's groundwater data out of training rather than combine
-    it with the tapwater set, and proposed two competing classifiers,
-    an interpretable baseline and a non-linear ensemble (Step 4).
-    Training both models and evaluating them against that plan is
-    Step 5 work for the final checkpoint.
+    The Step 3-4 evaluation and modeling design built directly on that
+    output: it set the risk-tier cutoffs against `ss_scored_df`'s ∑TQ
+    (Step 3), designed a study-grouped split and per-class evaluation
+    metrics, decided to hold McMahon's groundwater data out of training
+    rather than combine it with the tapwater set, and proposed two
+    competing classifiers, an interpretable baseline and a non-linear
+    ensemble (Step 4). Training both models and evaluating them against
+    that plan is Step 5 work for the project's final write-up and
+    presentation.
     """)
     return
 
@@ -143,10 +145,10 @@ def _(mo):
       aid and title options—so the project would be feasible within a 2–3 week
       window and remain grounded in current PFAS research.
     * Claude.ai ([thread ref](https://claude.ai/share/ccd96f8c-b3f9-45d0-b2b4-57b1e68b62c1)):
-      The team used Claude (via Claude.ai) to copyedit the markdown prose in
-      the checkpoint notebook, correcting grammar, subject-verb agreement, and
-      word-choice errors across the problem statement, data source
-      descriptions, and references. Claude also verified the currency of a
+      The team used Claude (via Claude.ai) to copyedit the project's markdown
+      prose — correcting grammar, subject-verb agreement, and word-choice
+      errors across the problem statement, data source descriptions, and
+      references. Claude also verified the currency of a
       regulatory claim in the "why this problem matters" section, flagging that
       EPA's PFAS drinking-water rule had changed since the original draft, and
       helped the team iteratively reframe that justification around the
