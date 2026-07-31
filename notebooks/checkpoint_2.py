@@ -1321,13 +1321,79 @@ def _(mo, task_callout):
                 "4.2",
                 category="Step 4 - Modeling Techniques",
                 lead="Raj, Yai",
+                depends_on="4.4",
                 summary=(
-                    "Tooling (e.g. scikit-learn) and compute needs shared "
-                    "by the baseline model proposal below: expected "
-                    "dataset size, training time, and hardware "
-                    "requirements on a standard machine, no foundation "
-                    "model or GPU dependency expected."
+                    "Define the software, compute, reproducibility, and "
+                    "resource requirements for the interpretable "
+                    "baseline classifier."
                 ),
+            ),
+            mo.md(
+                """
+                #### Software and modeling tools
+
+                The baseline will use Python in the existing  
+                notebook. `pandas` and `numpy` will support data
+                preparation, while `scikit-learn` will provide the
+                modeling workflow. The main components will be:
+
+                * `Pipeline` to keep preprocessing and modeling
+                  together.
+                * `ColumnTransformer` for numeric and categorical
+                  predictors.
+                * `StandardScaler` and `OneHotEncoder` from Task 4.4.
+                * `LogisticRegression` for the interpretable
+                  classifier.
+                * `StratifiedGroupKFold` for study-grouped validation.
+                * `GridSearchCV` or `cross_validate` for limited
+                  tuning.
+                * The shared precision, recall, macro-F1, and
+                  confusion-matrix functions defined in Step 3.
+
+                The approved landscape-feature list will exclude PFAS
+                concentrations, toxicity-quotient fields, site
+                identifiers, and study labels. During model selection,
+                preprocessing and classification will be combined in
+                one `Pipeline` and fitted inside each training fold.
+                This prevents held-out study groups from influencing
+                scaling, encoding, or model coefficients.
+
+                #### Foundation model and training approach
+
+                No foundation model, pretrained model, embedding
+                service, or generative AI system is required. This is
+                classical supervised learning. The baseline
+                coefficients will be estimated from scratch using only
+                the project training data.
+
+                #### Computational requirements
+
+                The tap-water dataset contains 236 sites and a modest
+                number of landscape predictors. Even after one-hot
+                encoding, the feature matrix will remain small.
+                Training can therefore run on a standard laptop with:
+
+                * A multi-core CPU.
+                * Approximately 8 GB of RAM.
+                * Less than 1 GB of temporary storage.
+                * No GPU or distributed-computing requirement.
+
+                A single model fit should finish in seconds. A small
+                grouped cross-validation and hyperparameter search
+                should finish within a few minutes. Actual training and
+                prediction times will be measured and reported during
+                Step 5.
+
+                #### Other resources and reproducibility
+
+                Package requirements will remain in the notebook
+                dependency block. The project will retain the approved
+                feature list, excluded leakage fields, selected study
+                groups, random seed, hyperparameter grid, and final
+                model settings in version control. No paid API,
+                foundation-model access, or external compute service is
+                needed.
+                """
             ),
         ]
     )
@@ -1338,20 +1404,129 @@ def _(mo, task_callout):
 def _(mo, task_callout):
     mo.vstack(
         [
-            mo.md("### Baseline model: interpretable classifier (Lead A)"),
+            mo.md("### Model A: multinomial logistic regression"),
             task_callout(
                 "4.1",
                 category="Step 4 - Modeling Techniques",
                 lead="Raj",
                 depends_on="3.2, 4.4",
                 summary=(
-                    "First modeling proposal: an interpretable classifier "
-                    "(e.g. logistic regression or a shallow decision "
-                    "tree) predicting the ∑TQ risk tier from land-use "
-                    "predictors only, chosen for legibility to water-"
-                    "resource operators and as a baseline the competing "
-                    "proposal below is measured against."
+                    "Propose an interpretable multiclass logistic-"
+                    "regression baseline for predicting PFAS risk tiers "
+                    "from approved landscape and land-use predictors."
                 ),
+            ),
+            mo.md(
+                """
+                #### Proposed modeling technique
+
+                Model A will use multinomial logistic regression to
+                predict `within_reduced_monitoring`,
+                `above_trigger`, and `mcl_exceedance`. Only approved
+                landscape and land-use predictors will be used. PFAS
+                concentrations, toxicity-quotient fields, site
+                identifiers, and study labels will be excluded.
+
+                #### Why this technique is appropriate
+
+                Logistic regression is appropriate because the target
+                is categorical and the dataset is small, structured,
+                and tabular. It provides a transparent baseline before
+                the team evaluates a more complex ensemble model. Each
+                fitted coefficient shows the direction and relative
+                strength of association between a processed predictor
+                and a risk tier. Coefficients can also be converted to
+                odds ratios for stakeholder interpretation.
+
+                L2 regularization will reduce coefficient instability
+                when predictors are correlated or the encoded feature
+                count is large relative to the number of sites. Class
+                weighting will be evaluated because the risk tiers are
+                imbalanced and missing an `mcl_exceedance` site is more
+                costly than producing a false alert.
+
+                The risk tiers are ordinal, but standard multinomial
+                logistic regression does not enforce an ordering. This
+                is acceptable for an interpretable baseline. The
+                direction and severity of errors will still be examined
+                through the confusion matrix and critical-miss count
+                defined in Step 3.
+
+                #### Training and optimization plan
+
+                Task 4.4 will provide the approved raw feature table and
+                preprocessing specification. The preprocessor and
+                classifier will be combined in one `scikit-learn`
+                `Pipeline`. During model selection, the full pipeline
+                will be refitted within every `StratifiedGroupKFold`
+                fold so that no validation study influences
+                preprocessing.
+
+                The initial tuning grid will remain intentionally small:
+
+                * Regularization strength `C`.
+                * L2 regularization.
+                * Unweighted versus balanced class weights.
+                * A sufficient iteration limit for convergence.
+
+                Candidate settings will be compared using macro-F1,
+                subject to the Step 3 success constraints for
+                `mcl_exceedance` recall and precision. The selected
+                pipeline will then be fitted on the full training
+                partition and evaluated once on the untouched grouped
+                test partition.
+
+                #### Expected strengths and limitations
+
+                The main strengths are interpretability, low compute
+                cost, reproducibility, and a clear benchmark for the
+                competing ensemble model. The main limitation is that
+                logistic regression represents additive linear effects
+                in log-odds space. It may miss nonlinear thresholds and
+                interactions among land-use variables. If the ensemble
+                model performs meaningfully better on held-out studies,
+                that result will show whether its added complexity is
+                justified.
+
+                Model coefficients will be interpreted as associations,
+                not causal effects, because this is observational
+                environmental data.
+
+                #### Overall suitability and evaluation readiness
+
+                In our opinion, the proposed approaches can address the
+                problem if they meet the Step 3 evaluation thresholds.
+                Both models are designed to estimate PFAS risk tiers
+                from landscape and land-use characteristics rather than
+                measured PFAS concentrations. A successful model could
+                support screening and sampling prioritization by helping
+                water-resource managers identify locations for earlier
+                laboratory testing or follow-up investigation. It will
+                not replace laboratory testing or determine regulatory
+                compliance.
+
+                Appropriate effectiveness metrics have been identified.
+                The plan uses per-class precision, recall, and F1;
+                macro-F1; `mcl_exceedance` recall and precision; a
+                three-by-three confusion matrix; and the number of
+                critical two-tier misses. Accuracy is not the primary
+                metric because the majority class could hide poor
+                high-risk detection. Success requires
+                `mcl_exceedance` recall of at least 0.70, macro-F1 of
+                at least 0.60, and `mcl_exceedance` precision of at
+                least 0.45.
+
+                The project also includes othercomplementary evaluation
+                plans. First, both models will be compared using the
+                classification metrics and naive baselines from Step 3.
+                Second, study-grouped cross-validation and an untouched
+                grouped test partition will evaluate generalization to
+                unseen study groups. Third, training time, prediction
+                time, memory use, and hardware needs will evaluate
+                computational feasibility. Together, these plans assess
+                predictive quality, cross-study generalization, and
+                operational practicality.
+                """
             ),
         ]
     )
