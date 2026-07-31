@@ -6,7 +6,7 @@ PW,"Reshape to one row per site/compound, join benchmarks, compute per-compound 
 4.2,Tooling & compute plan for baseline,Step 4 - Modeling Techniques,"Raj, Yai",None,2026-07-27,2026-07-28,Complete
 3.4,Decide groundwater's role (held-out vs combined),Step 3 - Evaluation Plan,"Raj, Yai",3.3,2026-07-27,2026-07-28,Complete
 3.2,Set the success threshold (risk-tier cutoffs),Step 3 - Evaluation Plan,"Somyaranjan, Team",PW,2026-07-28,2026-07-28,Complete
-4.4,Handle skew & encoding on finalized feature table,Step 4 - Modeling Techniques,Somyaranjan,PW,2026-07-28,2026-07-29,Not started
+4.4,Handle skew & encoding on finalized feature table,Step 4 - Modeling Techniques,Somyaranjan,PW,2026-07-28,2026-07-29,Complete
 4.1,Baseline model: interpretable classifier (Lead A),Step 4 - Modeling Techniques,Raj,"3.2, 4.4",2026-07-29,2026-07-31,Not started
 4.3,Competing model: hierarchical/ensemble (Lead B),Step 4 - Modeling Techniques,Emir,"3.2, 4.4",2026-07-29,2026-07-31,Not started
 EVAL,Run predictions & evaluate; retune,Step 5 - Evaluate & Retune,Somyaranjan,"4.1, 4.3, 3.1",2026-07-31,2026-08-01,Not started
