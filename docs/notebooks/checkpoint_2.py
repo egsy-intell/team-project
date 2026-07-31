@@ -1382,21 +1382,5 @@ def _(mo, task_callout):
     return
 
 
-@app.cell(hide_code=True)
-def _(mo):
-    mo.md("""
-    ## Conclusion
-
-    Checkpoint 2 establishes, but does not yet execute, the evaluation plan
-    and modeling proposals for classifying site-level PFAS risk from
-    land-use predictors: per-class metrics and a study-grouped split (Step
-    3), and two competing classifiers, an interpretable baseline and a
-    non-linear ensemble (Step 4), against the already-computed ∑TQ
-    target from checkpoint 1. Training both models and evaluating them
-    against the plan above is Step 5 work for the final checkpoint.
-    """)
-    return
-
-
 if __name__ == "__main__":
     app.run()
