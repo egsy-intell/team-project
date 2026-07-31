@@ -1359,90 +1359,82 @@ def _(mo, preprocess_tapwater_features, tapwater_test_df, tapwater_train_df):
 
 
 @app.cell(hide_code=True)
-def _(mo, task_callout):
-    mo.vstack(
-        [
-            mo.md("### Tooling & compute plan for baseline"),
-            task_callout(
-                "4.2",
-                category="Step 4 - Modeling Techniques",
-                lead="Raj, Yai",
-                depends_on="4.4",
-                summary=(
-                    "Define the software, compute, reproducibility, and "
-                    "resource requirements for the interpretable "
-                    "baseline classifier."
-                ),
-            ),
-            mo.md(
-                """
-                #### Software and modeling tools
+def _(mo):
+    mo.md(r"""
+    ### Tooling & compute plan for baseline
 
-                The baseline will use Python in the existing  
-                notebook. `pandas` and `numpy` will support data
-                preparation, while `scikit-learn` will provide the
-                modeling workflow. The main components will be:
+    #### Software and modeling tools
 
-                * `Pipeline` to keep preprocessing and modeling
-                  together.
-                * `ColumnTransformer` for numeric and categorical
-                  predictors.
-                * `StandardScaler` and `OneHotEncoder` from Task 4.4.
-                * `LogisticRegression` for the interpretable
-                  classifier.
-                * `StratifiedGroupKFold` for study-grouped validation.
-                * `GridSearchCV` or `cross_validate` for limited
-                  tuning.
-                * The shared precision, recall, macro-F1, and
-                  confusion-matrix functions defined in Step 3.
+    We use widely available, batteries-included Python tooling for
+    the baseline: `pandas` and `numpy` for data preparation, and
+    `scikit-learn` for the modeling workflow — `Pipeline` and
+    `ColumnTransformer` to keep preprocessing and modeling together,
+    `StandardScaler`/`OneHotEncoder` from the preprocessing section
+    above, `LogisticRegression` as the interpretable classifier,
+    `StratifiedGroupKFold` for study-grouped validation, and
+    `GridSearchCV`/`cross_validate` for the tuning grid, plus the
+    shared precision/recall/macro-F1/confusion-matrix functions from
+    Step 3. No foundation model, pretrained model, embedding service,
+    or generative AI system is required — this is classical
+    supervised learning, fit from scratch on the project's own
+    training data.
 
-                The approved landscape-feature list will exclude PFAS
-                concentrations, toxicity-quotient fields, site
-                identifiers, and study labels. During model selection,
-                preprocessing and classification will be combined in
-                one `Pipeline` and fitted inside each training fold.
-                This prevents held-out study groups from influencing
-                scaling, encoding, or model coefficients.
+    #### Compute-time estimate
 
-                #### Foundation model and training approach
+    `LogisticRegression` defaults to the `lbfgs` solver
+    (Scikit-learn developers, 2026a), which fits one coefficient
+    vector per risk tier — so, by our own estimate, each gradient
+    step costs on the order of $O(n_{\text{samples}} \times
+    n_{\text{features}} \times n_{\text{classes}})$. Our training set
+    is roughly 236 sites by 19 encoded predictors across the three
+    risk tiers (`within_reduced_monitoring`, `above_trigger`,
+    `mcl_exceedance`), so one fit, run out to `lbfgs`'s default
+    100-iteration cap, costs on the order of
 
-                No foundation model, pretrained model, embedding
-                service, or generative AI system is required. This is
-                classical supervised learning. The baseline
-                coefficients will be estimated from scratch using only
-                the project training data.
+    $$O(100 \times 236 \times 19 \times 3) \approx 1.3 \times 10^6
+    \text{ operations}$$
 
-                #### Computational requirements
+    For a rough sense of scale, a modern iPhone's GPU renders a
+    single frame of a demanding game using on the order of
+    $10^7$–$10^8$ operations, 60 times per second — these figures are
+    order-of-magnitude estimates, not benchmarked numbers. By that
+    comparison, even a full grid of candidate fits is negligible:
+    """)
+    return
 
-                The tap-water dataset contains 236 sites and a modest
-                number of landscape predictors. Even after one-hot
-                encoding, the feature matrix will remain small.
-                Training can therefore run on a standard laptop with:
 
-                * A multi-core CPU.
-                * Approximately 8 GB of RAM.
-                * Less than 1 GB of temporary storage.
-                * No GPU or distributed-computing requirement.
-
-                A single model fit should finish in seconds. A small
-                grouped cross-validation and hyperparameter search
-                should finish within a few minutes. Actual training and
-                prediction times will be measured and reported during
-                Step 5.
-
-                #### Other resources and reproducibility
-
-                Package requirements will remain in the notebook
-                dependency block. The project will retain the approved
-                feature list, excluded leakage fields, selected study
-                groups, random seed, hyperparameter grid, and final
-                model settings in version control. No paid API,
-                foundation-model access, or external compute service is
-                needed.
-                """
-            ),
-        ]
+@app.cell
+def _(mo):
+    mo.center(
+        mo.md("""
+        | Task | Operations (order of magnitude) | Frequency |
+        | --- | --- | --- |
+        | Logistic regression fit (236×19, 3 tiers) | ~10⁶ | Once per fit |
+        | One frame of a demanding iPhone game | ~10⁷–10⁸ | 60x per second |
+        | One second of gameplay | ~10⁹–10¹⁰ | Continuous |
+        """)
     )
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    In other words, we can retrain and experiment across the tuning
+    grid above without being constrained by heavy computational
+    demands: a standard laptop with a multi-core CPU, about 8 GB of
+    RAM, and under 1 GB of temporary storage covers it, with no GPU
+    or distributed-computing requirement. Actual training and
+    prediction times will be measured and reported during Step 5.
+
+    #### Reproducibility
+
+    Package requirements stay in the notebook's dependency block. We
+    retain the approved feature list, excluded leakage fields,
+    selected study groups, random seed, hyperparameter grid, and
+    final model settings in version control. No paid API,
+    foundation-model access, or external compute service is needed.
+    """)
     return
 
 
