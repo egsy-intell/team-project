@@ -185,9 +185,55 @@ followed by `checkpoint_2.py`:
   whole project.
 - When adding checkpoint 3+: create `checkpoint_3.py` following the
   embed pattern above, then add its embed-and-stack cells to
-  `notebooks/index.py`. Nothing in `scripts/export_notebooks.py` or
-  `tests/test_notebooks.py` needs to change — both glob `notebooks/*.py`
-  and pick up new notebooks automatically.
+  `notebooks/index.py`, positioned after checkpoint 2's pair and before
+  `footer`'s (see "Trailing content lives in `footer.py`, not in the
+  checkpoint notebooks" below for what to do with any Conclusion/
+  References/AI-usage content the new checkpoint itself ends with).
+  Nothing in `scripts/export_notebooks.py` or `tests/test_notebooks.py`
+  needs to change — both glob `notebooks/*.py` and pick up new notebooks
+  automatically.
+
+## Trailing content lives in `footer.py`, not in the checkpoint notebooks
+
+`App.embed()` returns one monolithic `Html` blob per notebook (see
+`AppEmbedResult.output` in marimo's `_ast/app.py`) — there's no way for
+`index.py` to pull out or reorder individual cells from an embedded
+checkpoint's output. That's a problem for content that's logically
+project-wide rather than specific to one checkpoint: a Conclusion,
+References, and an AI usage appendix need to render *last*, after every
+checkpoint's body, but if each `checkpoint_N.py` ended with its own copy
+of that content, embedding it wholesale would place it wherever that
+checkpoint falls in the stack — not necessarily last.
+
+The fix is structural, not a change to `index.py` alone:
+`notebooks/footer.py` is a small notebook (no sibling-notebook import
+fallback needed — it's pure `mo.md()` prose with no data dependency,
+just `import marimo as mo`) that holds all of this trailing content, and
+`index.py` embeds it last, after every checkpoint. Checkpoint notebooks
+themselves should contain only their own body content once integrated —
+no trailing Conclusion/References/AI-usage cell of their own.
+
+`footer.py` has two kinds of content that get updated differently as
+checkpoints are added:
+
+- **Conclusion**: replaced, not appended to. It's a single running
+  narrative reflecting the project's current state, not a per-checkpoint
+  log. When integrating a newly-finished `checkpoint_N.py` that ends
+  with its own Conclusion cell, fold that content into `footer.py`'s
+  existing Conclusion — merge the new substance into one coherent
+  section (this is the one step in the recipe that isn't pure
+  copy-paste; some light editorial rewriting to keep it coherent as a
+  single narrative is expected) — then delete the cell from
+  `checkpoint_N.py`.
+- **References / AI usage appendix**: appended to, not replaced, as new
+  sources or AI threads are used. Move new entries verbatim from
+  `checkpoint_N.py` into `footer.py`'s existing lists, then delete them
+  from `checkpoint_N.py`.
+
+In both cases, also add `checkpoint_N.py` to the sibling-fetch fallback
+list in `index.py`'s first cell (and in any later checkpoint that embeds
+it for data, the same way `checkpoint_2.py` currently embeds
+`checkpoint_1.py`).
 
 ## Task-tracking prose is scaffolding, not published content
 
