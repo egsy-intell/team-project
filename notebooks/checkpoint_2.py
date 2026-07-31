@@ -1500,8 +1500,10 @@ def _(mo, task_callout):
 
                 #### Training and optimization plan
 
-                Task 4.4 will provide the approved raw feature table and
-                preprocessing specification. The preprocessor and
+                The approved raw feature table and preprocessing
+                specification are defined above, in "Handling skew &
+                encoding on the finalized feature table"
+                (`preprocess_tapwater_features`). The preprocessor and
                 classifier will be combined in one `scikit-learn`
                 `Pipeline`. During model selection, the full pipeline
                 will be refitted within every `StratifiedGroupKFold`
@@ -1540,38 +1542,22 @@ def _(mo, task_callout):
 
                 #### Overall suitability and evaluation readiness
 
-                In our opinion, the proposed approaches can address the
-                problem if they meet the Step 3 evaluation thresholds.
-                Both models are designed to estimate PFAS risk tiers
-                from landscape and land-use characteristics rather than
-                measured PFAS concentrations. A successful model could
-                support screening and sampling prioritization by helping
-                water-resource managers identify locations for earlier
-                laboratory testing or follow-up investigation. It will
-                not replace laboratory testing or determine regulatory
-                compliance.
-
-                Appropriate effectiveness metrics have been identified.
-                The plan uses per-class precision, recall, and F1;
-                macro-F1; `mcl_exceedance` recall and precision; a
-                three-by-three confusion matrix; and the number of
-                critical two-tier misses. Accuracy is not the primary
-                metric because the majority class could hide poor
-                high-risk detection. Success requires
-                `mcl_exceedance` recall of at least 0.70, macro-F1 of
-                at least 0.60, and `mcl_exceedance` precision of at
-                least 0.45.
-
-                The project also includes othercomplementary evaluation
-                plans. First, both models will be compared using the
-                classification metrics and naive baselines from Step 3.
-                Second, study-grouped cross-validation and an untouched
-                grouped test partition will evaluate generalization to
-                unseen study groups. Third, training time, prediction
-                time, memory use, and hardware needs will evaluate
-                computational feasibility. Together, these plans assess
-                predictive quality, cross-study generalization, and
-                operational practicality.
+                In our opinion, Model A is ready for evaluation
+                against the Step 3 thresholds: the feature table,
+                preprocessing pipeline, tuning grid, and success
+                metrics above are all in place, so training and
+                scoring it is purely execution work for Step 5. As a
+                linear baseline, it is cheap enough to run the full
+                tuning grid within the compute budget above and
+                simple enough that its coefficients remain
+                interpretable regardless of outcome. Its main open
+                risk is the one named in "Expected strengths and
+                limitations": if `mcl_exceedance` risk depends on
+                nonlinear thresholds or interactions among land-use
+                predictors, the additive log-odds form may fall short
+                of the 0.70 recall floor, which is exactly what
+                comparing it against Model B's ensemble is designed to
+                reveal.
                 """
             ),
         ]
