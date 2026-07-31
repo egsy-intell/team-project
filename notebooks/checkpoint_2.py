@@ -169,10 +169,10 @@ def _(mo, tier_distribution):
       highest-risk tier, set against the actual `ss_scored_df` tier
       distribution below.
     * **Macro-averaged F1** as the scalar comparison metric *subject
-      to* that floor, so Model A and Model B (Tasks 4.1, 4.3) are
-      ranked on one number without letting the majority tier dominate
-      the score. Macro-averaging is chosen over weighted averaging
-      precisely because the minority tier is the one that matters.
+      to* that floor, so Model A and Model B are ranked on one number
+      without letting the majority tier dominate the score.
+      Macro-averaging is chosen over weighted averaging precisely
+      because the minority tier is the one that matters.
     * **3×3 confusion matrix** (actual × predicted). The tiers are
       ordinal, so the direction of error carries meaning that a scalar
       metric discards: a true `mcl_exceedance` site predicted as
@@ -1447,21 +1447,10 @@ def _(mo, task_callout):
 
 
 @app.cell(hide_code=True)
-def _(mo, task_callout):
+def _(mo):
     mo.vstack(
         [
             mo.md("### Model A: multinomial logistic regression"),
-            task_callout(
-                "4.1",
-                category="Step 4 - Modeling Techniques",
-                lead="Raj",
-                depends_on="3.2, 4.4",
-                summary=(
-                    "Propose an interpretable multiclass logistic-"
-                    "regression baseline for predicting PFAS risk tiers "
-                    "from approved landscape and land-use predictors."
-                ),
-            ),
             mo.md(
                 """
                 #### Proposed modeling technique
