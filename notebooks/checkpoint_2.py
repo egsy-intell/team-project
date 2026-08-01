@@ -1538,76 +1538,113 @@ def _(mo):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""
-    **Technique proposed:**
+    mo.vstack(
+        [
+            mo.md("### Model B: random forest classifier"),
+            mo.md(
+                """
+                #### Proposed modeling technique
 
-    Model B will be a Random Forest Classifier. The Random Forest Classifier
-    is a supervised machine learning algorithm used for classification
-    problems. It is a group of decision trees trained on bootstrap samples,
-    with a random subset of predictors considered at each split.
+                Model B will use a random forest classifier to predict
+                the same three targets as Model A:
+                `within_reduced_monitoring`, `above_trigger`, and
+                `mcl_exceedance`. A random forest is an ensemble of
+                decision trees, each trained on a bootstrap sample of
+                the training partition and considering a random subset
+                of predictors at every split, so individual trees learn
+                slightly different patterns and the ensemble vote is
+                more robust than any single tree. It uses the same
+                approved landscape and land-use predictors as Model A;
+                PFAS concentrations, toxicity-quotient fields, site
+                identifiers, and study labels are excluded.
 
-    It creates a collection of decision trees (a forest) instead of one tree.
-    Each tree is trained on a slightly different subset of the training data
-    and considers a random subset of features when determining how to split
-    the data. This randomness ensures that each tree learns slightly different
-    patterns, improving the robustness of the ensemble.
+                #### Why this technique is appropriate
 
-    **Why this model is appropriate:**
+                A random forest reduces the risk of overfitting relative
+                to a single tree and generally handles datasets with
+                many predictor variables well. We expect the
+                relationship between PFAS risk and landscape context to
+                be non-additive: for example, a short distance to an
+                industrial facility may matter differently in highly
+                urbanized and sparsely populated areas. An ensemble of
+                trees can represent these conditional effects without
+                our having to specify every interaction in advance,
+                which is exactly the kind of nonlinearity Model A's
+                additive log-odds form may miss.
 
-    A Random Forest Model reduces the potential of overfitting, making it more
-    likely to perform well on unseen data. Generally, it produces high
-    prediction accuracy and can effectively handle datasets with many
-    predictor variables.
+                We will use `class_weight="balanced"` so rare risk
+                tiers influence tree construction in inverse proportion
+                to their training frequency. We prefer this to
+                generating synthetic minority-class observations: with
+                only 236 sites and study-level structure, synthetic
+                records could combine landscape patterns that do not
+                occur in any study. Like Model A, Model B is trained
+                from scratch on the project's own training data — no
+                foundation model, pretrained model, or external service
+                is required.
 
-    The relationship between PFAS risk and landscape context is unlikely to be
-    purely additive or linear. For example, a short distance to an industrial
-    facility may matter differently in highly urbanized and sparsely populated
-    areas. A forest can represent these conditional effects without requiring
-    the team to specify every interaction in advance.
+                #### Training and optimization plan
 
-    The model will use `class_weight="balanced"` so rare risk tiers influence
-    tree construction in inverse proportion to their training frequency. This
-    is preferable to generating synthetic observations for the initial
-    comparison: with only 236 sites and study-level structure, synthetic
-    records could combine landscape patterns that do not occur in any study.
+                Implementation will use scikit-learn's
+                `RandomForestClassifier` with a fixed random seed and
+                all available CPU cores (`n_jobs=-1`). Hyperparameter
+                selection will test a deliberately small grid over the
+                number of trees, maximum tree depth, minimum leaf size,
+                and number of predictors considered per split. Each
+                candidate will be evaluated with grouped
+                cross-validation (`StratifiedGroupKFold`), run only
+                within the hand-rolled training partition selected by
+                the exhaustive search above, using `study_group` as the
+                grouping variable — this keeps every site from a
+                validation study out of that candidate's fitting fold.
+                Selection follows the same two-stage rule as Model A:
+                discard candidates whose cross-validated
+                `mcl_exceedance` recall falls below 0.70, then choose
+                the remaining candidate with the highest macro-F1. If
+                none clears the recall floor, we will report that
+                result rather than weaken the criterion, and retain the
+                candidate with the highest high-risk recall for
+                diagnostic comparison. Only the selected configuration
+                is refit on the full training partition and evaluated
+                once on the held-out studies. Training runs on a
+                standard CPU with no GPU or distributed-computing
+                requirement at this dataset size.
 
-    **Training and model selection:**
+                #### Expected strengths and limitations
 
-    Implementation will use scikit-learn's `RandomForestClassifier` with a
-    fixed random seed and all CPU cores. Hyperparameter selection will test a
-    deliberately small grid over the number of trees, maximum tree depth,
-    minimum leaf size, and number of predictors considered per split. Each
-    candidate will be evaluated with the `StratifiedGroupKFold` procedure
-    defined above, using only the training partition and `study_group` as the
-    grouping variable. This prevents sites from a validation study appearing
-    in that candidate's fitting fold. Selection follows the established
-    two-stage rule: discard candidates whose cross-validated `mcl_exceedance`
-    recall is below 0.70, then choose the remaining candidate with the highest
-    macro-F1. If none clears the recall floor, report that result rather than
-    weakening the criterion and retain the candidate with the highest
-    high-risk recall for diagnostic comparison. Only the selected
-    configuration is refit on the full training partition and evaluated once
-    on the held-out studies.
+                The main strengths are robustness to overfitting, the
+                ability to capture nonlinear and interaction effects
+                without specifying them in advance, and generally
+                strong out-of-the-box accuracy on tabular data. The
+                main limitation is interpretability: a forest does not
+                expose a single coefficient per predictor the way
+                logistic regression does, so we lose the direct
+                odds-ratio explanation Model A offers stakeholders, and
+                analysis will instead rely on feature importances. It
+                is also more expensive to tune, since the hyperparameter
+                grid spans several axes rather than one regularization
+                strength. If Model B does not meaningfully outperform
+                Model A on the held-out studies, that result will show
+                whether the added complexity was worth its
+                interpretability cost.
 
-    **Foundation model**
+                #### Overall suitability and evaluation readiness
 
-    The Random Forest Classifier will be trained from scratch using the project
-    dataset. No foundation or pretrained model is required because Random
-    Forest learns directly from the provided training data.
-
-    **Computational needs and other resources**
-
-    The Random Forest Classifier has relatively low computational requirements.
-    Training will be performed on a standard desktop or laptop computer using
-    CPU processing, with scikit-learn configured to utilize all available CPU
-    cores (n_jobs=-1). GPU acceleration is not required due to the modest
-    dataset size of 236 study sites.
-
-    Additional resources include Python, the scikit-learn, NumPy, and pandas
-    libraries, Marimo notebooks for development and experimentation, GitHub
-    for version control, and the USGS and EPA datasets used throughout the
-    project.
-    """)
+                In our opinion, Model B is ready for evaluation against
+                the Step 3 thresholds: the feature table, preprocessing
+                pipeline, tuning grid, and success metrics defined
+                above are all in place, so training and scoring it is
+                purely execution work for Step 5. Its main open risk is
+                the one named in "Expected strengths and limitations":
+                if its accuracy gain over Model A does not clear a
+                margin that justifies losing direct coefficient
+                interpretability, the simpler linear baseline may
+                remain the preferred choice regardless of which model
+                scores higher on macro-F1.
+                """
+            ),
+        ]
+    )
     return
 
 
