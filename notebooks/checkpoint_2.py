@@ -169,7 +169,7 @@ def _(mo, tier_distribution):
       highest-risk tier, set against the actual `ss_scored_df` tier
       distribution below.
     * **Macro-averaged F1** as the scalar comparison metric *subject
-      to* that floor, so Model A and Model B (Tasks 4.1, 4.3) are
+      to* that floor, so Model A and Model B are
       ranked on one number without letting the majority tier dominate
       the score. Macro-averaging is chosen over weighted averaging
       precisely because the minority tier is the one that matters.
@@ -1359,26 +1359,77 @@ def _(mo, task_callout):
 
 
 @app.cell(hide_code=True)
-def _(mo, task_callout):
-    mo.vstack(
-        [
-            mo.md("### Competing model: hierarchical / ensemble (Lead B)"),
-            task_callout(
-                "4.3",
-                category="Step 4 - Modeling Techniques",
-                lead="Emir",
-                depends_on="3.2, 4.4",
-                summary=(
-                    "Second modeling proposal: a hierarchical or ensemble "
-                    "classifier (e.g. random forest / gradient boosting) "
-                    "that can capture non-linear interactions between "
-                    "land-use predictors the baseline's linear form "
-                    "cannot, evaluated against the same metrics and split "
-                    "as Model A for a direct comparison."
-                ),
-            ),
-        ]
-    )
+def _(mo):
+    mo.md(r"""
+    **Technique proposed:**
+
+    Model B will be a Random Forest Classifier. The Random Forest Classifier
+    is a supervised machine learning algorithm used for classification
+    problems. It is a group of decision trees trained on bootstrap samples,
+    with a random subset of predictors considered at each split.
+
+    It creates a collection of decision trees (a forest) instead of one tree.
+    Each tree is trained on a slightly different subset of the training data
+    and considers a random subset of features when determining how to split
+    the data. This randomness ensures that each tree learns slightly different
+    patterns, improving the robustness of the ensemble.
+
+    **Why this model is appropriate:**
+
+    A Random Forest Model reduces the potential of overfitting, making it more
+    likely to perform well on unseen data. Generally, it produces high
+    prediction accuracy and can effectively handle datasets with many
+    predictor variables.
+
+    The relationship between PFAS risk and landscape context is unlikely to be
+    purely additive or linear. For example, a short distance to an industrial
+    facility may matter differently in highly urbanized and sparsely populated
+    areas. A forest can represent these conditional effects without requiring
+    the team to specify every interaction in advance.
+
+    The model will use `class_weight="balanced"` so rare risk tiers influence
+    tree construction in inverse proportion to their training frequency. This
+    is preferable to generating synthetic observations for the initial
+    comparison: with only 236 sites and study-level structure, synthetic
+    records could combine landscape patterns that do not occur in any study.
+
+    **Training and model selection:**
+
+    Implementation will use scikit-learn's `RandomForestClassifier` with a
+    fixed random seed and all CPU cores. Hyperparameter selection will test a
+    deliberately small grid over the number of trees, maximum tree depth,
+    minimum leaf size, and number of predictors considered per split. Each
+    candidate will be evaluated with the `StratifiedGroupKFold` procedure
+    defined above, using only the training partition and `study_group` as the
+    grouping variable. This prevents sites from a validation study appearing
+    in that candidate's fitting fold. Selection follows the established
+    two-stage rule: discard candidates whose cross-validated `mcl_exceedance`
+    recall is below 0.70, then choose the remaining candidate with the highest
+    macro-F1. If none clears the recall floor, report that result rather than
+    weakening the criterion and retain the candidate with the highest
+    high-risk recall for diagnostic comparison. Only the selected
+    configuration is refit on the full training partition and evaluated once
+    on the held-out studies.
+
+    **Foundation model**
+
+    The Random Forest Classifier will be trained from scratch using the project
+    dataset. No foundation or pretrained model is required because Random
+    Forest learns directly from the provided training data.
+
+    **Computational needs and other resources**
+
+    The Random Forest Classifier has relatively low computational requirements.
+    Training will be performed on a standard desktop or laptop computer using
+    CPU processing, with scikit-learn configured to utilize all available CPU
+    cores (n_jobs=-1). GPU acceleration is not required due to the modest
+    dataset size of 236 study sites.
+
+    Additional resources include Python, the scikit-learn, NumPy, and pandas
+    libraries, Marimo notebooks for development and experimentation, GitHub
+    for version control, and the USGS and EPA datasets used throughout the
+    project.
+    """)
     return
 
 
