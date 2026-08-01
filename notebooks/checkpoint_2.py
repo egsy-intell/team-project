@@ -50,7 +50,7 @@ async def _(checkpoint_1_app):
     mc_scored_df = checkpoint_1_result.defs["mc_scored_df"]
     ss_scored_df = checkpoint_1_result.defs["ss_scored_df"]
     task_callout = checkpoint_1_result.defs["task_callout"]
-    return mc_clean_df, mc_scored_df, ss_scored_df, task_callout
+    return mc_clean_df, mc_scored_df, ss_scored_df
 
 
 @app.cell(hide_code=True)
