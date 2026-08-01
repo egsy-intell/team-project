@@ -204,12 +204,12 @@ Random forest classifier with balanced class weighting, capturing non-linear lan
 # Wrap-Up
 
 ::: notes
-[Speaker: Yai] That's the full plan. Let's close with what's left and what's next.
+[Speaker: Yai] That's the full plan. Let's close with what's next.
 :::
 
-## What's Left
+## What's Next
 
-**Next up: Step 5 — train and evaluate both models — plus final deliverables.**
+**Step 5: train and evaluate both models, then report results.**
 
 | Deliverable | Owner | Due |
 |---|---|---|
@@ -219,16 +219,7 @@ Random forest classifier with balanced class weighting, capturing non-linear lan
 | Peer review | All | 8/2 |
 
 ::: notes
-[Speaker: Yai] Here's what's ahead: Step 5 — running both models and reporting the real trade-off Somyaranjan just described. On the submission side: the writeup wraps by August 2nd, this deck is due today, we're recording our fifteen-minute walkthrough right after, splitting sections the same way we just split this presentation, and peer review of another team's checkpoint closes out the week.
-:::
-
-## Where We Go Next
-
-- Test untested predictors: PFAS-site proximity, facility counts
-- Expand ∑TQ coverage if EPA finalizes benchmarks for more PFAS compounds
-
-::: notes
-[Speaker: Somyaranjan] Looking ahead: we still want to test predictors we haven't tried yet, like distance to the nearest known PFAS site and nearby facility counts, to see if they sharpen the model further. And if EPA finalizes health benchmarks for more PFAS compounds, we'll expand ∑TQ to cover them too.
+[Speaker: Yai] What's next for us is really Step 5: running both models and reporting the real trade-off Somyaranjan just described. On the submission side: the writeup wraps by August 2nd, this deck is due today, we're recording our fifteen-minute walkthrough right after, splitting sections the same way we just split this presentation, and peer review of another team's checkpoint closes out the week. Further out, we've got a short list for later — predictors we haven't tested yet, like distance to the nearest known PFAS site and facility counts, and expanding ∑TQ if EPA finalizes benchmarks for more compounds.
 :::
 
 ## References
