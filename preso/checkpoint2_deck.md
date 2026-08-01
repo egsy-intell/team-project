@@ -194,10 +194,11 @@ Random forest classifier with balanced class weighting, capturing non-linear lan
 
 **Both designs are locked — Step 5 is next**
 
-Accuracy vs. interpretability vs. compute cost — head to head, same split, same metrics.
+- Accuracy vs. interpretability vs. compute cost — head to head, same split, same metrics
+- Plus a groundwater check: score McMahon's held-out wells and see if the ranking holds up
 
 ::: notes
-[Speaker: Somyaranjan] Once both models are trained, I run them against the same held-out test set and the same metrics you just saw, and we report the real trade-off: not just which model scores higher, but whether that gain is worth losing some interpretability. Both designs are locked, so that's what's next for us.
+[Speaker: Somyaranjan] Once both models are trained, I run them against the same held-out test set and the same metrics you just saw, and report the real trade-off: not just which model scores higher, but whether that gain is worth losing some interpretability. I'll also take the winning model and score McMahon's groundwater wells — held out earlier for exactly this — as a qualified check: does its relative ranking of those wells look plausible, even though McMahon's ∑TQ isn't on the same footing as tap water's, so it's not a number we can compare directly. Both designs are locked, so that's what's next for us.
 :::
 
 # Wrap-Up
@@ -224,11 +225,10 @@ Accuracy vs. interpretability vs. compute cost — head to head, same split, sam
 ## Where We Go Next
 
 - Test untested predictors: PFAS-site proximity, facility counts
-- Validate the winning model against McMahon's held-out groundwater wells
 - Expand ∑TQ coverage if EPA finalizes benchmarks for more PFAS compounds
 
 ::: notes
-[Speaker: Somyaranjan] Looking ahead: we still want to test predictors we haven't tried yet, like distance to the nearest known PFAS site and nearby facility counts, to see if they sharpen the model further. Once we have a trained model, we'll validate it against McMahon's groundwater wells, checking whether its relative ranking of those sites looks plausible. And if EPA finalizes health benchmarks for more PFAS compounds, we'll expand ∑TQ to cover them too.
+[Speaker: Somyaranjan] Looking ahead: we still want to test predictors we haven't tried yet, like distance to the nearest known PFAS site and nearby facility counts, to see if they sharpen the model further. And if EPA finalizes health benchmarks for more PFAS compounds, we'll expand ∑TQ to cover them too.
 :::
 
 ## References
