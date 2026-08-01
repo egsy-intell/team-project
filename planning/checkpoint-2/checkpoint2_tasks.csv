@@ -8,7 +8,7 @@ PW,"Reshape to one row per site/compound, join benchmarks, compute per-compound 
 3.2,Set the success threshold (risk-tier cutoffs),Step 3 - Evaluation Plan,"Somyaranjan, Team",PW,2026-07-28,2026-07-28,Complete
 4.4,Handle skew & encoding on finalized feature table,Step 4 - Modeling Techniques,Somyaranjan,PW,2026-07-28,2026-07-29,Complete
 4.1,Baseline model: interpretable classifier (Lead A),Step 4 - Modeling Techniques,Raj,"3.2, 4.4",2026-07-29,2026-07-31,Complete
-4.3,Competing model: hierarchical/ensemble (Lead B),Step 4 - Modeling Techniques,Emir,"3.2, 4.4",2026-07-29,2026-07-31,Not started
+4.3,Competing model: hierarchical/ensemble (Lead B),Step 4 - Modeling Techniques,Emir,"3.2, 4.4",2026-07-29,2026-07-31,Complete
 EVAL,Run predictions & evaluate; retune,Step 5 - Evaluate & Retune,Somyaranjan,"4.1, 4.3, 3.1",2026-07-31,2026-08-01,Not started
 DOC,Writeup draft through final,Deliverable,Yai,EVAL (for final pass),2026-07-26,2026-08-02,Not started
 DECK,Slide deck,Deliverable,"Yai, All",DOC,2026-08-01,2026-08-01,Not started
