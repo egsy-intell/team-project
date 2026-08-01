@@ -78,6 +78,19 @@ different kind of value than a computed statistic. See
 in `checkpoint_1.py`, and `groundwater_comparison_df`'s `sum_tq_epa
 median` in `checkpoint_2.py`, for the pattern.
 
+**First person ("we"/"our"), not third-person passive, is the
+report's voice.** `checkpoint_1.py` is written throughout in first
+person (e.g. "We will also attempt...", "Our original provisional
+classification..."). `checkpoint_2.py` had drifted into third-person
+passive constructions ("will be used", "is appropriate", "will
+remain") almost everywhere, with only a couple of first-person
+slips. Since `index.py` stacks every checkpoint into one flowing
+document, a voice mismatch at the checkpoint boundary reads as
+jarring even when nothing else about the prose is wrong. When adding
+or editing reader-facing prose, write "we"/"our" rather than passive
+constructions like "will be used" or "is proposed" — check for this
+the same way you'd check for the other conventions here.
+
 ## Printing / PDF output
 
 We do not generate PDFs from this repo. An earlier version of this

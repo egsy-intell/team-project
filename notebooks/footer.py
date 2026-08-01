@@ -108,7 +108,9 @@ def _(mo):
       polyfluoroalkyl substances in groundwater used as a source of drinking
       water in the Eastern United States. *Environmental Science & Technology*,
       *56*(4), 2279–2288. https://doi.org/10.1021/acs.est.1c04795
-    * Scikit-learn developers. (2026). 1.10. Decision trees.
+    * Scikit-learn developers. (2026a). 1.1.11. Logistic regression.
+      https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression
+    * Scikit-learn developers. (2026b). 1.10. Decision trees.
       https://scikit-learn.org/stable/modules/tree.html
     * Seawolf, S. M., Williams, B. M., Gordon, S. E., Romanok, K., Smalling,
       K., Bradley, P. M., & Morriss, M. C. (2023). *PFAS reconnaissance
