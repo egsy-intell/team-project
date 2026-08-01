@@ -70,8 +70,8 @@ def _(mo):
     | Name | Role | Superpowers |
     |---|---|---|
     | Yai Torres | Proposal/Docs/Presentation Lead | Web dev, organization |
-    | Raj Shetty | Modeling & Presentation Lead A | Data analysis, exploration, review |
-    | Emir Beg | Modeling & Presentation Lead B | Software arch., big data |
+    | Raj Shetty | Modeling & Pres. Lead A | Data analysis, exploration |
+    | Emir Beg | Modeling & Pres. Lead B | Software arch., big data |
     | Somyaranjan | Model Quality & PM Support Lead | Problem-solving, QA |
     """)
             ),
