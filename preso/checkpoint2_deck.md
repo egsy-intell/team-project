@@ -14,13 +14,13 @@ date: Check-In #2 — August 1, 2026
 
 | Name | Role | Focus |
 |---|---|---|
-| Yaisiel (Yai) Torres | Proposal / Presentation & Docs Lead | Data curation, proofreading, PM |
-| Emir Beg | Modeling Lead B | Ensemble model, scalability |
-| Gulshan Raj Shetty (Raj) | Modeling Lead A | Split strategy, baseline, McMahon eval |
-| Somyaranjan Sahu | Model Quality Lead | Test, evaluate, retune |
+| Yaisiel (Yai) Torres | Proposal / Presentation & Docs Lead | Data curation, proofreading, PM, Step 5 validation |
+| Emir Beg | Modeling & Presentation Lead B | Ensemble model, scalability |
+| Gulshan Raj Shetty (Raj) | Modeling & Presentation Lead A | Split strategy, baseline, McMahon eval |
+| Somyaranjan Sahu | Model Quality & PM Support Lead | Test, evaluate, retune, PM support |
 
 ::: notes
-[Speaker: Yai] I'm Yai — I lead the proposal, docs, and data-curation side. Raj leads modeling on our interpretable baseline, plus the split strategy and the groundwater evaluation. Emir leads modeling on the ensemble model and our scalability check. And Somyaranjan owns model quality and evaluation. Every piece of this pipeline has an owner. Let's start with the problem itself — why PFAS, and why now.
+[Speaker: Yai] I'm Yai — I lead the proposal, docs, and data-curation side, and I'm co-leading this presentation with Raj and Emir. Raj leads modeling on our interpretable baseline, plus the split strategy and the groundwater evaluation. Emir leads modeling on the ensemble model and our scalability check. And Somyaranjan owns model quality, evaluation, and project-management support for the team. I'm also teaming up with Somyaranjan on Step 5 model validation and benchmarking once both models are trained. Every piece of this pipeline has an owner. Let's start with the problem itself — why PFAS, and why now.
 :::
 
 ## What Are PFAS?
@@ -198,7 +198,7 @@ Random forest classifier with balanced class weighting, capturing non-linear lan
 - Plus a groundwater check: score McMahon's held-out wells and see if the ranking holds up
 
 ::: notes
-[Speaker: Somyaranjan] Once both models are trained, I run them against the same held-out test set and the same metrics you just saw, and report the real trade-off: not just which model scores higher, but whether that gain is worth losing some interpretability. I'll also take the winning model and score McMahon's groundwater wells — held out earlier for exactly this — as a qualified check: does its relative ranking of those wells look plausible, even though McMahon's ∑TQ isn't on the same footing as tap water's, so it's not a number we can compare directly. That's the analysis ahead of us.
+[Speaker: Somyaranjan] Once both models are trained, Yai and I run them against the same held-out test set and the same metrics you just saw, co-leading that validation and benchmarking together, and report the real trade-off: not just which model scores higher, but whether that gain is worth losing some interpretability. We'll also take the winning model and score McMahon's groundwater wells — held out earlier for exactly this — as a qualified check: does its relative ranking of those wells look plausible, even though McMahon's ∑TQ isn't on the same footing as tap water's, so it's not a number we can compare directly. That's the analysis ahead of us.
 :::
 
 # Wrap-Up
@@ -215,7 +215,7 @@ Random forest classifier with balanced class weighting, capturing non-linear lan
 - Carry it all into the Final submission
 
 ::: notes
-[Speaker: Yai] What's ahead from there is folding in whatever peer-review feedback we get, and carrying all of it, along with what Somyaranjan just described, into the Final submission. Thanks in advance to whichever teams we end up reviewing — we're looking forward to it.
+[Speaker: Yai] What's ahead from there is folding in whatever peer-review feedback we get, and carrying all of it, along with the Step 5 validation Somyaranjan and I are co-leading, into the Final submission. Thanks in advance to whichever teams we end up reviewing — we're looking forward to it.
 :::
 
 ## References
