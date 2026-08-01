@@ -1,32 +1,46 @@
 ---
 title: Predicting PFAS Occurrence Risk from Land-Use Features
 author: Team .egsy intelligence (Group 14)
-date: Checkpoint 2 — August 1, 2026
+date: Check-In #2 — August 1, 2026
 ---
 
 # Findings So Far
+
+::: notes
+[Speaker: Yai] Hi everyone — we're Team .egsy intelligence, Group 14. Over the next fifteen minutes we'll walk through why this problem matters, what we've found in the data, and where our evaluation plan and modeling proposals stand for this Check-In. Quick introductions first.
+:::
 
 ## Team & Roles
 
 | Name | Role | Focus |
 |---|---|---|
 | Yaisiel (Yai) Torres | Proposal / Presentation & Docs Lead | Data curation, proofreading, PM |
-| Emir Beg | Modeling Lead A | Build, train, evaluate |
-| Gulshan Raj Shetty (Raj) | Modeling Lead B | Split strategy, baseline, McMahon eval |
+| Emir Beg | Modeling Lead B | Ensemble model, scalability |
+| Gulshan Raj Shetty (Raj) | Modeling Lead A | Split strategy, baseline, McMahon eval |
 | Somyaranjan Sahu | Model Quality Lead | Test, evaluate, retune |
 
 ::: notes
-[Speaker: Yai] Hi everyone, we're Team .egsy intelligence — Group 14. Over the next fifteen minutes we'll walk through our data, a key methodology pivot, and where our evaluation plan and modeling proposals stand for Checkpoint 2. Quick introductions first: I'm Yai, I lead the proposal and docs side. Emir leads modeling on the ensemble side, Raj leads modeling on the baseline and split-strategy side, and Somyaranjan owns model quality and evaluation. Let's start with our findings so far.
+[Speaker: Yai] I'm Yai — I lead the proposal, docs, and data-curation side. Raj leads modeling on our interpretable baseline, plus the split strategy and the groundwater evaluation. Emir leads modeling on the ensemble model and our scalability check. And Somyaranjan owns model quality and evaluation. Every piece of this pipeline has an owner. Let's start with the problem itself — why PFAS, and why now.
 :::
 
-## Why This Matters
+## What Are PFAS?
 
-- **PFAS** ("forever chemicals") — synthetic compounds linked to health harms
-- EPA's legal limit (MCL) on PFAS — enforceable, but still shifting
-- Private wells: outside the federal rule's reach
+- **PFAS** — a family of roughly 15,000 synthetic "forever chemicals"
+- In nonstick cookware, firefighting foam, water-resistant fabric since the 1940s
+- Linked to cancer, thyroid disease, and immune-system harm
 
 ::: notes
-[Speaker: Raj] Quick grounding for anyone new to this: PFAS are a family of synthetic "forever chemicals," so called because they barely break down, and they're linked to real, documented health harms. EPA took a major step in April 2024 by finalizing an MCL — a Maximum Contaminant Level, the legal limit a water system has to stay under — for six of them. But that rule has already been narrowed once, in 2025, to just two compounds, and there's a further extension under proposal right now — so water systems are trying to prioritize against a moving target. And here's the gap that makes our project matter: that federal rule only covers public water systems. It says nothing about the private wells millions of people rely on. Our data spans both — public supply and private wells — so we can speak to a population the regulation doesn't reach.
+[Speaker: Yai] Let's ground this for anyone hearing the term for the first time. PFAS stands for per- and polyfluoroalkyl substances — a family of something like fifteen thousand synthetic chemicals, nicknamed "forever chemicals" because the carbon-fluorine bond that makes them nonstick, waterproof, and fire-resistant is the same bond that makes them essentially indestructible, in the environment and in our bodies. They've been in everyday products since the 1940s. And they're not just persistent, they're harmful: PFAS exposure is linked to certain cancers, thyroid disease, and immune-system effects. That's why anyone should care. Here's why it isn't already solved.
+:::
+
+## The Regulatory Gap
+
+- EPA's legal limit (MCL) — finalized 2024, already narrowed once, more changes proposed
+- Covers *public* water systems only
+- Private wells: tens of millions of people, **zero federal requirement to test**
+
+::: notes
+[Speaker: Yai] In April 2024, EPA finalized a Maximum Contaminant Level — an MCL, the enforceable legal limit — for six PFAS compounds. Sounds solved. It isn't, for two reasons. First, it's a moving target: the rule was already narrowed once, in 2025, down to just two compounds, with a further extension currently proposed. Second, and this is the gap our project lives in: that rule only covers public water systems. Tens of millions of people get their water from private wells, and nobody is required to test those at all. Our data spans both public supply and private wells, so we can speak to exactly the population the regulation leaves out.
 :::
 
 ## Project Scope
@@ -36,7 +50,7 @@ date: Checkpoint 2 — August 1, 2026
 - Tap water + groundwater, one risk classification per site
 
 ::: notes
-[Speaker: Raj] To be clear about what this is and isn't: this is a prioritization tool — it tells you where to look closer, not a legal determination that a specific well is safe or unsafe. The intended users are the people who'd act on that signal: public-health agencies, water-resource managers, researchers planning sampling campaigns. We're scoping to one classification per sampling site, covering both tap water and groundwater sources.
+[Speaker: Yai] So what are we actually building? A prioritization tool — it tells you where to look closer, not a legal determination that a specific well is safe or unsafe. It's built for the people who'd act on that signal: public-health agencies, water-resource managers, researchers planning sampling campaigns, community groups. And we're scoping it to one risk classification per sampling site, covering both tap water and groundwater sources. Raj, over to you for where that data actually comes from.
 :::
 
 ## Data Sources
@@ -48,7 +62,7 @@ date: Checkpoint 2 — August 1, 2026
 | McMahon et al., 2022 | Groundwater — both predictors & outcomes |
 
 ::: notes
-[Speaker: Raj] We're combining three public USGS datasets. Smalling gives us the outcome we're trying to predict — measured PFAS in tap water. Seawolf gives us the land-use predictors for those same sites — things like nearby industrial activity. And McMahon stands on its own: it covers groundwater wells across the Eastern U.S. and has both predictors and outcomes in one dataset. All three are public domain, CC0-licensed, and fully anonymized — no privacy concerns on the data side.
+[Speaker: Raj] Thanks, Yai. We're combining three public USGS datasets. Smalling gives us the outcome we're trying to predict — measured PFAS in tap water. Seawolf gives us the land-use predictors for those same sites, things like nearby industrial activity. McMahon stands on its own: groundwater wells across the Eastern U.S., with both predictors and outcomes in one dataset. All three are public domain, CC0-licensed, and fully anonymized, so there are no privacy concerns on the data side.
 :::
 
 ## Data Quality: It Held Up
@@ -58,7 +72,7 @@ date: Checkpoint 2 — August 1, 2026
 - Only 1 record dropped across the whole join
 
 ::: notes
-[Speaker: Raj] Before trusting a target variable, we had to trust the data underneath it — and it held up well. Joining Smalling to Seawolf, we lost exactly one record. A handful of Seawolf columns were structurally missing — meaning "no facility observed nearby," not a data error — and we imputed those deliberately rather than dropping rows. End result: 236 clean tap-water sites and 254 clean groundwater sites, ready to build a target on top of.
+[Speaker: Raj] Before trusting a target variable, we had to trust the data underneath it, and it held up well. Joining Smalling to Seawolf, we lost exactly one record. A handful of Seawolf columns were structurally missing, meaning "no facility observed nearby," not a data error, and we imputed those deliberately rather than dropping rows. End result: 236 clean tap-water sites and 254 clean groundwater sites, ready to build a target on top of. Emir's going to pick up the story from here.
 :::
 
 ## The Pivot: From Median Split to ∑TQ
@@ -68,7 +82,7 @@ date: Checkpoint 2 — August 1, 2026
 - New target: **∑TQ**, anchored on EPA's own compliance language
 
 ::: notes
-[Speaker: Emir] This is the most important methodology decision we made. Our original plan classified sites as low/medium/high using the median of our own sample — but that treats every PFAS compound as equally dangerous, which they're not, and it's relative to us, not to any external health standard. So we scrapped it in favor of something anchored on an actual regulatory yardstick: ∑TQ. Let me quickly define that before we get to results.
+[Speaker: Emir] Thanks, Raj. This is the most important methodology decision we made. Our original plan classified sites as low, medium, or high using the median of our own sample, but that treats every PFAS compound as equally dangerous, which they're not, and it's relative to us, not to any external health standard. So we scrapped it for something anchored on an actual regulatory yardstick: ∑TQ. Let me define that quickly before we get to results.
 :::
 
 ## What Is ∑TQ?
@@ -78,7 +92,7 @@ date: Checkpoint 2 — August 1, 2026
 - **< 0.5** reduced monitoring · **0.5–1.0** trigger · **≥ 1.0** MCL exceedance
 
 ::: notes
-[Speaker: Emir] Here's the mechanics: for each of the six EPA-regulated compounds — PFOA, PFOS, PFHxS, PFNA, PFBS, and GenX — we divide the measured concentration by that compound's EPA health benchmark. That ratio is the toxicity quotient, TQ. Add up all six and you get ∑TQ, one number per site. EPA's own compliance language gives us three tiers from that number: under 0.5 is within reduced monitoring, 0.5 up to 1.0 is above the trigger, and 1.0 or higher is MCL exceedance — the same tiers used in the results on the next couple of slides.
+[Speaker: Emir] Think of it like a tab: for each of the six EPA-regulated compounds — PFOA, PFOS, PFHxS, PFNA, PFBS, and GenX — we divide the measured concentration by that compound's EPA health benchmark, and that ratio is the toxicity quotient, TQ. Add up all six and you get ∑TQ, one running total per site. EPA's own compliance language gives us three tiers from that number: under 0.5 is within reduced monitoring, 0.5 up to 1.0 is above the trigger, and 1.0 or higher is MCL exceedance, meaning the tab has come due. Same tiers you'll see in the results next.
 :::
 
 ## ∑TQ — Tap Water
@@ -88,7 +102,7 @@ date: Checkpoint 2 — August 1, 2026
 Most sites well within reduced monitoring — a long right tail is what we're hunting for.
 
 ::: notes
-[Speaker: Emir] So what does that look like in practice? Across 236 tap-water sites, the median ∑TQ is 0.17 — well under our 0.5 trigger threshold. Most sites are fine. But the range runs all the way up to 17.7, and that long tail — the sites way above the norm — is exactly what a prioritization tool should be built to catch.
+[Speaker: Emir] So what does that look like in practice? Across 236 tap-water sites, the median ∑TQ is 0.17, well under our 0.5 trigger threshold. Most sites are fine. But the range runs all the way up to 17.7, and that long tail, the sites way above the norm, is exactly what a prioritization tool should be built to catch.
 :::
 
 ## ∑TQ — Groundwater, and a Catch
@@ -100,105 +114,108 @@ Most sites well within reduced monitoring — a long right tail is what we're hu
 - **The two studies' ∑TQ scores are not directly comparable**
 
 ::: notes
-[Speaker: Emir] Here's where we have to be honest about a limitation. Every single McMahon groundwater site scores above our exceedance cutoff — not because groundwater is uniformly worse, but because of how the score is built. McMahon's panel is missing GenX entirely, and its convention for non-detects — half the reporting limit instead of zero — inflates the floor for every "clean" site. So right now we cannot say groundwater is riskier than tap water; we can only say the two scores aren't computed the same way yet. Reconciling that is an open task — 3.4 — before we can train one model across both.
+[Speaker: Emir] Here's where we have to be honest about a limitation. Every single McMahon groundwater site scores above our exceedance cutoff, not because groundwater is uniformly worse, but because of how the score is built: McMahon's panel is missing GenX entirely, and its convention for non-detects, half the reporting limit instead of zero, inflates the floor for every "clean" site. So we can't say groundwater is riskier than tap water; we can only say the two scores aren't computed the same way. We've already made a call on what to do about that, and Raj will walk through it next.
 :::
 
 # Evaluation Plan & Modeling Proposals
 
-## Where Step 3 Stands
+::: notes
+[Speaker: Raj] Thanks, Emir. Now let's turn to our evaluation plan and the two modeling proposals we're comparing for this Check-In.
+:::
 
-- ✅ Split strategy (3.3) — complete
-- ⏳ Metrics, thresholds, groundwater reconciliation (3.1, 3.2, 3.4) — in progress, due 7/31
+## Where We Stand
+
+- Evaluation plan (Step 3) and both modeling proposals (Step 4) — fully designed
+- One thing left to produce: real model scores, in Step 5
 
 ::: notes
-[Speaker: Somyaranjan] Now let's turn to our evaluation plan and the two modeling proposals we're comparing for Checkpoint 2. Quick status check before we go further: the split strategy is done and Raj will walk through it next. Everything else in the evaluation plan — how we score the model, what "success" means, and reconciling that groundwater gap — is actively being worked toward Thursday's deadline. We're showing you the shape of the plan, not final numbers, because we'd rather be accurate than premature.
+[Speaker: Raj] Quick status check before we get into the plan itself: every open question in our evaluation plan is resolved, and both modeling proposals — my baseline and Emir's ensemble — are fully designed. What's left isn't more planning, it's execution: plugging real predictions into this plan, which is Step 5's job. Let's start with the split.
 :::
 
 ## Split Strategy: Group by Study
 
 - Whole **studies** held out together — not individual rows
-- Benchmarked against `StratifiedGroupKFold`
-- Verified: zero overlapping sites or studies across train/test
+- Verified: zero overlapping sites or studies across train/test, all three risk tiers preserved
+
+| Method | Held-out studies | Test share (target 20%) | Distribution gap |
+|---|---|---|---|
+| Our exhaustive search | Cape Cod, Minnesota, Northeast Iowa | 19.5% | 3.5% |
+| Best `StratifiedGroupKFold` fold | Minnesota, Puerto Rico | 14.4% | 10.9% |
 
 ::: notes
-[Speaker: Raj] The risk with PFAS data specifically is that sites from the same study tend to resemble each other — same sampling protocol, similar geography — so a naive random split lets the model "cheat" by seeing near-duplicates on both sides. We hold out entire studies instead, scored against candidate splits for class balance and coverage, and benchmarked that scoring against scikit-learn's own StratifiedGroupKFold. We then verified directly: zero shared sites, zero shared studies between train and test. [Presenter note: pull the actual partition and leakage numbers from running checkpoint_2.py before recording.]
+[Speaker: Raj] The risk with PFAS data specifically is that sites from the same study tend to resemble each other — same sampling protocol, similar geography — so a naive random split lets the model "cheat" by seeing near-duplicates on both sides. We hold out entire studies instead, and to make sure we weren't just fooling ourselves, we scored every candidate split against the same rubric scikit-learn's own StratifiedGroupKFold uses. Both approaches preserve all three risk tiers with zero leakage, but our exhaustive search lands closer to the 20 percent test-fraction target and keeps the test set's risk-tier mix much closer to the full dataset's — a 3.5 percent gap versus almost 11 percent for the best sklearn fold. The selected split holds out Cape Cod, Minnesota, and Northeast Iowa: 190 sites across 7 studies for training, 46 sites across 3 studies for test, zero shared sites or studies between them. This is also how we settled McMahon's role: it stays out of both partitions entirely, used as a held-out validation check instead of training data, since its ∑TQ score isn't on the same footing as tap water's. Somyaranjan, over to you for what these models actually need to hit.
 :::
 
 ## Metrics & Success Thresholds
 
-**In progress — Task 3.1 / 3.2**
-
-Per-class precision, recall, F1 — weighted toward catching high-risk sites over avoiding false alarms.
+| Metric | Threshold | Why |
+|---|---|---|
+| Recall, high-risk tier | ≥ 70% | A missed contaminated site costs more than a false alarm |
+| Macro F1, all tiers | ≥ 0.60 | Proof the model learns all three tiers, not just the majority |
+| Precision, high-risk tier | ≥ 45% | A floor against "flag everything," not the primary target |
 
 ::: notes
-[Speaker: Somyaranjan] We know a missed high-risk site is more costly than a false alarm, so our metrics plan leans toward recall on the highest-risk tier specifically, not just overall accuracy. We're not locking in an exact number here yet — that lands once the tier definitions from Task 3.2 are finalized — but the direction is set.
+[Speaker: Somyaranjan] Thanks, Raj. Before we trust any model's output, we need to know what "good" looks like, and that's what this plan sets. We picked three thresholds, each benchmarked against a random guess so they're not arbitrary. Recall on the highest-risk tier has to hit at least 70 percent, because a missed contaminated site is a public-health failure, while a false alarm only costs a confirmatory retest, so recall gets the strictest bar. Macro F1 across all three tiers has to clear 0.60, our check that the model is actually learning the difference between tiers, not just calling everything "safe" and coasting on the fact that most sites really are. And precision on the highest-risk tier needs to clear 45 percent, a floor, not a target, just to stop a model from gaming recall by flagging everything. For context, a model that always predicts the majority class scores zero recall on the tier we care about most — that's the bar we're measuring against.
 :::
 
 ## Two Competing Proposals
 
 | | Proposal A | Proposal B |
 |---|---|---|
-| Approach | Interpretable baseline | Hierarchical / ensemble |
+| Approach | Interpretable baseline | Random forest ensemble |
 | Lead | Raj | Emir |
 | Optimized for | Legibility, trust | Non-linear land-use interactions |
 
 ::: notes
-[Speaker: Emir] Rather than committing to one model, we're running two proposals in parallel, evaluated on the same split and the same metrics so they're a fair comparison. Proposal A is a simple, auditable model an operator could actually trust and inspect. Proposal B trades some of that legibility for the ability to capture non-linear interactions the baseline can't. May the better-performing, still-explainable model win.
+[Speaker: Emir] Rather than committing to one model, we're running two proposals in parallel, evaluated on the same split and the same metrics, so they're a fair comparison. Proposal A is a simple, auditable model an operator could actually trust and inspect. Proposal B trades some of that legibility for the ability to capture non-linear interactions the baseline can't. May the better-performing, still-explainable model win.
 :::
 
 ## Proposal A — Interpretable Baseline
 
-Logistic regression / shallow decision tree on land-use predictors.
+Multinomial logistic regression on land-use predictors, with L2 regularization and class weighting.
 
-**Status:** approach set — training pending (Task 4.1)
+**Status:** design finalized — training happens alongside Proposal B in Step 5
 
 ::: notes
-[Speaker: Raj] My baseline: a logistic regression or shallow decision tree, deliberately kept simple, predicting the ∑TQ tier straight from land-use features. The approach is locked in; what's not done yet is running it — that's Task 4.1, and we'll have real numbers by evaluation.
+[Speaker: Raj] My baseline is a multinomial logistic regression, deliberately kept simple, predicting the risk tier straight from land-use features. L2 regularization keeps the coefficients stable, and we'll weight classes to account for how imbalanced the tiers are. The pipeline, tuning grid, and feature list are all locked in — what's left is purely running it, which happens alongside Emir's ensemble in Step 5.
 :::
 
-## Proposal B — Hierarchical / Ensemble
+## Proposal B — Random Forest Ensemble
 
-Random forest / gradient boosting, capturing non-linear interactions.
+Random forest classifier with balanced class weighting, capturing non-linear land-use interactions.
 
-**Status:** approach set — training pending (Task 4.3)
+**Status:** design finalized — training happens alongside Proposal A in Step 5
 
 ::: notes
-[Speaker: Emir] My proposal pushes further — an ensemble method that can model interactions a linear approach would miss entirely. Same story as Proposal A: the design is done, execution is Task 4.3, and I'll bring back real results rather than guess at them here.
+[Speaker: Emir] My proposal is a random forest: an ensemble of decision trees that can capture the nonlinear interactions Raj's linear baseline would miss — say, a facility's distance mattering differently in an urban area than a rural one. I'm using balanced class weighting so the rare high-risk tier still gets a real say in how the trees are built, and I'm holding it to the exact same rulebook as Raj's baseline: first clear the 70 percent recall floor, then rank by macro-F1. Same rigor, same rules, just a different shape of model — so when we compare them, it's an honest fight.
 :::
 
 ## Validation & Trade-offs
 
-**Step 5 (EVAL) begins 7/31**
+**Both designs are locked — here's the analysis ahead of us**
 
-Accuracy vs. interpretability vs. compute cost — head to head, same split, same metrics.
+- Accuracy vs. interpretability vs. compute cost — head to head, same split, same metrics
+- Plus a groundwater check: score McMahon's held-out wells and see if the ranking holds up
 
 ::: notes
-[Speaker: Somyaranjan] Once both models are trained, I run them against the same held-out test set and the same metrics, and we'll report the real trade-off — not just which model scores higher, but whether that gain is worth losing some interpretability. That comparison is what Step 5 delivers, starting the day after tomorrow.
+[Speaker: Somyaranjan] Once both models are trained, I run them against the same held-out test set and the same metrics you just saw, and report the real trade-off: not just which model scores higher, but whether that gain is worth losing some interpretability. I'll also take the winning model and score McMahon's groundwater wells — held out earlier for exactly this — as a qualified check: does its relative ranking of those wells look plausible, even though McMahon's ∑TQ isn't on the same footing as tap water's, so it's not a number we can compare directly. That's the analysis ahead of us.
 :::
 
 # Wrap-Up
 
-## What's Left
-
-| Deliverable | Owner | Due |
-|---|---|---|
-| Writeup | Yai | 8/2 |
-| This deck | Yai, All | 8/1 |
-| 15-min video | All | 8/1–8/2 |
-| Peer review | All | 8/2 |
-
 ::: notes
-[Speaker: Yai] Let's close with where things stand and what's next. Here's what's left on our end: the writeup wraps by August 2nd, this deck is due tomorrow, and we record the 15-minute walkthrough right after, splitting sections across the four of us — the same way we just split this presentation. Peer review of another team's checkpoint closes out the week.
+[Speaker: Yai] Thanks, Somyaranjan. Let's close with where all of that leads.
 :::
 
-## Where We Go Next
+## What's Next
 
-- Untested predictors: PFAS-site proximity, facility counts
-- Only 6 of 17 reported PFAS compounds have EPA MCLs
-- Reconcile Smalling vs. McMahon ∑TQ before one shared target
+**From there: fold in peer-review feedback, then the Final.**
+
+- Fold in peer-review feedback
+- Carry it all into the Final submission
 
 ::: notes
-[Speaker: Somyaranjan] Looking past this checkpoint: we've flagged some promising predictors — distance to the nearest PFAS site, nearby facility counts — that haven't been tested against the model yet. We're also only using 6 of the 17 PFAS compounds Smalling reports, because those are the only ones with EPA benchmarks; the rest stay descriptive for now. And the biggest open thread is reconciling the tap-water and groundwater ∑TQ scores so we can eventually train across both.
+[Speaker: Yai] What's ahead from there is folding in whatever peer-review feedback we get, and carrying all of it, along with what Somyaranjan just described, into the Final submission. Thanks in advance to whichever teams we end up reviewing — we're looking forward to it.
 :::
 
 ## References
@@ -215,7 +232,7 @@ Sources cited in this presentation:
 | U.S. EPA (2026) | Proposed PFOA/PFOS compliance extension rule. |
 
 ::: notes
-[Speaker: Yai] These are the sources behind the data and the regulatory timeline we've cited — full citations are on screen, and we're happy to send the list along with the deck rather than read through it here.
+[Speaker: Yai] These are the sources behind the data and the regulatory timeline we've cited. Full citations are on screen, and we're happy to send the list along with the deck rather than read through it here.
 :::
 
 ## Thank You
@@ -225,5 +242,5 @@ Questions?
 **Team .egsy intelligence** — Emir Beg · Gulshan Raj Shetty · Somyaranjan Sahu · Yaisiel Torres
 
 ::: notes
-[Speaker: All] Yai: That's where we stand — solid data and a defensible pivot to ∑TQ. Raj: One evaluation piece done, the rest in flight for Thursday. Emir: Two modeling proposals ready to run. Somyaranjan: And a clear plan for how we'll judge them. All: Thanks for listening — happy to take questions.
+[Speaker: Yai] That's where we stand: solid data, a defensible pivot to ∑TQ, and an evaluation plan with two fully designed modeling proposals ready to run. Thanks for listening — happy to take questions.
 :::
