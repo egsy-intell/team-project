@@ -92,24 +92,16 @@ def _(mc_clean_df, mc_scored_df, mo, ss_scored_df):
     mo.md(f"""
     # Step 3-4: Model Selection, Training & Evaluation Design
 
-    This section is Check-In #2's deliverable: a formal evaluation plan
-    (Step 3) and a set of proposed modeling techniques (Step 4), per
-    `specs/checkpoint-2/GRAD 50400 - Project Checkpoint-2.pdf`. It's a
-    **design/proposal document** — each section below states what a task
-    lead will argue and how, not yet an executed evaluation. Execution and
-    retuning (Step 5, task `EVAL`) is out of scope here and belongs to the
-    project's final write-up and presentation.
+    With our data cleaned and scored in Step 2, we turn here to a
+    formal plan for evaluating model efficacy (Step 3) and a set of
+    modeling techniques we propose to try (Step 4).
 
-    Every section carries a callout naming its task ID, category, lead, and
-    dependencies, tied to `planning/checkpoint-2/checkpoint2_tasks.csv`; use
-    the task ID to cross-reference the task board.
-
-    Inherited from the Step 2 cleaning and ∑TQ construction sections above:
-    `ss_scored_df` ({ss_scored_df.shape[0]} rows), `mc_scored_df`
-    ({mc_scored_df.shape[0]} rows). `mc_clean_df` ({mc_clean_df.shape[0]}
-    rows) is also available unscored — McMahon is held out of training
-    entirely and used only as a qualified validation slice, per the
-    groundwater-role decision below.
+    Inherited from the Step 2 cleaning and ∑TQ construction sections
+    above: `ss_scored_df` ({ss_scored_df.shape[0]} rows), `mc_scored_df`
+    ({mc_scored_df.shape[0]} rows). `mc_clean_df`
+    ({mc_clean_df.shape[0]} rows) is also available unscored — we hold
+    McMahon out of training entirely and use it only as a qualified
+    validation slice, per the groundwater-role decision below.
     """)
     return
 
@@ -119,10 +111,9 @@ def _(mo):
     mo.md("""
     ## Step 3: Evaluation Plan
 
-    Per spec section 2.3: a formal plan to evaluate model efficacy,
-    identifying metrics and why they're appropriate, what constitutes
-    success, what data evaluation uses (and whether that should differ from
-    training data), and a method for evaluation.
+    We ground this plan in four questions: which metrics are
+    appropriate, what constitutes success, what data the evaluation
+    should draw on, and how we'll carry it out.
     """)
     return
 
@@ -1189,10 +1180,9 @@ def _(mo):
     mo.md("""
     ## Step 4: Modeling Techniques
 
-    Per spec section 2.4: identify specific modeling techniques, why each is
-    appropriate, what tools will be used, and the computational/other
-    resources needed. At least two proposals, led by different team
-    members.
+    We propose two modeling techniques below, covering why each is
+    appropriate, the tools we'll use, and the compute and other
+    resources each needs.
     """)
     return
 
