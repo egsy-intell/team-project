@@ -62,12 +62,10 @@ date: Check-In #2 — August 1, 2026
 | McMahon et al., 2022 | Groundwater — both predictors & outcomes |
 
 ::: notes
-[Speaker: Raj] Thanks, Yai. Our analysis combines three public USGS datasets that serve different purposes in the project.
-The Smalling dataset provides the measured PFAS concentrations in tap-water samples, which we use to construct the outcome we want to predict. The Seawolf dataset provides the corresponding land-use and environmental predictors for those sampling locations, including factors such as nearby industrial activity and potential PFAS sources.
-We join Smalling and Seawolf at the sampling-site level to create the primary modeling dataset.
-The McMahon dataset is slightly different. It contains groundwater wells from across the Eastern United States and includes both PFAS measurements and landscape predictors. Because its PFAS measurements were processed differently, we will not combine it directly with the tap-water training data. Instead, we will use it later as an independent groundwater validation dataset.
-All three datasets are publicly available, CC0-licensed, anonymized, and contain no personally identifiable information. so there are no privacy concerns on the data side.
-
+[Speaker: Raj] Thanks, Yai. We are combining three public USGS datasets.
+Smalling provides the measured PFAS concentrations in tap water, which we use to create our target. Seawolf provides the corresponding land-use predictors, such as nearby industrial activity and potential PFAS sources. We join these two datasets at the sampling-site level to create our primary modeling dataset.
+McMahon contains both PFAS measurements and landscape predictors for groundwater wells. Because its measurements were processed differently, we are keeping it separate and using it later as an independent validation dataset.
+All three datasets are publicly available, CC0-licensed (Creative Commons Zero), anonymized, and contain no personally identifiable information. so there are no privacy concerns on the data side.
 :::
 
 ## Data Quality: It Held Up
@@ -77,12 +75,10 @@ All three datasets are publicly available, CC0-licensed, anonymized, and contain
 - Only 1 record dropped across the whole join
 
 ::: notes
-[Speaker: Raj] Before building a target variable or training a model, we first checked whether the datasets could be combined reliably.
-The join between the Smalling and Seawolf datasets held up very well. Out of the original records, only one site was lost during the matching process, leaving us with 236 usable tap-water sites.
-We also reviewed the missing values carefully. Several Seawolf variables were structurally missing, meaning that no nearby facility or source was identified. These values did not represent data-entry errors, so we handled them deliberately rather than removing the affected sites.
-The McMahon dataset contributed another 254 usable groundwater sites. Overall, we retained nearly all available observations and avoided unnecessary row deletion, giving us a clean foundation for both modeling and external validation.
-
-Emir will now explain how we used the PFAS measurements to define the risk target.
+[Speaker: Raj] The data integration held up well. We lost only one record when joining Smalling and Seawolf, leaving 236 usable tap-water sites.
+Some missing Seawolf values were structural, meaning no nearby facility was identified rather than the data being unavailable. We handled those values deliberately instead of dropping the sites.
+We also retained 254 usable groundwater sites from McMahon, giving us a strong foundation for modeling and validation.
+Emir will now explain how we defined the PFAS risk target.
 :::
 
 ## The Pivot: From Median Split to ∑TQ
@@ -130,8 +126,9 @@ Most sites well within reduced monitoring — a long right tail is what we're hu
 # Evaluation Plan & Modeling Proposals
 
 ::: notes
-[Speaker: Raj] Thanks, Emir. The groundwater limitation is important because it affects both how we divide the data and how we evaluate the models.
-I’ll now walk through our evaluation strategy and the two modeling proposals we designed for this checkpoint. I’ll begin with where the work currently stands, and then explain how we created a test set that gives us a realistic measure of model generalization.
+[Speaker: Raj] Thanks, Emir.
+I’ll now walk through our evaluation strategy and the modeling proposals we designed for this checkpoint. 
+
 :::
 
 ## Where We Stand
@@ -141,10 +138,7 @@ I’ll now walk through our evaluation strategy and the two modeling proposals w
 
 ::: notes
 [Speaker: Raj] At this stage, the evaluation plan for Step 3 and both modeling proposals for Step 4 are fully designed.
-We have finalized the target definition, selected the input features, established the train-and-test split, chosen the evaluation metrics, and defined the success thresholds. We have also specified the preprocessing steps and tuning approach for both candidate models.
-The remaining task is execution. During Step 5, we will train both models, generate predictions on the same held-out test set, and compare their actual performance using the evaluation criteria we established.
-
-Let’s first look at how we selected that held-out test set.
+At this point, the target, features, split strategy, metrics, success thresholds, and both model proposals are finalized. Step 5 will focus on execution: training both models and comparing their predictions on the same held-out test set. Let’s begin with how we created that test set.
 :::
 
 ## Split Strategy: Group by Study
@@ -158,11 +152,11 @@ Let’s first look at how we selected that held-out test set.
 | Best `StratifiedGroupKFold` fold | Minnesota, Puerto Rico | 14.4% | 10.9% |
 
 ::: notes
-[Speaker: Raj] The first issue we wanted to avoid was data leakage. In PFAS data, sites from the same study often share the same sampling protocol, geographic conditions, and environmental characteristics. If we used a standard random split, very similar sites could end up in both the training and test sets. That could make the model appear more accurate than it would be on truly unseen data.To prevent this, we grouped the data by study and held out complete studies for testing rather than randomly separating individual sites. This gives us a more realistic measure of how the model may perform on new studies and new geographic areas.
-We then compared two approaches for selecting the grouped split. The first was scikit-learn’s StratifiedGroupKFold. The second was our own exhaustive search, where we evaluated every valid combination of held-out studies using the same general criteria: no study overlap, preservation of all three risk tiers, a test size close to 20 percent, and a class distribution that closely matches the full dataset.
-Both approaches prevented leakage and preserved all three risk tiers. However, our exhaustive search produced the stronger split. It achieved a 19.5 percent test share, which is very close to our 20 percent target, and the risk-tier distribution gap was only 3.5 percent, compared with 11 percent for the best StratifiedGroupKFold result.
-Our final split holds out Cape Cod, Minnesota, and Northeast Iowa. That gives us 190 sites from seven studies for training and 46 sites from three studies for testing, with zero shared sites or studies between the two sets.
-This decision also clarified how we should use the McMahon groundwater dataset. Since its ∑TQ score is calculated differently and is not directly comparable with the tap-water data, we excluded it from both training and testing. Instead, we will use it as an independent validation check to evaluate whether the model’s relative risk rankings generalize to groundwater sites.
+[Speaker: Raj] The main risk we wanted to avoid was data leakage. Sites from the same PFAS study often share similar geography, sampling methods, and environmental conditions. With a random split, very similar sites could appear in both the training and test sets, making the model look more accurate than it would be on truly unseen data.
+To prevent that, we held out complete studies rather than individual rows.
+We compared scikit-learn’s StratifiedGroupKFold with our own exhaustive search. Both approaches preserved all three risk tiers and produced zero overlap between studies. However, our selected split was closer to the 20 percent test-size target and had a much smaller risk-tier distribution gap: 3.5 percent compared with about 11 percent.
+The final split uses 190 sites from seven studies for training and holds out Cape Cod, Minnesota, and Northeast Iowa. This gives us 46 test sites from three completely unseen studies.
+McMahon remains outside both the training and test sets because its ∑TQ values are calculated differently. This gives us two complementary evaluation plans. First, both models will be formally evaluated on the grouped tap-water test set using unseen studies. Second, the winning model will be applied to the McMahon groundwater dataset as an independent validation check.
 
 Somyaranjan, over to you to explain the metrics and success thresholds we will use to evaluate the models.
 :::
@@ -198,14 +192,12 @@ Multinomial logistic regression on land-use predictors, with L2 regularization a
 **Status:** design finalized — training happens alongside Proposal B in Step 5
 
 ::: notes
-[Speaker: Raj] My proposal is a multinomial logistic regression model that predicts the three PFAS risk tiers directly from the land-use and environmental features.
-We selected logistic regression as the baseline because it is interpretable, computationally efficient, and appropriate for a multiclass classification problem. Each coefficient helps us understand how a predictor is associated with an increase or decrease in the probability of a particular risk tier. That level of transparency is valuable for a public-health screening tool, where users may need to understand why a location was flagged.
-The model will be implemented using a scikit-learn pipeline. Numerical features will be standardized using StandardScaler, followed by multinomial LogisticRegression. We will use L2 regularization to reduce coefficient instability and limit overfitting, particularly because the dataset is relatively small and some predictors may be correlated.
-We will also apply balanced class weighting so that the less common medium- and high-risk observations influence the model during training rather than being overwhelmed by the majority class.
-The regularization strength will be tuned using grouped cross-validation within the training data. This ensures that the final test set remains completely untouched until the last evaluation.
-This model is being trained from scratch on our tabular dataset. It does not use a foundation model or pretrained neural network. Its computational requirements are low, so training and tuning can be completed on a standard laptop or Google Colab using CPU resources.
-The model may not capture every complex nonlinear relationship in the data, but it gives us a transparent and defensible benchmark. Emir’s random forest will then show us whether additional model complexity produces a meaningful improvement.
-
+[Speaker: Raj] My proposal is a multinomial logistic regression model that predicts the three PFAS risk tiers from the land-use features.
+We chose logistic regression because it is interpretable, efficient, and well suited for multiclass classification. Its coefficients allow us to understand how each predictor influences the probability of a risk tier, which is important for a public-health screening tool.
+We will implement it using a scikit-learn pipeline with feature standardization, L2 regularization to reduce overfitting, and balanced class weights to account for the smaller medium- and high-risk classes.
+The regularization strength will be tuned using grouped cross-validation within the training data, while the final test set remains untouched.
+This model is trained from scratch on our tabular data. It does not use a foundation model, and its computational requirements are low enough to run on a standard laptop or Google Colab using CPU resources.
+It provides a transparent baseline against which we can evaluate whether Emir’s more complex random forest delivers a meaningful performance improvement.
 Emir, over to you for Proposal B.
 :::
 
