@@ -192,30 +192,30 @@ Random forest classifier with balanced class weighting, capturing non-linear lan
 
 ## Validation & Trade-offs
 
-**Both designs are locked — Step 5 is next**
+**Both designs are locked — here's the analysis ahead of us**
 
 - Accuracy vs. interpretability vs. compute cost — head to head, same split, same metrics
 - Plus a groundwater check: score McMahon's held-out wells and see if the ranking holds up
 
 ::: notes
-[Speaker: Somyaranjan] Once both models are trained, I run them against the same held-out test set and the same metrics you just saw, and report the real trade-off: not just which model scores higher, but whether that gain is worth losing some interpretability. I'll also take the winning model and score McMahon's groundwater wells — held out earlier for exactly this — as a qualified check: does its relative ranking of those wells look plausible, even though McMahon's ∑TQ isn't on the same footing as tap water's, so it's not a number we can compare directly. Both designs are locked, so that's what's next for us.
+[Speaker: Somyaranjan] Once both models are trained, I run them against the same held-out test set and the same metrics you just saw, and report the real trade-off: not just which model scores higher, but whether that gain is worth losing some interpretability. I'll also take the winning model and score McMahon's groundwater wells — held out earlier for exactly this — as a qualified check: does its relative ranking of those wells look plausible, even though McMahon's ∑TQ isn't on the same footing as tap water's, so it's not a number we can compare directly. That's the analysis ahead of us.
 :::
 
 # Wrap-Up
 
 ::: notes
-[Speaker: Yai] That's the full plan. Let's close with what's next.
+[Speaker: Yai] Thanks, Somyaranjan. Let's close with where all of that leads.
 :::
 
 ## What's Next
 
-**Step 5: run the analysis, then fold in peer-review feedback.**
+**From there: fold in peer-review feedback, then the Final.**
 
-- Train and evaluate both proposals — the real, formal results
-- Fold in peer-review feedback before the Final
+- Fold in peer-review feedback
+- Carry it all into the Final submission
 
 ::: notes
-[Speaker: Yai] What's ahead is Step 5: running the analysis on both proposals and reporting the real results, then folding in whatever peer-review feedback we get before the Final. Thanks in advance to whichever teams we end up reviewing — we're looking forward to it.
+[Speaker: Yai] What's ahead from there is folding in whatever peer-review feedback we get, and carrying all of it, along with what Somyaranjan just described, into the Final submission. Thanks in advance to whichever teams we end up reviewing — we're looking forward to it.
 :::
 
 ## References
