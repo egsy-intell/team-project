@@ -123,13 +123,13 @@ Most sites well within reduced monitoring — a long right tail is what we're hu
 [Speaker: Raj] Thanks, Emir. Now let's turn to our evaluation plan and the two modeling proposals we're comparing for this Check-In.
 :::
 
-## Where Step 3 Stands
+## Where We Stand
 
-- Split strategy, metrics, thresholds, and the groundwater decision — all locked in
-- One number left to produce: real model scores, in Step 5
+- Evaluation plan (Step 3) and both modeling proposals (Step 4) — fully designed
+- One thing left to produce: real model scores, in Step 5
 
 ::: notes
-[Speaker: Raj] Quick status check before we get into the plan itself: every open question in our evaluation plan is now resolved — how we split the data, what we measure, what counts as success, and how we handle the groundwater gap you just heard about. What's left isn't more planning, it's execution: plugging real model predictions into this plan, which is Step 5's job. Let's start with the split.
+[Speaker: Raj] Quick status check before we get into the plan itself: every open question in our evaluation plan is resolved, and both modeling proposals — my baseline and Emir's ensemble — are fully designed. What's left isn't more planning, it's execution: plugging real predictions into this plan, which is Step 5's job. Let's start with the split.
 :::
 
 ## Split Strategy: Group by Study
@@ -162,7 +162,7 @@ Most sites well within reduced monitoring — a long right tail is what we're hu
 
 | | Proposal A | Proposal B |
 |---|---|---|
-| Approach | Interpretable baseline | Hierarchical / ensemble |
+| Approach | Interpretable baseline | Random forest ensemble |
 | Lead | Raj | Emir |
 | Optimized for | Legibility, trust | Non-linear land-use interactions |
 
@@ -180,24 +180,24 @@ Multinomial logistic regression on land-use predictors, with L2 regularization a
 [Speaker: Raj] My baseline is a multinomial logistic regression, deliberately kept simple, predicting the risk tier straight from land-use features. L2 regularization keeps the coefficients stable, and we'll weight classes to account for how imbalanced the tiers are. The pipeline, tuning grid, and feature list are all locked in — what's left is purely running it, which happens alongside Emir's ensemble in Step 5.
 :::
 
-## Proposal B — Hierarchical / Ensemble
+## Proposal B — Random Forest Ensemble
 
-Random forest / gradient boosting, capturing non-linear interactions.
+Random forest classifier with balanced class weighting, capturing non-linear land-use interactions.
 
-**Status:** design in progress — the last piece before Step 5
+**Status:** design finalized — training happens alongside Proposal A in Step 5
 
 ::: notes
-[Speaker: Emir] My proposal pushes further: a random forest or gradient-boosting ensemble that can capture nonlinear interactions a straight line can't. This is the one piece of our plan still being finalized — I'm locking in the same level of design detail Raj just walked through, so both models can run through the exact same evaluation Somyaranjan described.
+[Speaker: Emir] My proposal is a random forest: an ensemble of decision trees that can capture the nonlinear interactions Raj's linear baseline would miss — say, a facility's distance mattering differently in an urban area than a rural one. I'm using balanced class weighting so the rare high-risk tier still gets a real say in how the trees are built, and I'm holding it to the exact same rulebook as Raj's baseline: first clear the 70 percent recall floor, then rank by macro-F1. Same rigor, same rules, just a different shape of model — so when we compare them, it's an honest fight.
 :::
 
 ## Validation & Trade-offs
 
-**Step 5 starts as soon as Model B's design is locked in**
+**Both designs are locked — Step 5 is next**
 
 Accuracy vs. interpretability vs. compute cost — head to head, same split, same metrics.
 
 ::: notes
-[Speaker: Somyaranjan] Once both models are trained, I run them against the same held-out test set and the same metrics you just saw, and we report the real trade-off: not just which model scores higher, but whether that gain is worth losing some interpretability. That's Step 5, and it starts the moment Emir's design is finalized.
+[Speaker: Somyaranjan] Once both models are trained, I run them against the same held-out test set and the same metrics you just saw, and we report the real trade-off: not just which model scores higher, but whether that gain is worth losing some interpretability. Both designs are locked, so that's what's next for us.
 :::
 
 # Wrap-Up
@@ -208,7 +208,7 @@ Accuracy vs. interpretability vs. compute cost — head to head, same split, sam
 
 ## What's Left
 
-**One modeling task left: finalize Proposal B's design — everything else is ready for Step 5.**
+**Next up: Step 5 — train and evaluate both models — plus final deliverables.**
 
 | Deliverable | Owner | Due |
 |---|---|---|
@@ -218,17 +218,17 @@ Accuracy vs. interpretability vs. compute cost — head to head, same split, sam
 | Peer review | All | 8/2 |
 
 ::: notes
-[Speaker: Yai] So here's where we stand: the evaluation plan is locked, Proposal A's design is done, and the only open modeling work is finishing Proposal B's design so both can run through Step 5 together. On the submission side: the writeup wraps by August 2nd, this deck is due today, we're recording our fifteen-minute walkthrough right after, splitting sections the same way we just split this presentation, and peer review of another team's checkpoint closes out the week.
+[Speaker: Yai] Here's what's ahead: Step 5 — running both models and reporting the real trade-off Somyaranjan just described. On the submission side: the writeup wraps by August 2nd, this deck is due today, we're recording our fifteen-minute walkthrough right after, splitting sections the same way we just split this presentation, and peer review of another team's checkpoint closes out the week.
 :::
 
 ## Where We Go Next
 
-- Untested predictors: PFAS-site proximity, facility counts
-- Only 6 of 17 reported PFAS compounds have EPA benchmarks — the rest stay descriptive
-- Use McMahon's groundwater wells as a held-out validation check, not training data
+- Test untested predictors: PFAS-site proximity, facility counts
+- Validate the winning model against McMahon's held-out groundwater wells
+- Expand ∑TQ coverage if EPA finalizes benchmarks for more PFAS compounds
 
 ::: notes
-[Speaker: Somyaranjan] Looking past this Check-In: we've flagged predictors we haven't tested yet, like distance to the nearest known PFAS site and nearby facility counts, that could sharpen the model further. We're also only scoring 6 of the 17 PFAS compounds Smalling reports, because those are the only ones with EPA health benchmarks to divide by; the rest stay descriptive, not ignored. And remember McMahon's groundwater data from earlier: since its score isn't built the same way as tap water's, we're not training on it. Once we have a trained model, we'll use McMahon as a sanity check instead, asking whether its relative ranking of those wells looks plausible, even though we can't compare its raw score directly.
+[Speaker: Somyaranjan] Looking ahead: we still want to test predictors we haven't tried yet, like distance to the nearest known PFAS site and nearby facility counts, to see if they sharpen the model further. Once we have a trained model, we'll validate it against McMahon's groundwater wells, checking whether its relative ranking of those sites looks plausible. And if EPA finalizes health benchmarks for more PFAS compounds, we'll expand ∑TQ to cover them too.
 :::
 
 ## References
@@ -255,5 +255,5 @@ Questions?
 **Team .egsy intelligence** — Emir Beg · Gulshan Raj Shetty · Somyaranjan Sahu · Yaisiel Torres
 
 ::: notes
-[Speaker: Yai] That's where we stand: solid data, a defensible pivot to ∑TQ, an evaluation plan that's fully locked in, one modeling proposal ready to run and a second close behind. Thanks for listening — happy to take questions.
+[Speaker: Yai] That's where we stand: solid data, a defensible pivot to ∑TQ, and an evaluation plan with two fully designed modeling proposals ready to run. Thanks for listening — happy to take questions.
 :::
