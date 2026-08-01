@@ -209,21 +209,13 @@ Random forest classifier with balanced class weighting, capturing non-linear lan
 
 ## What's Next
 
-**Step 5, leading into the Final: build, evaluate, and report on both proposals.**
+**Step 5: run the analysis, then fold in peer-review feedback.**
 
-- Train Proposal A and B; report what worked, what didn't, and the formal results
-- Discuss deployment: does this solve the original problem, what pitfalls to watch for, what we learned
-- Fold in peer-review feedback and publish our codebase link
-
-| Deliverable | Owner | Due |
-|---|---|---|
-| Writeup | Yai | 8/2 |
-| This deck | Yai, All | 8/1 |
-| 15-min video | All | 8/1–8/2 |
-| Peer review | All | 8/2 |
+- Train and evaluate both proposals — the real, formal results
+- Fold in peer-review feedback before the Final
 
 ::: notes
-[Speaker: Yai] What's ahead of us is Step 5, which carries us into the Final submission: actually training and evaluating both proposals, and reporting what worked and what didn't against the formal results. We'll also need to discuss deployment — could this actually solve the problem we opened with, what pitfalls would a real deployment hit, and what we learned along the way. And two things we specifically owe by then: folding in at least one piece of peer-review feedback once we get it, and publishing our codebase with the link in both the report and the presentation. Closer to home: the writeup wraps by August 2nd, this deck is due today, we're recording our fifteen-minute walkthrough right after, splitting sections the same way we just split this presentation, and peer review of another team's checkpoint closes out the week.
+[Speaker: Yai] What's ahead is Step 5: running the analysis on both proposals and reporting the real results, then folding in whatever peer-review feedback we get before the Final. Thanks in advance to whichever teams we end up reviewing — we're looking forward to it.
 :::
 
 ## References
