@@ -169,10 +169,10 @@ def _(mo, tier_distribution):
       highest-risk tier, set against the actual `ss_scored_df` tier
       distribution below.
     * **Macro-averaged F1** as the scalar comparison metric *subject
-      to* that floor, so Model A and Model B (Tasks 4.1, 4.3) are
-      ranked on one number without letting the majority tier dominate
-      the score. Macro-averaging is chosen over weighted averaging
-      precisely because the minority tier is the one that matters.
+      to* that floor, so Model A and Model B are ranked on one number
+      without letting the majority tier dominate the score.
+      Macro-averaging is chosen over weighted averaging precisely
+      because the minority tier is the one that matters.
     * **3×3 confusion matrix** (actual × predicted). The tiers are
       ordinal, so the direction of error carries meaning that a scalar
       metric discards: a true `mcl_exceedance` site predicted as
@@ -1359,45 +1359,187 @@ def _(mo, preprocess_tapwater_features, tapwater_test_df, tapwater_train_df):
 
 
 @app.cell(hide_code=True)
-def _(mo, task_callout):
-    mo.vstack(
-        [
-            mo.md("### Tooling & compute plan for baseline"),
-            task_callout(
-                "4.2",
-                category="Step 4 - Modeling Techniques",
-                lead="Raj, Yai",
-                summary=(
-                    "Tooling (e.g. scikit-learn) and compute needs shared "
-                    "by the baseline model proposal below: expected "
-                    "dataset size, training time, and hardware "
-                    "requirements on a standard machine, no foundation "
-                    "model or GPU dependency expected."
-                ),
-            ),
-        ]
+def _(mo):
+    mo.md(r"""
+    ### Tooling & compute plan for baseline
+
+    #### Software and modeling tools
+
+    We use widely available, batteries-included Python tooling for
+    the baseline: `pandas` and `numpy` for data preparation, and
+    `scikit-learn` for the modeling workflow — `Pipeline` and
+    `ColumnTransformer` to keep preprocessing and modeling together,
+    `StandardScaler`/`OneHotEncoder` from the preprocessing section
+    above, `LogisticRegression` as the interpretable classifier,
+    `StratifiedGroupKFold` for study-grouped validation, and
+    `GridSearchCV`/`cross_validate` for the tuning grid, plus the
+    shared precision/recall/macro-F1/confusion-matrix functions from
+    Step 3. No foundation model, pretrained model, embedding service,
+    or generative AI system is required — this is classical
+    supervised learning, fit from scratch on the project's own
+    training data.
+
+    #### Compute-time estimate
+
+    `LogisticRegression` defaults to the `lbfgs` solver
+    (Scikit-learn developers, 2026a), which fits one coefficient
+    vector per risk tier — so, by our own estimate, each gradient
+    step costs on the order of $O(n_{\text{samples}} \times
+    n_{\text{features}} \times n_{\text{classes}})$. Our training set
+    is roughly 236 sites by 19 encoded predictors across the three
+    risk tiers (`within_reduced_monitoring`, `above_trigger`,
+    `mcl_exceedance`), so one fit, run out to `lbfgs`'s default
+    100-iteration cap, costs on the order of
+
+    $$O(100 \times 236 \times 19 \times 3) \approx 1.3 \times 10^6
+    \text{ operations}$$
+
+    For a rough sense of scale, a modern iPhone's GPU renders a
+    single frame of a demanding game using on the order of
+    $10^7$–$10^8$ operations, 60 times per second — these figures are
+    order-of-magnitude estimates, not benchmarked numbers. By that
+    comparison, even a full grid of candidate fits is negligible:
+    """)
+    return
+
+
+@app.cell
+def _(mo):
+    mo.center(
+        mo.md("""
+        | Task | Operations (order of magnitude) | Frequency |
+        | --- | --- | --- |
+        | Logistic regression fit (236×19, 3 tiers) | ~10⁶ | Once per fit |
+        | One frame of a demanding iPhone game | ~10⁷–10⁸ | 60x per second |
+        | One second of gameplay | ~10⁹–10¹⁰ | Continuous |
+        """)
     )
     return
 
 
 @app.cell(hide_code=True)
-def _(mo, task_callout):
+def _(mo):
+    mo.md(r"""
+    In other words, we can retrain and experiment across the tuning
+    grid above without being constrained by heavy computational
+    demands: a standard laptop with a multi-core CPU, about 8 GB of
+    RAM, and under 1 GB of temporary storage covers it, with no GPU
+    or distributed-computing requirement. Actual training and
+    prediction times will be measured and reported during Step 5.
+
+    #### Reproducibility
+
+    Package requirements stay in the notebook's dependency block. We
+    retain the approved feature list, excluded leakage fields,
+    selected study groups, random seed, hyperparameter grid, and
+    final model settings in version control. No paid API,
+    foundation-model access, or external compute service is needed.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
     mo.vstack(
         [
-            mo.md("### Baseline model: interpretable classifier (Lead A)"),
-            task_callout(
-                "4.1",
-                category="Step 4 - Modeling Techniques",
-                lead="Raj",
-                depends_on="3.2, 4.4",
-                summary=(
-                    "First modeling proposal: an interpretable classifier "
-                    "(e.g. logistic regression or a shallow decision "
-                    "tree) predicting the ∑TQ risk tier from land-use "
-                    "predictors only, chosen for legibility to water-"
-                    "resource operators and as a baseline the competing "
-                    "proposal below is measured against."
-                ),
+            mo.md("### Model A: multinomial logistic regression"),
+            mo.md(
+                """
+                #### Proposed modeling technique
+
+                Model A will use multinomial logistic regression to
+                predict `within_reduced_monitoring`,
+                `above_trigger`, and `mcl_exceedance`. Only approved
+                landscape and land-use predictors will be used. PFAS
+                concentrations, toxicity-quotient fields, site
+                identifiers, and study labels will be excluded.
+
+                #### Why this technique is appropriate
+
+                Logistic regression is appropriate because the target
+                is categorical and the dataset is small, structured,
+                and tabular. It provides a transparent baseline before
+                the team evaluates a more complex ensemble model. Each
+                fitted coefficient shows the direction and relative
+                strength of association between a processed predictor
+                and a risk tier. Coefficients can also be converted to
+                odds ratios for stakeholder interpretation.
+
+                L2 regularization will reduce coefficient instability
+                when predictors are correlated or the encoded feature
+                count is large relative to the number of sites. Class
+                weighting will be evaluated because the risk tiers are
+                imbalanced and missing an `mcl_exceedance` site is more
+                costly than producing a false alert.
+
+                The risk tiers are ordinal, but standard multinomial
+                logistic regression does not enforce an ordering. This
+                is acceptable for an interpretable baseline. The
+                direction and severity of errors will still be examined
+                through the confusion matrix and critical-miss count
+                defined in Step 3.
+
+                #### Training and optimization plan
+
+                The approved raw feature table and preprocessing
+                specification are defined above, in "Handling skew &
+                encoding on the finalized feature table"
+                (`preprocess_tapwater_features`). The preprocessor and
+                classifier will be combined in one `scikit-learn`
+                `Pipeline`. During model selection, the full pipeline
+                will be refitted within every `StratifiedGroupKFold`
+                fold so that no validation study influences
+                preprocessing.
+
+                The initial tuning grid will remain intentionally small:
+
+                * Regularization strength `C`.
+                * L2 regularization.
+                * Unweighted versus balanced class weights.
+                * A sufficient iteration limit for convergence.
+
+                Candidate settings will be compared using macro-F1,
+                subject to the Step 3 success constraints for
+                `mcl_exceedance` recall and precision. The selected
+                pipeline will then be fitted on the full training
+                partition and evaluated once on the untouched grouped
+                test partition.
+
+                #### Expected strengths and limitations
+
+                The main strengths are interpretability, low compute
+                cost, reproducibility, and a clear benchmark for the
+                competing ensemble model. The main limitation is that
+                logistic regression represents additive linear effects
+                in log-odds space. It may miss nonlinear thresholds and
+                interactions among land-use variables. If the ensemble
+                model performs meaningfully better on held-out studies,
+                that result will show whether its added complexity is
+                justified.
+
+                Model coefficients will be interpreted as associations,
+                not causal effects, because this is observational
+                environmental data.
+
+                #### Overall suitability and evaluation readiness
+
+                In our opinion, Model A is ready for evaluation
+                against the Step 3 thresholds: the feature table,
+                preprocessing pipeline, tuning grid, and success
+                metrics above are all in place, so training and
+                scoring it is purely execution work for Step 5. As a
+                linear baseline, it is cheap enough to run the full
+                tuning grid within the compute budget above and
+                simple enough that its coefficients remain
+                interpretable regardless of outcome. Its main open
+                risk is the one named in "Expected strengths and
+                limitations": if `mcl_exceedance` risk depends on
+                nonlinear thresholds or interactions among land-use
+                predictors, the additive log-odds form may fall short
+                of the 0.70 recall floor, which is exactly what
+                comparing it against Model B's ensemble is designed to
+                reveal.
+                """
             ),
         ]
     )
