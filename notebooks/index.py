@@ -69,10 +69,10 @@ def _(mo):
                 mo.md("""
     | Name | Role | Superpowers |
     |---|---|---|
-    | Yai Torres | Proposal Lead; Docs Lead | Web dev, organization, writing |
-    | Raj Shetty | Modeling Lead B | Data analysis, exploration, review |
-    | Emir Beg | Modeling Lead A | Software architecture, big data, review |
-    | Somyaranjan | Model Quality Lead | Problem-solving, testing, anomaly QA |
+    | Yai Torres | Proposal/Docs/Presentation Lead | Web dev, organization |
+    | Raj Shetty | Modeling & Presentation Lead A | Data analysis, exploration, review |
+    | Emir Beg | Modeling & Presentation Lead B | Software arch., big data |
+    | Somyaranjan | Model Quality & PM Support Lead | Problem-solving, QA |
     """)
             ),
             mo.md("""
@@ -80,8 +80,10 @@ def _(mo):
       sources, and the data dictionary (Steps 1-2); has also served
       as the team's data-platform lead and a general technical
       resource across every workstream rather than one fixed slice;
+      laid the validation groundwork in Step 3, co-leading its
+      Step 5 model validation and benchmarking with Somyaranjan;
       leads the project write-up and slide deck through the final
-      submission.
+      submission, co-leading the presentation with Emir.
     * **Raj** drafted the data source and ethical-considerations
       review and led the categorical-variable quality assessment
       (Step 2); leads the study-grouped split strategy, groundwater
@@ -90,11 +92,15 @@ def _(mo):
     * **Emir** led the summary-statistics, outlier, and skewness
       analysis (Step 2); leads the optional scalability/deployment
       metric and the competing ensemble model (Steps 3-4), carried
-      into its Step 5 execution and evaluation.
+      into its Step 5 execution and evaluation; co-leads the
+      presentation with Yai.
     * **Somyaranjan** leads the per-class metrics framework,
-      risk-tier threshold decision, and skew handling/encoding on the
-      finalized feature table (Steps 3-4); leads running predictions
-      and evaluation/retuning across both models (Step 5).
+      risk-tier threshold decision, skew handling/encoding on the
+      finalized feature table, and the validation groundwork laid
+      in Step 3 (Steps 3-4); leads running predictions and
+      evaluation/retuning across both models, co-leading Step 5
+      model validation and benchmarking with Yai; also provides
+      project management support across the team.
     """),
         ]
     )
