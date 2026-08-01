@@ -42,6 +42,22 @@ TEMPLATE_PPTX = PRESO_DIR / "template.pptx"
 DENSE_CONTENT_LAYOUT = "Content with Caption"
 DENSE_TABLE_FONT_SIZE = Pt(14)
 
+# Without an explicit --slide-level, pandoc infers one by scanning for the
+# highest (numerically smallest) heading level that's ever immediately
+# followed by non-heading content anywhere in the document, and uses *that*
+# level - and only that level - to start new slides. Our `#` section
+# dividers (Findings So Far, Evaluation Plan & Modeling Proposals, Wrap-Up)
+# used to have nothing directly under them but another `#`/`##` heading, so
+# pandoc inferred slide-level 2 and every `##` correctly started its own
+# slide. The moment a `#` divider gets its own `::: notes :::` block
+# directly beneath it (so presenters have a script for that slide too),
+# pandoc sees content under a level-1 heading and silently drops the
+# inferred slide-level to 1 - collapsing every `##` section back down into
+# whichever `#` divider contains it, instead of giving each its own slide.
+# Pinning slide-level=2 makes `##` the permanent slide boundary regardless
+# of what content ends up under a `#` divider.
+SLIDE_LEVEL = 2
+
 
 def _shrink_dense_tables(pptx_path: Path) -> None:
     prs = Presentation(str(pptx_path))
@@ -85,6 +101,15 @@ def main() -> int:
         action="store_true",
         help="Open the generated .pptx in the default app afterward (best-effort)",
     )
+    parser.add_argument(
+        "--template",
+        type=Path,
+        default=TEMPLATE_PPTX,
+        help=(
+            "Reference-doc .pptx to style the deck with "
+            "(default: preso/template.pptx)"
+        ),
+    )
     args = parser.parse_args()
 
     if not SOURCE_MD.exists():
@@ -92,9 +117,9 @@ def main() -> int:
             f"Missing deck source: {SOURCE_MD.relative_to(REPO_ROOT)}", file=sys.stderr
         )
         return 1
-    if not TEMPLATE_PPTX.exists():
+    if not args.template.exists():
         print(
-            f"Missing reference template: {TEMPLATE_PPTX.relative_to(REPO_ROOT)}\n"
+            f"Missing reference template: {args.template}\n"
             "See the README's presentation-pipeline section for how it's built.",
             file=sys.stderr,
         )
@@ -102,7 +127,10 @@ def main() -> int:
 
     output_dir = args.output_dir
     output_dir.mkdir(parents=True, exist_ok=True)
-    output_path = output_dir / f"{SOURCE_MD.stem}.pptx"
+    output_stem = SOURCE_MD.stem
+    if args.template != TEMPLATE_PPTX:
+        output_stem += f"-{args.template.stem}"
+    output_path = output_dir / f"{output_stem}.pptx"
 
     print(f"Building {SOURCE_MD.relative_to(REPO_ROOT)} -> {output_path}")
     try:
@@ -110,7 +138,12 @@ def main() -> int:
             str(SOURCE_MD),
             to="pptx",
             outputfile=str(output_path),
-            extra_args=["--reference-doc", str(TEMPLATE_PPTX)],
+            extra_args=[
+                "--reference-doc",
+                str(args.template),
+                "--slide-level",
+                str(SLIDE_LEVEL),
+            ],
         )
     except RuntimeError as exc:
         print(f"pandoc conversion failed: {exc}", file=sys.stderr)
