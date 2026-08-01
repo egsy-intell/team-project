@@ -49,8 +49,7 @@ async def _(checkpoint_1_app):
     mc_clean_df = checkpoint_1_result.defs["mc_clean_df"]
     mc_scored_df = checkpoint_1_result.defs["mc_scored_df"]
     ss_scored_df = checkpoint_1_result.defs["ss_scored_df"]
-    task_callout = checkpoint_1_result.defs["task_callout"]
-    return mc_clean_df, mc_scored_df, ss_scored_df, task_callout
+    return mc_clean_df, mc_scored_df, ss_scored_df
 
 
 @app.cell(hide_code=True)
@@ -1537,23 +1536,111 @@ def _(mo):
 
 
 @app.cell(hide_code=True)
-def _(mo, task_callout):
+def _(mo):
     mo.vstack(
         [
-            mo.md("### Competing model: hierarchical / ensemble (Lead B)"),
-            task_callout(
-                "4.3",
-                category="Step 4 - Modeling Techniques",
-                lead="Emir",
-                depends_on="3.2, 4.4",
-                summary=(
-                    "Second modeling proposal: a hierarchical or ensemble "
-                    "classifier (e.g. random forest / gradient boosting) "
-                    "that can capture non-linear interactions between "
-                    "land-use predictors the baseline's linear form "
-                    "cannot, evaluated against the same metrics and split "
-                    "as Model A for a direct comparison."
-                ),
+            mo.md("### Model B: random forest classifier"),
+            mo.md(
+                """
+                #### Proposed modeling technique
+
+                Model B will use a random forest classifier to predict
+                the same three targets as Model A:
+                `within_reduced_monitoring`, `above_trigger`, and
+                `mcl_exceedance`. A random forest is an ensemble of
+                decision trees, each trained on a bootstrap sample of
+                the training partition and considering a random subset
+                of predictors at every split, so individual trees learn
+                slightly different patterns and the ensemble vote is
+                more robust than any single tree. It uses the same
+                approved landscape and land-use predictors as Model A;
+                PFAS concentrations, toxicity-quotient fields, site
+                identifiers, and study labels are excluded.
+
+                #### Why this technique is appropriate
+
+                A random forest reduces the risk of overfitting relative
+                to a single tree and generally handles datasets with
+                many predictor variables well. We expect the
+                relationship between PFAS risk and landscape context to
+                be non-additive: for example, a short distance to an
+                industrial facility may matter differently in highly
+                urbanized and sparsely populated areas. An ensemble of
+                trees can represent these conditional effects without
+                our having to specify every interaction in advance,
+                which is exactly the kind of nonlinearity Model A's
+                additive log-odds form may miss.
+
+                We will use `class_weight="balanced"` so rare risk
+                tiers influence tree construction in inverse proportion
+                to their training frequency. We prefer this to
+                generating synthetic minority-class observations: with
+                only 236 sites and study-level structure, synthetic
+                records could combine landscape patterns that do not
+                occur in any study. Like Model A, Model B is trained
+                from scratch on the project's own training data — no
+                foundation model, pretrained model, or external service
+                is required.
+
+                #### Training and optimization plan
+
+                Implementation will use scikit-learn's
+                `RandomForestClassifier` with a fixed random seed and
+                all available CPU cores (`n_jobs=-1`). Hyperparameter
+                selection will test a deliberately small grid over the
+                number of trees, maximum tree depth, minimum leaf size,
+                and number of predictors considered per split. Each
+                candidate will be evaluated with grouped
+                cross-validation (`StratifiedGroupKFold`), run only
+                within the hand-rolled training partition selected by
+                the exhaustive search above, using `study_group` as the
+                grouping variable — this keeps every site from a
+                validation study out of that candidate's fitting fold.
+                Selection follows the same two-stage rule as Model A:
+                discard candidates whose cross-validated
+                `mcl_exceedance` recall falls below 0.70, then choose
+                the remaining candidate with the highest macro-F1. If
+                none clears the recall floor, we will report that
+                result rather than weaken the criterion, and retain the
+                candidate with the highest high-risk recall for
+                diagnostic comparison. Only the selected configuration
+                is refit on the full training partition and evaluated
+                once on the held-out studies. Training runs on a
+                standard CPU with no GPU or distributed-computing
+                requirement at this dataset size.
+
+                #### Expected strengths and limitations
+
+                The main strengths are robustness to overfitting, the
+                ability to capture nonlinear and interaction effects
+                without specifying them in advance, and generally
+                strong out-of-the-box accuracy on tabular data. The
+                main limitation is interpretability: a forest does not
+                expose a single coefficient per predictor the way
+                logistic regression does, so we lose the direct
+                odds-ratio explanation Model A offers stakeholders, and
+                analysis will instead rely on feature importances. It
+                is also more expensive to tune, since the hyperparameter
+                grid spans several axes rather than one regularization
+                strength. If Model B does not meaningfully outperform
+                Model A on the held-out studies, that result will show
+                whether the added complexity was worth its
+                interpretability cost.
+
+                #### Overall suitability and evaluation readiness
+
+                In our opinion, Model B is ready for evaluation against
+                the Step 3 thresholds: the feature table, preprocessing
+                pipeline, tuning grid, and success metrics defined
+                above are all in place, so training and scoring it is
+                purely execution work for Step 5. Its main open risk is
+                the one named in "Expected strengths and limitations":
+                if its accuracy gain over Model A does not clear a
+                margin that justifies losing direct coefficient
+                interpretability, the simpler linear baseline may
+                remain the preferred choice regardless of which model
+                scores higher on macro-F1.
+                """
             ),
         ]
     )
