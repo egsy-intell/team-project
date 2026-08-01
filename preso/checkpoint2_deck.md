@@ -209,7 +209,11 @@ Random forest classifier with balanced class weighting, capturing non-linear lan
 
 ## What's Next
 
-**Step 5: train and evaluate both models, then report results.**
+**Step 5, leading into the Final: build, evaluate, and report on both proposals.**
+
+- Train Proposal A and B; report what worked, what didn't, and the formal results
+- Discuss deployment: does this solve the original problem, what pitfalls to watch for, what we learned
+- Fold in peer-review feedback and publish our codebase link
 
 | Deliverable | Owner | Due |
 |---|---|---|
@@ -219,7 +223,7 @@ Random forest classifier with balanced class weighting, capturing non-linear lan
 | Peer review | All | 8/2 |
 
 ::: notes
-[Speaker: Yai] What's next for us is really Step 5: running both models and reporting the real trade-off Somyaranjan just described. On the submission side: the writeup wraps by August 2nd, this deck is due today, we're recording our fifteen-minute walkthrough right after, splitting sections the same way we just split this presentation, and peer review of another team's checkpoint closes out the week. Further out, we've got a short list for later — predictors we haven't tested yet, like distance to the nearest known PFAS site and facility counts, and expanding ∑TQ if EPA finalizes benchmarks for more compounds.
+[Speaker: Yai] What's ahead of us is Step 5, which carries us into the Final submission: actually training and evaluating both proposals, and reporting what worked and what didn't against the formal results. We'll also need to discuss deployment — could this actually solve the problem we opened with, what pitfalls would a real deployment hit, and what we learned along the way. And two things we specifically owe by then: folding in at least one piece of peer-review feedback once we get it, and publishing our codebase with the link in both the report and the presentation. Closer to home: the writeup wraps by August 2nd, this deck is due today, we're recording our fifteen-minute walkthrough right after, splitting sections the same way we just split this presentation, and peer review of another team's checkpoint closes out the week.
 :::
 
 ## References
