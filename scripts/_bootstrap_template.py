@@ -1,6 +1,6 @@
 """One-off script that customized ``preso/template.pptx``.
 
-Not part of the ongoing build (``scripts/build_presentation.py`` only
+Not part of the ongoing build (``scripts/toolkit.py presentation`` only
 needs ``pypandoc`` and reads the committed ``template.pptx`` as-is). Kept
 for reference in case the template ever needs to be regenerated (e.g. a
 logo refresh) — rerun with ``uv run --with python-pptx python3
