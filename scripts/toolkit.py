@@ -11,6 +11,7 @@ subcommand's options.
 
 import argparse
 import os
+import re
 import subprocess
 import sys
 import urllib.parse
@@ -171,7 +172,15 @@ def _add_presentation_parser(subparsers: argparse._SubParsersAction) -> None:
 # marimo's own export produces out of the box.
 # ---------------------------------------------------------------------------
 
-DEFAULT_NOTEBOOK_URL = "https://egsy-intell.github.io/team-project/notebooks/"
+NOTEBOOKS_DIR = REPO_ROOT / "notebooks"
+DEFAULT_NOTEBOOK = NOTEBOOKS_DIR / "index.py"
+
+# Matches a PEP 723 inline script metadata block, e.g.:
+#   # /// script
+#   # requires-python = ">=3.14"
+#   # ///
+# (kept in sync with export_notebooks.py's copy of the same pattern)
+_PEP723_HEADER_RE = re.compile(r"^# /// script\n(?:#.*\n)*?# ///\n\n*", re.MULTILINE)
 
 # marimo's HTML export is a single-page app, not a paginated document, and
 # none of its layout survives Chrome's print pagination unmodified:
@@ -370,7 +379,54 @@ def _is_url(ref: str) -> bool:
     return ref.startswith(("http://", "https://"))
 
 
-def _read_input(input_ref: str) -> str:
+def _strip_pep723_header(source: str) -> str:
+    # marimo's HTML export embeds the notebook's full source verbatim when
+    # code is included (used to reconstruct cells for the editor), so the
+    # PEP 723 dependency header would otherwise leak into the exported
+    # HTML's embedded source. Only matters when --include-code is used;
+    # with the default (no code), marimo omits the source entirely.
+    return _PEP723_HEADER_RE.sub("", source, count=1)
+
+
+def _export_local_notebook(notebook_path: Path, *, include_code: bool) -> str:
+    """Run `marimo export html` on a local notebook .py file, return the HTML."""
+    print(f"Exporting {notebook_path} (include_code={include_code})")
+    source = notebook_path.read_text(encoding="utf-8")
+    # Strip the header in place (rather than exporting from a copy
+    # elsewhere) so relative sibling imports (e.g. checkpoint_1.py) and
+    # data/ lookups keep resolving locally. Always restore afterwards.
+    if include_code:
+        notebook_path.write_text(_strip_pep723_header(source), encoding="utf-8")
+    try:
+        # No -o: marimo prints the HTML to stdout when --output is omitted,
+        # which we capture directly instead of round-tripping through a
+        # temp file. stderr is left to inherit ours, so any warnings the
+        # notebook's own code prints during execution still surface live.
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "marimo",
+                "export",
+                "html",
+                str(notebook_path),
+                "--include-code" if include_code else "--no-include-code",
+            ],
+            stdout=subprocess.PIPE,
+            text=True,
+            check=False,
+        )
+    finally:
+        if include_code:
+            notebook_path.write_text(source, encoding="utf-8")
+    if result.returncode != 0:
+        raise NotebookCleanError(
+            f"marimo export html exited with status {result.returncode} (see output above)"
+        )
+    return result.stdout
+
+
+def _resolve_html(input_ref: str, *, include_code: bool) -> str:
     if _is_url(input_ref):
         print(f"Downloading {input_ref}")
         with urllib.request.urlopen(input_ref) as resp:
@@ -378,12 +434,14 @@ def _read_input(input_ref: str) -> str:
     path = Path(input_ref)
     if not path.exists():
         raise NotebookCleanError(f"no such file: {path}")
+    if path.suffix == ".py":
+        return _export_local_notebook(path, include_code=include_code)
     return path.read_text(encoding="utf-8")
 
 
 def _default_stem(input_ref: str) -> str:
-    # A trailing slash (a directory URL/path, e.g. the published
-    # ".../notebooks/") resolves to that directory's index.html.
+    # A trailing slash (a directory URL/path) resolves to that directory's
+    # index.html.
     if input_ref.endswith("/"):
         return "index"
     name = urllib.parse.urlparse(input_ref).path if _is_url(input_ref) else input_ref
@@ -391,8 +449,16 @@ def _default_stem(input_ref: str) -> str:
 
 
 def cmd_clean_notebook(args: argparse.Namespace) -> int:
+    input_is_local_notebook = not _is_url(args.input) and Path(args.input).suffix == ".py"
+    if args.include_code and not input_is_local_notebook:
+        print(
+            "Warning: --include-code only applies when exporting a local .py "
+            "notebook; ignoring (input is already-exported HTML).",
+            file=sys.stderr,
+        )
+
     try:
-        html = _read_input(args.input)
+        html = _resolve_html(args.input, include_code=args.include_code)
     except (NotebookCleanError, OSError, urllib.error.URLError) as exc:
         print(f"Failed to read {args.input}: {exc}", file=sys.stderr)
         return 1
@@ -416,21 +482,32 @@ def cmd_clean_notebook(args: argparse.Namespace) -> int:
 def _add_clean_notebook_parser(subparsers: argparse._SubParsersAction) -> None:
     parser = subparsers.add_parser(
         "clean-notebook",
-        help="Patch a marimo notebook HTML export so it prints/PDFs cleanly",
+        help="Export (or read) a marimo notebook HTML export and patch it so it prints/PDFs cleanly",
         description=(
-            "Download (or read locally) a marimo notebook HTML export and patch it "
-            "with a print-only CSS/JS fix so PDF/print output doesn't have blank "
-            "pages, tables clipped past the margin, or orphaned headings. The "
-            "notebook's normal on-screen appearance is untouched."
+            "Export a marimo notebook to HTML - by default, locally from "
+            f"{DEFAULT_NOTEBOOK.relative_to(REPO_ROOT)} - and patch it with a "
+            "print-only CSS/JS fix so PDF/print output doesn't have blank pages, "
+            "tables clipped past the margin, or orphaned headings. The notebook's "
+            "normal on-screen appearance is untouched. INPUT can instead be a "
+            "different local notebook .py file, a URL, or an already-exported "
+            ".html file (local or downloaded) to patch as-is."
         ),
     )
     parser.add_argument(
         "input",
         nargs="?",
-        default=DEFAULT_NOTEBOOK_URL,
+        default=str(DEFAULT_NOTEBOOK),
         help=(
-            "URL or local file path to a marimo HTML export "
-            f"(default: the published full report, {DEFAULT_NOTEBOOK_URL})"
+            "Local notebook .py file, local .html file, or URL to a marimo HTML "
+            f"export (default: {DEFAULT_NOTEBOOK.relative_to(REPO_ROOT)})"
+        ),
+    )
+    parser.add_argument(
+        "--include-code",
+        action="store_true",
+        help=(
+            "Include the notebook's source code in the export (default: excluded, "
+            "matching molab). Only applies when INPUT is a local .py notebook."
         ),
     )
     parser.add_argument(

@@ -71,15 +71,22 @@ This writes `preso/dist/checkpoint2_deck.pptx` (gitignored — a build artifact,
 
 ### Print-friendly notebook export
 
-marimo's HTML export (what `scripts/export_notebooks.py` publishes to `gh-pages`, see [CI/CD](#cicd) below) is built as a single-page app, not a paginated document, and none of its layout survives Chrome's print pagination unmodified: the notebook body sits inside a viewport-height, scroll-clipped shell (so printing loses everything past the first screenful — blank pages, content cut off mid-page), `mo.vstack()` layout blocks render as CSS flex containers that Chrome's print engine won't fragment across a page break (a tall one gets shoved whole onto a fresh page, leaving a large blank gap on the page before it), the content column is hard-capped at a fixed desktop width wider than a printed page (wide tables run past the margin instead of wrapping), and headings have no "keep with next" rule (a heading can land alone at the bottom of a page with its content pushed to the next one).
+marimo's HTML export is built as a single-page app, not a paginated document, and none of its layout survives Chrome's print pagination unmodified: the notebook body sits inside a viewport-height, scroll-clipped shell (so printing loses everything past the first screenful — blank pages, content cut off mid-page), `mo.vstack()` layout blocks render as CSS flex containers that Chrome's print engine won't fragment across a page break (a tall one gets shoved whole onto a fresh page, leaving a large blank gap on the page before it), the content column is hard-capped at a fixed desktop width wider than a printed page (wide tables run past the margin instead of wrapping), and headings have no "keep with next" rule (a heading can land alone at the bottom of a page with its content pushed to the next one).
 
-`clean-notebook` downloads (or reads locally) a marimo HTML export and patches in a print-only CSS/JS fix for all of the above, without touching the notebook's normal on-screen appearance:
+`clean-notebook` exports a marimo notebook to HTML and patches in a print-only CSS/JS fix for all of the above, without touching the notebook's normal on-screen appearance:
 
 ```bash
 uv run python scripts/toolkit.py clean-notebook
 ```
 
-With no arguments this fetches the published full report (`https://egsy-intell.github.io/team-project/notebooks/`) and writes `index_clean.html` in the current directory. Pass a different URL or a local `.html` path as the first argument to patch that instead; `--name` and `--output-dir` override the output filename (default: `<input stem>_clean.html`) and directory (default: current directory). Open the result in a browser and print/"Save as PDF" as usual — no extra tooling required at print time, the fix is baked into the file.
+With no arguments this runs `marimo export html` locally against `notebooks/index.py` (the full report) and writes `index_clean.html` in the current directory — a fresh export straight from the notebook source, not the possibly-stale copy on `gh-pages`. Like `molab`, the export excludes the notebook's source code by default (marimo's own `--include-code`/`--no-include-code` flag, which `scripts/export_notebooks.py`'s `gh-pages` publish step doesn't set, so that copy still includes code); pass `--include-code` to embed it instead.
+
+`INPUT` (the first positional argument) can override what gets exported/patched:
+
+- a different local notebook `.py` file — exported the same way as the default
+- a local `.html` file, or a URL (e.g. the published `https://egsy-intell.github.io/team-project/notebooks/`) — patched as-is, no export step; `--include-code` doesn't apply here, since the code was already baked in (or not) when that HTML was built
+
+`--name` and `--output-dir` override the output filename (default: `<input stem>_clean.html`) and directory (default: current directory). Open the result in a browser and print/"Save as PDF" as usual — no extra tooling required at print time, the fix is baked into the file.
 
 # Marimo Quick Reference
 
