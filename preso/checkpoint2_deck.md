@@ -65,7 +65,7 @@ date: Check-In #2 — August 1, 2026
 [Speaker: Raj] Thanks, Yai. We are combining three public USGS datasets.
 Smalling provides the measured PFAS concentrations in tap water, which we use to create our target. Seawolf provides the corresponding land-use predictors, such as nearby industrial activity and potential PFAS sources. We join these two datasets at the sampling-site level to create our primary modeling dataset.
 McMahon contains both PFAS measurements and landscape predictors for groundwater wells. Because its measurements were processed differently, we are keeping it separate and using it later as an independent validation dataset.
-All three datasets are publicly available, CC0-licensed (Creative Commons Zero), anonymized, and contain no personally identifiable information. so there are no privacy concerns on the data side.
+All three datasets are publicly available, CC0-licensed (Creative Commons Zero), anonymized, and contain no personally identifiable information, so there are no privacy concerns on the data side.
 :::
 
 ## Data Quality: It Held Up
