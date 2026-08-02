@@ -815,7 +815,7 @@ def _(
     ]
     _split_comparison_preview = (
         _split_comparison_df[_comparison_columns]
-        .head(20)
+        .head(5)
         .round(
             {"test_fraction": 4, "distribution_gap": 4, "selection_score": 4}
         )
@@ -951,21 +951,29 @@ def _(
                 """
             ),
             mo.md("#### Exhaustive versus sklearn comparison"),
-            mo.ui.table(_method_best_summary),
+            mo.ui.table(
+                _method_best_summary, wrapped_columns=["Held-out studies"]
+            ),
             mo.md(_comparison_result),
             mo.md(
                 """
-                The table below shows the 20 highest-ranked candidates
+                The table below shows the 5 highest-ranked candidates
                 from the combined comparison.
                 """
             ),
-            mo.ui.table(_split_comparison_preview),
+            mo.ui.table(
+                _split_comparison_preview,
+                wrapped_columns=["Held-out studies"],
+            ),
             mo.md("#### Selected partition"),
-            mo.ui.table(_partition_summary),
+            mo.ui.table(_partition_summary, wrapped_columns=["Studies"]),
             mo.md("#### Risk-tier counts by partition"),
             mo.ui.table(_partition_class_summary),
             mo.md("#### Leakage validation"),
-            mo.ui.table(_leakage_summary),
+            mo.ui.table(
+                _leakage_summary,
+                wrapped_columns=["Validation check", "Assessment"],
+            ),
             mo.md(
                 r"""
                 #### Model optimization inside the training partition
@@ -1334,7 +1342,10 @@ def _(mo, preprocess_tapwater_features, tapwater_test_df, tapwater_train_df):
         [
             mo.md(
                 "#### Feature-preprocessing audit: features transformed "
-                "via $\\log_{1p}$ (tap-water set)"
+                "via $\\log_{1p}$ (tap-water set)\n\n"
+                f"{len(_tapwater_model_matrices['skew_audit'])} training "
+                "features exceeded the skew threshold; the 10 most "
+                "skewed are shown below."
             ),
             mo.ui.table(_tapwater_model_matrices["skew_audit"].head(10)),
             mo.md(
