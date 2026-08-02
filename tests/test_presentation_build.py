@@ -8,19 +8,19 @@ import pytest
 pytest.importorskip("pypandoc")
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent
-BUILD_SCRIPT = REPO_ROOT / "scripts" / "build_presentation.py"
+TOOLKIT_SCRIPT = REPO_ROOT / "scripts" / "toolkit.py"
 
 
 def test_build_presentation(tmp_path):
     output_dir = tmp_path / "dist"
     result = subprocess.run(
-        [sys.executable, str(BUILD_SCRIPT), "--output-dir", str(output_dir)],
+        [sys.executable, str(TOOLKIT_SCRIPT), "presentation", "--output-dir", str(output_dir)],
         capture_output=True,
         text=True,
         check=False,
     )
     assert result.returncode == 0, (
-        f"build_presentation.py failed:\nstdout:\n{result.stdout}\nstderr:\n{result.stderr}"
+        f"toolkit.py presentation failed:\nstdout:\n{result.stdout}\nstderr:\n{result.stderr}"
     )
 
     output_path = output_dir / "checkpoint2_deck.pptx"

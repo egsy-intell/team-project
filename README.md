@@ -47,7 +47,11 @@ uvx marimo run --sandbox https://egsy-intell.github.io/team-project/notebooks/ch
 
 Install the [marimo extension](https://marketplace.visualstudio.com/items?itemName=marimo-team.vscode-marimo) for syntax support and running notebooks directly from the editor. It's already listed under recommended extensions for this workspace — VS Code should prompt you to install it when you open the project.
 
-## 6. (Optional) Build the checkpoint slide deck
+## 6. (Optional) Project utility CLI
+
+`scripts/toolkit.py` bundles the project's build/export helpers behind one CLI, as subcommands — run `uv run python scripts/toolkit.py --help` to list them, or `... <subcommand> --help` for a subcommand's own options.
+
+### Build the checkpoint slide deck
 
 Presentation source lives under `preso/`: `checkpoint2_deck.md` is the deck content (pandoc slide-show markdown — `#`/`##` headings are slide breaks, `::: notes ... :::` blocks are per-slide speaker notes), and `template.pptx` is a reference-doc template (fonts, layouts, and the team logo — pandoc can only style master layouts from an existing `.pptx`, so this file is a styled copy of pandoc's stock reference doc, committed as-is; see `scripts/_bootstrap_template.py` if it ever needs regenerating).
 
@@ -60,10 +64,22 @@ uv sync --group preso
 Then regenerate the `.pptx` from the latest markdown source:
 
 ```bash
-uv run python scripts/build_presentation.py
+uv run python scripts/toolkit.py presentation
 ```
 
 This writes `preso/dist/checkpoint2_deck.pptx` (gitignored — a build artifact, not committed) using `pypandoc`/`pypandoc_binary`, so no system `pandoc` install is required. Pass `--output-dir` to change where it's written, or `--open` to open it automatically in PowerPoint afterward (best-effort; macOS/Windows only, no-ops elsewhere). Upload the generated file to OneDrive manually — there's no automated publish step for slides, unlike the notebook HTML exports below.
+
+### Print-friendly notebook export
+
+marimo's HTML export (what `scripts/export_notebooks.py` publishes to `gh-pages`, see [CI/CD](#cicd) below) is built as a single-page app, not a paginated document, and none of its layout survives Chrome's print pagination unmodified: the notebook body sits inside a viewport-height, scroll-clipped shell (so printing loses everything past the first screenful — blank pages, content cut off mid-page), `mo.vstack()` layout blocks render as CSS flex containers that Chrome's print engine won't fragment across a page break (a tall one gets shoved whole onto a fresh page, leaving a large blank gap on the page before it), the content column is hard-capped at a fixed desktop width wider than a printed page (wide tables run past the margin instead of wrapping), and headings have no "keep with next" rule (a heading can land alone at the bottom of a page with its content pushed to the next one).
+
+`clean-notebook` downloads (or reads locally) a marimo HTML export and patches in a print-only CSS/JS fix for all of the above, without touching the notebook's normal on-screen appearance:
+
+```bash
+uv run python scripts/toolkit.py clean-notebook
+```
+
+With no arguments this fetches the published full report (`https://egsy-intell.github.io/team-project/notebooks/`) and writes `index_clean.html` in the current directory. Pass a different URL or a local `.html` path as the first argument to patch that instead; `--name` and `--output-dir` override the output filename (default: `<input stem>_clean.html`) and directory (default: current directory). Open the result in a browser and print/"Save as PDF" as usual — no extra tooling required at print time, the fix is baked into the file.
 
 # Marimo Quick Reference
 
