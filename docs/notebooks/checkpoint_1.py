@@ -461,7 +461,6 @@ def _(
     mc_merged_df,
     mo,
     pd,
-    print_sections,
     ss_merged_df,
     ss_unmatched_count,
 ):
@@ -502,51 +501,7 @@ def _(
         ]
     )
 
-    _integration_identifier_samples = pd.DataFrame(
-        {
-            "Smalling Site Code sample": (
-                ss_merged_df["Site Code"]
-                .dropna()
-                .astype(str)
-                .head(5)
-                .reset_index(drop=True)
-            ),
-            "Seawolf SiteCode sample": (
-                ss_merged_df["SiteCode"]
-                .dropna()
-                .astype(str)
-                .head(5)
-                .reset_index(drop=True)
-            ),
-            "McMahon environmental ID sample": (
-                mc_merged_df["NAWQA_ID_mc_env"]
-                .dropna()
-                .astype(str)
-                .head(5)
-                .reset_index(drop=True)
-            ),
-            "McMahon geospatial ID sample": (
-                mc_merged_df["NAWQA_ID_mc_geo"]
-                .dropna()
-                .astype(str)
-                .head(5)
-                .reset_index(drop=True)
-            ),
-        }
-    )
-
-    mo.vstack(
-        [
-            mo.ui.table(_integration_feasibility_summary),
-            print_sections(
-                {
-                    "Sample identifiers for consistency review": mo.ui.table(
-                        _integration_identifier_samples
-                    ),
-                }
-            ),
-        ]
-    )
+    mo.ui.table(_integration_feasibility_summary, wrapped_columns=["Datasets"])
     return
 
 
@@ -1047,7 +1002,7 @@ def _(mo):
 
 
 @app.cell(hide_code=True)
-def _(mo, pd, pfas_cols, print_sections, ss_clean_df):
+def _(mo, pd, pfas_cols, ss_clean_df):
     _smalling_assessment_numeric_pfas = ss_clean_df[pfas_cols]
     _smalling_assessment_published_count = ss_clean_df["Count Detected PFAS"]
     _smalling_assessment_published_total = ss_clean_df["∑PFAS"]
@@ -1057,25 +1012,6 @@ def _(mo, pd, pfas_cols, print_sections, ss_clean_df):
     _smalling_assessment_calculated_total = (
         _smalling_assessment_numeric_pfas.fillna(0).sum(axis=1)
     )
-
-    _smalling_assessment_columns = (
-        ["Site Code", "State", "Site Type"]
-        + pfas_cols
-        + ["Count Detected PFAS", "∑PFAS", "∑EAR"]
-    )
-    _smalling_missing_summary = (
-        ss_clean_df[_smalling_assessment_columns]
-        .isna()
-        .sum()
-        .sort_values(ascending=False)
-        .head(10)
-        .rename("Missing values")
-        .rename_axis("Column")
-        .reset_index()
-    )
-    _smalling_missing_summary["Missing (%)"] = (
-        100 * _smalling_missing_summary["Missing values"] / len(ss_clean_df)
-    ).round(1)
 
     _smalling_quality_checks = pd.DataFrame(
         [
@@ -1162,13 +1098,9 @@ def _(mo, pd, pfas_cols, print_sections, ss_clean_df):
 
     mo.vstack(
         [
-            mo.ui.table(_smalling_quality_checks),
-            print_sections(
-                {
-                    "Columns with the most missing values": mo.ui.table(
-                        _smalling_missing_summary
-                    ),
-                }
+            mo.ui.table(
+                _smalling_quality_checks,
+                wrapped_columns=["Quality check", "Assessment"],
             ),
             mo.md("""
         **Suitability assessment:** The Smalling portion of `ss_clean_df` is
@@ -1194,7 +1126,7 @@ def _(mo):
 
 
 @app.cell(hide_code=True)
-def _(mo, pd, print_sections, ss_clean_df):
+def _(mo, pd, ss_clean_df):
     _seawolf_quality_landcover_columns = [
         "OpenWater",
         "PerennialIceSnow",
@@ -1269,23 +1201,9 @@ def _(mo, pd, print_sections, ss_clean_df):
         ]
     )
 
-    _seawolf_study_summary = (
-        ss_clean_df["Study_seawolf"]
-        .value_counts()
-        .rename_axis("Study")
-        .reset_index(name="Sites")
-    )
-
     mo.vstack(
         [
             mo.ui.table(_seawolf_exploration_summary),
-            print_sections(
-                {
-                    "Sites by contributing study": mo.ui.table(
-                        _seawolf_study_summary
-                    ),
-                }
-            ),
             mo.md(f"""
         The Seawolf portion of `ss_clean_df` contains landscape characteristics
         joined onto **{len(ss_clean_df)} Smalling sites**. It includes
@@ -1309,7 +1227,7 @@ def _(mo):
 
 
 @app.cell(hide_code=True)
-def _(mo, pd, print_sections, ss_clean_df):
+def _(mo, pd, ss_clean_df):
     _seawolf_assessment_landcover_columns = [
         "OpenWater",
         "PerennialIceSnow",
@@ -1349,26 +1267,6 @@ def _(mo, pd, print_sections, ss_clean_df):
         .sum()
         .sum()
     )
-
-    _seawolf_assessment_columns = [
-        "SiteCode",
-        "Study_seawolf",
-        "number_pfas_sites_proximal",
-        "mean_dist_to_pfas_site",
-    ] + _seawolf_assessment_fraction_columns
-    _seawolf_missing_summary = (
-        ss_clean_df[_seawolf_assessment_columns]
-        .isna()
-        .sum()
-        .sort_values(ascending=False)
-        .head(10)
-        .rename("Missing values")
-        .rename_axis("Column")
-        .reset_index()
-    )
-    _seawolf_missing_summary["Missing (%)"] = (
-        100 * _seawolf_missing_summary["Missing values"] / len(ss_clean_df)
-    ).round(1)
 
     _seawolf_quality_checks = pd.DataFrame(
         [
@@ -1436,13 +1334,9 @@ def _(mo, pd, print_sections, ss_clean_df):
 
     mo.vstack(
         [
-            mo.ui.table(_seawolf_quality_checks),
-            print_sections(
-                {
-                    "Columns with the most missing values": mo.ui.table(
-                        _seawolf_missing_summary
-                    ),
-                }
+            mo.ui.table(
+                _seawolf_quality_checks,
+                wrapped_columns=["Quality check", "Assessment"],
             ),
             mo.md("""
         **Suitability assessment:** The Seawolf portion of `ss_clean_df` is
@@ -1474,7 +1368,7 @@ def _(mo):
 
 
 @app.cell(hide_code=True)
-def _(mc_clean_df, mo, pd, print_sections):
+def _(mc_clean_df, mo, pd):
     _mcmahon_quality_clean_columns = [
         column
         for column in mc_clean_df.columns
@@ -1535,23 +1429,9 @@ def _(mc_clean_df, mo, pd, print_sections):
         ]
     )
 
-    _mcmahon_land_use_summary = (
-        mc_clean_df[["AGRI_12", "NATU_12", "URBA_12"]]
-        .describe()
-        .T.reset_index(names="Land-use variable")
-        .round(4)
-    )
-
     mo.vstack(
         [
             mo.ui.table(_mcmahon_exploration_summary),
-            print_sections(
-                {
-                    "Land-use variable summary": mo.ui.table(
-                        _mcmahon_land_use_summary
-                    ),
-                }
-            ),
             mo.md(f"""
         The McMahon analytical table contains groundwater PFAS measurements and
         landscape predictors for **{len(mc_clean_df)} sites**. Concentration
@@ -1573,7 +1453,7 @@ def _(mo):
 
 
 @app.cell(hide_code=True)
-def _(mc_clean_df, mo, pd, print_sections):
+def _(mc_clean_df, mo, pd):
     _mcmahon_assessment_clean_columns = [
         column
         for column in mc_clean_df.columns
@@ -1697,28 +1577,11 @@ def _(mc_clean_df, mo, pd, print_sections):
         ]
     )
 
-    _mcmahon_missing_summary = (
-        mc_clean_df.isna()
-        .sum()
-        .sort_values(ascending=False)
-        .head(10)
-        .rename("Missing values")
-        .reset_index()
-        .rename(columns={"index": "Column"})
-    )
-    _mcmahon_missing_summary["Missing (%)"] = (
-        100 * _mcmahon_missing_summary["Missing values"] / len(mc_clean_df)
-    ).round(1)
-
     mo.vstack(
         [
-            mo.ui.table(_mcmahon_quality_checks),
-            print_sections(
-                {
-                    "Columns with the most missing values": mo.ui.table(
-                        _mcmahon_missing_summary
-                    ),
-                }
+            mo.ui.table(
+                _mcmahon_quality_checks,
+                wrapped_columns=["Quality check", "Assessment"],
             ),
             mo.md("""
         **Suitability assessment:** The McMahon environmental and geospatial
@@ -1865,22 +1728,26 @@ def _(mc_clean_df, mo, pd, print_sections, ss_clean_df):
                 }
             )
 
-            category_table = (
-                category_counts.rename("Count")
-                .rename_axis("Category")
-                .reset_index()
-            )
-            category_table["Percent of non-missing"] = (
-                (
-                    100 * category_table["Count"] / len(non_missing_series)
-                ).round(1)
-                if len(non_missing_series)
-                else 0.0
-            )
+            # Only render a full value-count breakdown for columns flagged
+            # for review; "Pass" columns are already fully described by
+            # the profile row above and don't need a per-category table.
+            if quality_assessment != "Pass":
+                category_table = (
+                    category_counts.rename("Count")
+                    .rename_axis("Category")
+                    .reset_index()
+                )
+                category_table["Percent of non-missing"] = (
+                    (
+                        100 * category_table["Count"] / len(non_missing_series)
+                    ).round(1)
+                    if len(non_missing_series)
+                    else 0.0
+                )
 
-            value_count_tables[f"{dataset_name}: {column_name}"] = mo.ui.table(
-                category_table.head(25)
-            )
+                value_count_tables[f"{dataset_name}: {column_name}"] = (
+                    mo.ui.table(category_table.head(25))
+                )
 
         profile_columns = [
             "Dataset",
@@ -1986,17 +1853,46 @@ def _(mc_clean_df, mo, pd, print_sections, ss_clean_df):
     _categorical_overall_summary = pd.DataFrame(_categorical_overall_rows)
 
     def _categorical_panel(profile_df, category_tables, dataset_note):
-        # profile_df has 14 columns; two of them ("Recommended treatment",
+        # profile_df has 14 columns. Two of them ("Recommended treatment",
         # "Quality assessment") hold long free-text notes that read poorly
         # next to short numeric/label columns in one wide table, so split
-        # the free-text columns into their own narrower table instead.
+        # the free-text columns into their own narrower table instead. The
+        # remaining count/percent pairs (Missing, Dominant) are also
+        # combined into one display column each, to keep the measures
+        # table under the report's table-width limit.
         text_columns = ["Recommended treatment", "Quality assessment"]
-        measure_columns = [
-            col for col in profile_df.columns if col not in text_columns
-        ]
+        _measures_df = pd.DataFrame(
+            {
+                "Dataset": profile_df["Dataset"],
+                "Variable": profile_df["Variable"],
+                "Rows": profile_df["Rows"],
+                "Non-missing": profile_df["Non-missing"],
+                "Missing (n / %)": (
+                    profile_df["Missing"].astype(str)
+                    + " / "
+                    + profile_df["Missing (%)"].astype(str)
+                    + "%"
+                ),
+                "Distinct categories": profile_df["Distinct categories"],
+                "Dominant category": profile_df["Dominant category"],
+                "Dominant (n / %)": (
+                    profile_df["Dominant count"].astype(str)
+                    + " / "
+                    + profile_df["Dominant (%)"].astype(str)
+                    + "%"
+                ),
+                "Rare categories (<5 rows)": (
+                    profile_df["Rare categories (<5 rows)"]
+                ),
+                "Label-variant groups": profile_df["Label-variant groups"],
+            }
+        )
         panel_items = [
-            mo.ui.table(profile_df[measure_columns]),
-            mo.ui.table(profile_df[["Dataset", "Variable", *text_columns]]),
+            mo.ui.table(_measures_df),
+            mo.ui.table(
+                profile_df[["Dataset", "Variable", *text_columns]],
+                wrapped_columns=text_columns,
+            ),
         ]
         if category_tables:
             panel_items.append(print_sections(category_tables))
