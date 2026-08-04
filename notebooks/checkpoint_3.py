@@ -66,12 +66,12 @@ async def _(checkpoint_2_app):
 @app.cell(hide_code=True)
 def _(mo, tapwater_test_df, tapwater_train_df):
     mo.md(f"""
-    # Step 5: Model Execution, Evaluation & Deployment (Checkpoint 3)
+    # Step 5: Model Execution, Evaluation & Deployment
 
-    This notebook is Check-In #3's deliverable: training and tuning the
-    two models proposed in Step 4, evaluating them against the Step 3
-    plan, and discussing deployment feasibility. It carries forward
-    Checkpoint 2's study-grouped training/test partition —
+    This notebook is the final report's deliverable: training and
+    tuning the two models proposed in Step 4, evaluating them against
+    the Step 3 plan, and discussing deployment feasibility. It carries
+    forward the Step 3-4 report's study-grouped training/test partition —
     `tapwater_train_df` ({tapwater_train_df.shape[0]} rows) and
     `tapwater_test_df` ({tapwater_test_df.shape[0]} rows) — and its
     per-class metrics, risk-tier thresholds, and preprocessing pipeline.
@@ -80,9 +80,10 @@ def _(mo, tapwater_test_df, tapwater_train_df):
     only, per `planning/checkpoint-3/checkpoint3_task_plan.csv`. Pending
     sections carry a callout naming their task ID, lead, and
     dependencies from that plan; use the task ID to cross-reference the
-    task board. Tasks tracking project logistics rather than report
-    content (repo hygiene, the writeup/deck/video, submission, and
-    individual peer review) aren't reflected here.
+    task board. Tasks tracking project logistics the spec doesn't ask
+    the report itself to cover (the writeup/deck/video, submission, and
+    individual peer review) aren't reflected here — only the public
+    codebase link the spec does require the report to mention.
     """)
     return
 
@@ -119,7 +120,7 @@ def _(mo):
     ## Check-In #2 feedback integration
 
     Per the spec, the final submission must integrate at least one item
-    from the peer feedback the team received on Checkpoint 2.
+    from the peer feedback the team received on Check-In #2.
     """)
     return
 
@@ -134,7 +135,7 @@ def _(mo, task_callout):
                 category="Feedback integration",
                 lead="Yai, Somyaranjan",
                 summary=(
-                    "Review the peer feedback received on Checkpoint 2 "
+                    "Review the peer feedback received on Check-In #2 "
                     "and select at least one item the team will "
                     "integrate into the final submission."
                 ),
@@ -146,9 +147,9 @@ def _(mo, task_callout):
                     ),
                     (
                         "Does any item conflict with a decision the team "
-                        "already made in Checkpoint 2 (e.g. the groundwater "
-                        "hold-out, the risk-tier thresholds), and if so, "
-                        "which one wins?"
+                        "already made in the Step 3-4 report (e.g. the "
+                        "groundwater hold-out, the risk-tier thresholds), "
+                        "and if so, which one wins?"
                     ),
                     (
                         "Is the selected item a modeling change, an "
@@ -219,8 +220,8 @@ def _(mo, task_callout):
                 depends_on="T1",
                 summary=(
                     "Implement and train the interpretable baseline "
-                    "classifier (Model A) proposed in Step 4, using "
-                    "Checkpoint 2's study-grouped training partition "
+                    "classifier (Model A) proposed in Step 4, using the "
+                    "Step 3-4 report's study-grouped training partition "
                     "and tuning grid."
                 ),
                 guiding_questions=[
@@ -432,6 +433,47 @@ def _(mo, task_callout):
                         "(interpretability vs. accuracy, or the McMahon "
                         "generalization gap) change the deployment "
                         "recommendation itself?"
+                    ),
+                ],
+            ),
+        ]
+    )
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo, task_callout):
+    mo.vstack(
+        [
+            mo.md("## Public codebase"),
+            mo.md("""
+    Per the spec, the report and presentation must both link the
+    public codebase. This project's codebase is public at
+    <https://github.com/egsy-intell/team-project>, the same repository
+    this report itself is published from.
+    """),
+            task_callout(
+                "T11",
+                category="Step 5 - Submission",
+                lead="Yai, Raj",
+                depends_on="T4, T5, T6",
+                summary=(
+                    "Push Step 5 code to the public repo and confirm "
+                    "it's publicly accessible for the writeup/deck link, "
+                    "once the feedback change and both models have "
+                    "landed."
+                ),
+                guiding_questions=[
+                    (
+                        "Right before submission, does a signed-out "
+                        "browser (not just a logged-in team member) "
+                        "actually load the repo without a permission "
+                        "prompt?"
+                    ),
+                    (
+                        "Does the linked repo state match what the "
+                        "writeup describes, or is there unmerged work "
+                        "the writeup depends on?"
                     ),
                 ],
             ),
