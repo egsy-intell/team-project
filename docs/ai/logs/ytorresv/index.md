@@ -30,8 +30,9 @@ teammates' disclosures live in their own sibling directory under
 21. [Rewriting the Check-In #2 deck](21-rewriting-the-check-in-2-deck.md)
 22. [One more line-length fix](22-one-more-line-length-fix.md)
 23. [Timing the narration](23-timing-the-narration.md)
+24. [Checkpoint 3 header skeleton, then aligning it with the spec](24-checkpoint-3-header-skeleton.md)
 
-Sourced from local Claude Code session logs (14 in this checkout, 9 run
+Sourced from local Claude Code session logs (15 in this checkout, 9 run
 inside git worktrees under `claude/*` branches). Text-only: prompts and
 responses, no tool-call/tool-result mechanics. `_manifest.json` in this
 directory has the same data in machine-readable form, for regenerating
