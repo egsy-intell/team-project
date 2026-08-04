@@ -24,6 +24,7 @@ def _():
     try:
         from checkpoint_1 import app as checkpoint_1_app
         from checkpoint_2 import app as checkpoint_2_app
+        from checkpoint_3 import app as checkpoint_3_app
         from footer import app as footer_app
     except ModuleNotFoundError:
         import sys as _sys
@@ -32,7 +33,12 @@ def _():
 
         _RAW_BASE = "https://raw.githubusercontent.com/egsy-intell/team-project/main/notebooks"
         _tmp_dir = _tempfile.mkdtemp(prefix="egsy-pfas-")
-        for _name in ("checkpoint_1.py", "checkpoint_2.py", "footer.py"):
+        for _name in (
+            "checkpoint_1.py",
+            "checkpoint_2.py",
+            "checkpoint_3.py",
+            "footer.py",
+        ):
             _urllib_request.urlretrieve(
                 f"{_RAW_BASE}/{_name}", f"{_tmp_dir}/{_name}"
             )
@@ -40,8 +46,15 @@ def _():
 
         from checkpoint_1 import app as checkpoint_1_app
         from checkpoint_2 import app as checkpoint_2_app
+        from checkpoint_3 import app as checkpoint_3_app
         from footer import app as footer_app
-    return checkpoint_1_app, checkpoint_2_app, footer_app, mo
+    return (
+        checkpoint_1_app,
+        checkpoint_2_app,
+        checkpoint_3_app,
+        footer_app,
+        mo,
+    )
 
 
 @app.cell(hide_code=True)
@@ -138,6 +151,29 @@ async def _(checkpoint_2_app):
 @app.cell(hide_code=True)
 def _(checkpoint_2_result, mo):
     mo.vstack([checkpoint_2_result.output])
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    With an evaluation plan and two proposed modeling techniques in
+    place, the report turns finally to Step 5: training and tuning
+    both models, evaluating them against that plan, and discussing
+    deployment feasibility.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+async def _(checkpoint_3_app):
+    checkpoint_3_result = await checkpoint_3_app.embed()
+    return (checkpoint_3_result,)
+
+
+@app.cell(hide_code=True)
+def _(checkpoint_3_result, mo):
+    mo.vstack([checkpoint_3_result.output])
     return
 
 
