@@ -9,6 +9,7 @@
   - [6. (Optional) Project utility CLI](#6-optional-project-utility-cli)
     - [Build the checkpoint slide deck](#build-the-checkpoint-slide-deck)
     - [Print-friendly notebook export](#print-friendly-notebook-export)
+    - [AI-use disclosure page](#ai-use-disclosure-page)
 - [Marimo Quick Reference](#marimo-quick-reference)
 - [AI Use Disclosure](#ai-use-disclosure)
   - [Project planning and exploration](#project-planning-and-exploration)
@@ -104,6 +105,24 @@ With no arguments this runs `marimo export html` locally against `notebooks/inde
 - a local `.html` file, or a URL (e.g. the published `https://egsy-intell.github.io/team-project/notebooks/`) — patched as-is, no export step; `--include-code` doesn't apply here, since the code was already baked in (or not) when that HTML was built
 
 `--name` and `--output-dir` override the output filename (default: `<input stem>_clean.html`) and directory (default: current directory). Open the result in a browser and print/"Save as PDF" as usual — no extra tooling required at print time, the fix is baked into the file.
+
+### AI-use disclosure page
+
+Each teammate's individual AI Tool Use Policy disclosure
+(`docs/ai/<person>.html` and `docs/ai/logs/<person>/`) is generated from
+a small JSON manifest, not hand-written:
+
+```bash
+uv run python scripts/toolkit.py ai-disclosure <person>
+```
+
+`<person>` is a directory name under `docs/ai/logs/` holding that
+person's `_manifest.json` and transcript files. Pass `--skip-git` to
+skip automatic commit attribution (by git author + timestamp window,
+not by any commit trailer) and use only what's already listed in the
+manifest. See [`docs/ai/skill/README.md`](docs/ai/skill/README.md) for
+the full runbook — written so any AI coding agent can produce the
+manifest, not just Claude Code.
 
 # Marimo Quick Reference
 
