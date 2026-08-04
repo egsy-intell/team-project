@@ -1,0 +1,485 @@
+[
+  {
+    "order": 1,
+    "sid": "19926818",
+    "slug": "getting-marimo-running",
+    "fname": "01-getting-marimo-running.md",
+    "title": "Getting marimo running",
+    "branch": "main",
+    "span": "Jul 11, 16:45\u201316:52 UTC",
+    "n_user": 6,
+    "n_asst": 7,
+    "commits": [
+      [
+        "9bbe512",
+        "Add marimo setup and usage instructions"
+      ]
+    ]
+  },
+  {
+    "order": 2,
+    "sid": "098f34d1",
+    "slug": "reusing-the-merged-frame-in-qa-cells",
+    "fname": "02-reusing-the-merged-frame-in-qa-cells.md",
+    "title": "Reusing the merged frame in QA cells",
+    "branch": "GRS_Data_Explore",
+    "span": "Jul 19, 01:49\u201301:53 UTC",
+    "n_user": 1,
+    "n_asst": 6,
+    "commits": [
+      [
+        "b38b12d",
+        "Reuse ss_merged_df in Smalling/Seawolf quality assessment cells"
+      ],
+      [
+        "f95f2e0",
+        "Dedupe join-ability check into Unmatched rows section"
+      ]
+    ]
+  },
+  {
+    "order": 3,
+    "sid": "cbf443b1",
+    "slug": "scoping-codespell-off-cache-artifacts",
+    "fname": "03-scoping-codespell-off-cache-artifacts.md",
+    "title": "Scoping codespell off cache artifacts",
+    "branch": "claude/codespell-notebook-scope-afe0b9 (worktree)",
+    "span": "Jul 19, 18:03\u201318:05 UTC",
+    "n_user": 2,
+    "n_asst": 6,
+    "commits": [
+      [
+        "a2b6219",
+        "Scope codespell to notebook files, not marimo cache artifacts"
+      ]
+    ]
+  },
+  {
+    "order": 4,
+    "sid": "be623868",
+    "slug": "sum-tq-groundwork-and-an-outlier-pass",
+    "fname": "04-sum-tq-groundwork-and-an-outlier-pass.md",
+    "title": "\u2211TQ groundwork and an outlier pass",
+    "branch": "Outliers",
+    "span": "Jul 19, 20:10\u201322:20 UTC",
+    "n_user": 19,
+    "n_asst": 45,
+    "commits": [
+      [
+        "bb64f5c",
+        "Add Step 2.3: Preparing for modeling section"
+      ],
+      [
+        "1eb3d8d",
+        "Move Proposed classification to EPA-aligned TQ tiers"
+      ],
+      [
+        "2b3970b",
+        "Wire up TQ benchmark data and copyedit checkpoint notebook"
+      ]
+    ]
+  },
+  {
+    "order": 5,
+    "sid": "51012342",
+    "slug": "making-notebooks-run-via-uvx-from-gh-pages",
+    "fname": "05-making-notebooks-run-via-uvx-from-gh-pages.md",
+    "title": "Making notebooks run via uvx from gh-pages",
+    "branch": "claude/notebook-uvx-gh-pages-17b43a (worktree)",
+    "span": "Jul 19\u201320, 22:57\u201302:25 UTC",
+    "n_user": 8,
+    "n_asst": 63,
+    "commits": [
+      [
+        "f8bd312",
+        "Make notebooks runnable via uvx from gh-pages, no clone required"
+      ],
+      [
+        "050140e",
+        "Extend standalone data fallback to the new TQ benchmarks file"
+      ],
+      [
+        "e1c931a",
+        "Hide boilerplate/plumbing cells in checkpoint_1 notebook"
+      ]
+    ]
+  },
+  {
+    "order": 6,
+    "sid": "778627c5",
+    "slug": "one-pdf-bug-too-many",
+    "fname": "06-one-pdf-bug-too-many.md",
+    "title": "One PDF bug too many",
+    "branch": "claude/pdf-blank-pages-tooltips-3b77f6 (worktree)",
+    "span": "Jul 25, 12:44\u201313:39 UTC",
+    "n_user": 9,
+    "n_asst": 94,
+    "commits": [
+      [
+        "635c76f",
+        "Drop PDF export, simplify viz to a shared DRY 3x3 grid helper"
+      ],
+      [
+        "bcdcf4c",
+        "Fix stale PDF reference in notebooks/ruff.toml comment"
+      ]
+    ]
+  },
+  {
+    "order": 7,
+    "sid": "64cf1631",
+    "slug": "re-architecting-for-checkpoint-2",
+    "fname": "07-re-architecting-for-checkpoint-2.md",
+    "title": "Re-architecting for Checkpoint 2",
+    "branch": "claude/pipeline-checkpoint-2-integration-3336f3 (worktree)",
+    "span": "Jul 25, 18:01\u201318:18 UTC",
+    "n_user": 3,
+    "n_asst": 22,
+    "commits": [
+      [
+        "29033c6",
+        "Add checkpoint_2.py and composed index.py notebooks"
+      ],
+      [
+        "7919ebd",
+        "Fix ruff/marimo autofix conflict in checkpoint_2.py"
+      ]
+    ]
+  },
+  {
+    "order": 8,
+    "sid": "b6fac9a3",
+    "slug": "designing-checkpoint-2-header-hierarchy",
+    "fname": "08-designing-checkpoint-2-header-hierarchy.md",
+    "title": "Designing Checkpoint 2's header hierarchy",
+    "branch": "claude/checkpoint-2-headers-5e074a (worktree)",
+    "span": "Jul 25, 18:26\u201318:57 UTC",
+    "n_user": 4,
+    "n_asst": 23,
+    "commits": [
+      [
+        "bb3e789",
+        "Build Checkpoint 2 header skeleton, formalize PW as a task"
+      ]
+    ]
+  },
+  {
+    "order": 9,
+    "sid": "fe701394",
+    "slug": "scoring-sum-tq-step-by-step",
+    "fname": "09-scoring-sum-tq-step-by-step.md",
+    "title": "Scoring \u2211TQ, step by step",
+    "branch": "pw-toxicity-quotients",
+    "span": "Jul 25, 19:19\u201321:44 UTC",
+    "n_user": 39,
+    "n_asst": 130,
+    "commits": [
+      [
+        "97d5aff",
+        "Score \u2211TQ toxicity quotients for Smalling and McMahon (Task PW)"
+      ],
+      [
+        "ee7b593",
+        "Display \u2211TQ summary tables to fix autofix-lint/ruff conflict"
+      ],
+      [
+        "5f9ff44",
+        "Restore return tuples the autofix-lint workflow's earlier run stripped"
+      ]
+    ]
+  },
+  {
+    "order": 10,
+    "sid": "56a54640",
+    "slug": "closing-out-the-split-strategy-task",
+    "fname": "10-closing-out-the-split-strategy-task.md",
+    "title": "Closing out the split-strategy task",
+    "branch": "Return-Task-callout-in-Checkpoint-1",
+    "span": "Jul 26\u201327, 22:10\u201309:48 UTC",
+    "n_user": 23,
+    "n_asst": 38,
+    "commits": [
+      [
+        "066ae73",
+        "Mark Task 3.3 complete: drop callout, mark CSV done"
+      ],
+      [
+        "dbeb67d",
+        "Remove unreachable empty-partition guard in split search"
+      ]
+    ]
+  },
+  {
+    "order": 11,
+    "sid": "0fab95e5",
+    "slug": "task-3-3-cleanup-round-two",
+    "fname": "11-task-3-3-cleanup-round-two.md",
+    "title": "Task 3.3 cleanup, round two",
+    "branch": "Return-Task-callout-in-Checkpoint-1",
+    "span": "Jul 28, 08:49\u201308:54 UTC",
+    "n_user": 2,
+    "n_asst": 4,
+    "commits": [
+      [
+        "8929f1d",
+        "Strip completed task 3.3's callout, simplify comparison branching"
+      ]
+    ]
+  },
+  {
+    "order": 12,
+    "sid": "88834174",
+    "slug": "lint-triage-on-eval-plan-3-1",
+    "fname": "12-lint-triage-on-eval-plan-3-1.md",
+    "title": "Lint triage on eval_plan_3_1",
+    "branch": "eval_plan_3_1",
+    "span": "Jul 28, 13:26\u201313:49 UTC",
+    "n_user": 5,
+    "n_asst": 31,
+    "commits": [
+      [
+        "343858f",
+        "fix: wrap long markdown lines and drop unused int() cast in checkpoint_2"
+      ],
+      [
+        "05afe69",
+        "fix: dedupe Task 3.1 metadata in checkpoint_2 write-up cell"
+      ],
+      [
+        "3b92ae6",
+        "refactor: consolidate checkpoint_2's pandas/sklearn imports into one setup cell"
+      ],
+      [
+        "ef1246d",
+        "fix: rejoin comment lines split by stray blank lines in checkpoint_2"
+      ]
+    ]
+  },
+  {
+    "order": 13,
+    "sid": "10372b3a",
+    "slug": "building-the-pandoc-slide-pipeline",
+    "fname": "13-building-the-pandoc-slide-pipeline.md",
+    "title": "Building the pandoc slide pipeline",
+    "branch": "claude/pandoc-presentation-pipeline-6401e7 (worktree)",
+    "span": "Jul 29, 09:04\u201310:20 UTC",
+    "n_user": 7,
+    "n_asst": 50,
+    "commits": [
+      [
+        "041e27d",
+        "Add pandoc markdown-to-pptx presentation pipeline"
+      ]
+    ]
+  },
+  {
+    "order": 14,
+    "sid": "88a77648",
+    "slug": "reconciling-model-tech-4-4-with-main",
+    "fname": "14-reconciling-model-tech-4-4-with-main.md",
+    "title": "Reconciling model_tech_4_4 with main",
+    "branch": "model_tech_4_4",
+    "span": "Jul 30, 11:41\u201323:10 UTC",
+    "n_user": 10,
+    "n_asst": 26,
+    "commits": [
+      [
+        "ade35f3",
+        "Add Task 4.2 tooling & compute-time analysis to checkpoint 2"
+      ]
+    ]
+  },
+  {
+    "order": 15,
+    "sid": "79327e70",
+    "slug": "finishing-task-4-4-preprocessing",
+    "fname": "15-finishing-task-4-4-preprocessing.md",
+    "title": "Finishing Task 4.4 preprocessing",
+    "branch": "model_tech_4_4",
+    "span": "Jul 30\u201331, 23:30\u201300:05 UTC",
+    "n_user": 14,
+    "n_asst": 44,
+    "commits": [
+      [
+        "49f66f6",
+        "Align Task 4.4 preprocessing with the study-grouped split, exclude study identifiers, cleanup naming"
+      ],
+      [
+        "50d444e",
+        "Merge branch 'model_tech_4_4' of origin, keep this session's Task 4.4 work"
+      ],
+      [
+        "11fe714",
+        "Mark Task 4.4 complete, strip its task-tracking scaffolding"
+      ]
+    ]
+  },
+  {
+    "order": 16,
+    "sid": "4453b22c",
+    "slug": "fixing-index-py-composition-limits",
+    "fname": "16-fixing-index-py-composition-limits.md",
+    "title": "Fixing index.py's composition limits",
+    "branch": "claude/project-dirs-index-composition-88c0f2 (worktree)",
+    "span": "Jul 31, 19:52\u201320:18 UTC",
+    "n_user": 2,
+    "n_asst": 20,
+    "commits": [
+      [
+        "59a2e16",
+        "Compose index.py's trailing content via a shared footer.py"
+      ]
+    ]
+  },
+  {
+    "order": 17,
+    "sid": "a3a88dbd",
+    "slug": "adding-the-team-roles-table",
+    "fname": "17-adding-the-team-roles-table.md",
+    "title": "Adding the team roles table",
+    "branch": "claude/add-team-roles-tasks-5e1583 (worktree)",
+    "span": "Jul 31, 20:24\u201321:15 UTC",
+    "n_user": 6,
+    "n_asst": 45,
+    "commits": [
+      [
+        "424a25b",
+        "Add team roles/task delegation table; de-checkpoint self-references"
+      ]
+    ]
+  },
+  {
+    "order": 18,
+    "sid": "0c5d9163",
+    "slug": "editorial-revision-across-both-checkpoints",
+    "fname": "18-editorial-revision-across-both-checkpoints.md",
+    "title": "Editorial revision across both checkpoints",
+    "branch": "claude/editorial-checkpoints-footer-2a7f6c (worktree)",
+    "span": "Jul 31, 21:22\u201322:01 UTC",
+    "n_user": 3,
+    "n_asst": 51,
+    "commits": [
+      [
+        "4afb3bd",
+        "Editorial pass: single-flow report, code visibility, matplotlib refs, table trims"
+      ]
+    ]
+  },
+  {
+    "order": 19,
+    "sid": "c20bcba4",
+    "slug": "a-mermaid-diagram-then-more",
+    "fname": "19-a-mermaid-diagram-then-more.md",
+    "title": "A mermaid diagram, then more",
+    "branch": "task3.5",
+    "span": "Jul 31, 22:44\u201322:54 UTC",
+    "n_user": 3,
+    "n_asst": 24,
+    "commits": [
+      [
+        "63f4dc4",
+        "Add mermaid diagram of the batch-scoring timing boundary"
+      ],
+      [
+        "bd2bf95",
+        "Rewrite Model A readiness section and fix stale Task 4.4 reference"
+      ],
+      [
+        "1712235",
+        "Mark Task 4.1 complete: strip its task-tracking prose from checkpoint_2"
+      ]
+    ]
+  },
+  {
+    "order": 20,
+    "sid": "6ca724b5",
+    "slug": "checking-validation-metric-coverage",
+    "fname": "20-checking-validation-metric-coverage.md",
+    "title": "Checking validation-metric coverage",
+    "branch": "Model-Section-and-Justification",
+    "span": "Jul 31, 22:59\u201323:59 UTC",
+    "n_user": 15,
+    "n_asst": 37,
+    "commits": [
+      [
+        "52b5ed0",
+        "Merge tooling-and-compute branch's compute analysis into Task 4.2"
+      ]
+    ]
+  },
+  {
+    "order": 21,
+    "sid": "2e714a18",
+    "slug": "rewriting-the-check-in-2-deck",
+    "fname": "21-rewriting-the-check-in-2-deck.md",
+    "title": "Rewriting the Check-In #2 deck",
+    "branch": "index-cleanup",
+    "span": "Aug 1, 01:07\u201311:40 UTC",
+    "n_user": 20,
+    "n_asst": 64,
+    "commits": [
+      [
+        "3c71233",
+        "Rewrite Check-In #2 deck script and add a pinned reference-template flag"
+      ],
+      [
+        "a20bef5",
+        "Merge main and update deck for the now-complete ensemble model"
+      ],
+      [
+        "6f43483",
+        "Move McMahon validation check onto the Validation & Trade-offs slide"
+      ],
+      [
+        "c725669",
+        "Collapse What's Left / Where We Go Next into one What's Next slide"
+      ],
+      [
+        "9309f8f",
+        "Reframe What's Next around the spec's actual Step 5 requirements"
+      ],
+      [
+        "8c82bfa",
+        "Trim What's Next to the analysis and peer-review feedback loop"
+      ],
+      [
+        "201b09a",
+        "Align Validation & Trade-offs and What's Next into one throughline"
+      ]
+    ]
+  },
+  {
+    "order": 22,
+    "sid": "4eba9f23",
+    "slug": "one-more-line-length-fix",
+    "fname": "22-one-more-line-length-fix.md",
+    "title": "One more line-length fix",
+    "branch": "preso-second-iteration",
+    "span": "Aug 1, 12:24\u201312:52 UTC",
+    "n_user": 7,
+    "n_asst": 20,
+    "commits": [
+      [
+        "116f893",
+        "Fix E501 line-too-long in team roles table"
+      ]
+    ]
+  },
+  {
+    "order": 23,
+    "sid": "7fd19789",
+    "slug": "timing-the-narration",
+    "fname": "23-timing-the-narration.md",
+    "title": "Timing the narration",
+    "branch": "Update--PPT-Narration-for-Raj",
+    "span": "Aug 1\u20132, 18:28\u201320:15 UTC",
+    "n_user": 13,
+    "n_asst": 24,
+    "commits": [
+      [
+        "d1f5c48",
+        "Trim redundant/decorative tables and improve table readability"
+      ]
+    ]
+  }
+]
