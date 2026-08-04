@@ -462,21 +462,21 @@
     <div class="disclosure-item">
       <span class="dl-label">History of the exchange</span>
       <p>Every thread below links its full prompt/response transcript;
-      all 23 are also collected in
+      all 24 are also collected in
       <a href="logs/ytorresv/index.md"><code>docs/ai/logs/</code></a>.</p>
     </div>
   </div>
 
   <div class="stats">
-    <div class="stat"><span class="n">23</span><span class="l">Threads</span></div>
-    <div class="stat"><span class="n">46</span><span class="l">Commits with Claude</span></div>
-    <div class="stat"><span class="n">18%</span><span class="l">Of my 255 commits</span></div>
-    <div class="stat"><span class="n">23</span><span class="l">Days, Jul&nbsp;11–Aug&nbsp;2</span></div>
+    <div class="stat"><span class="n">24</span><span class="l">Threads</span></div>
+    <div class="stat"><span class="n">48</span><span class="l">Commits with Claude</span></div>
+    <div class="stat"><span class="n">18%</span><span class="l">Of my 268 commits</span></div>
+    <div class="stat"><span class="n">25</span><span class="l">Days, Jul&nbsp;11–Aug&nbsp;4</span></div>
   </div>
 
   <p class="note">
-    <strong>Methodology.</strong> The 46 commits are every commit carrying
-    a <code>Co-Authored-By: Claude Sonnet 5</code> trailer. The 23 threads
+    <strong>Methodology.</strong> The 48 commits are every commit carrying
+    a <code>Co-Authored-By: Claude Sonnet 5</code> trailer. The 24 threads
     are the actual coding sessions behind them — some run directly on
     <code>main</code>/a feature branch in this checkout, others in a git
     worktree under a <code>claude/*</code> branch — matched to each commit
@@ -1291,15 +1291,45 @@
         </div>
       </li>
     </ol>
+
+    <div class="tl-row thread">
+      <div class="tl-time"><span class="d">Aug 4</span><span class="t">22:56</span></div>
+      <div class="tl-rail"><span class="dot"></span></div>
+      <div class="tl-content">
+        <h3>Checkpoint 3 header skeleton, then aligning it with the spec</h3>
+        <p class="thread-quote">"let's initialize checkpoint-3 as we've done in the past"</p>
+        <p class="thread-meta">branch init-cp-3 → ai-disclosure-cp3 · 37 turns · 33 min · <a href="logs/ytorresv/24-checkpoint-3-header-skeleton.md">full transcript →</a></p>
+      </div>
+    </div>
+    <ol class="entries">
+      <li class="tl-row entry">
+        <div class="tl-time"><span class="d">Aug 4</span><span class="t">23:17</span></div>
+        <div class="tl-rail"><span class="dot"></span></div>
+        <div class="tl-content">
+          <div class="entry-head"><h4>Build Checkpoint 3 header skeleton (Step 5)</h4><span class="hash">e1222e7</span></div>
+          <p class="entry-p">Adds checkpoint_3.py: the Step 5 header skeleton, mirroring how checkpoint_2's Step 3-4 skeleton was built. Pending tasks carry a task_callout() naming their lead and dependencies plus guiding questions for the assignee; already-done tasks get plain prose instead. Wired into index.py between checkpoint 2 and the footer.</p>
+          <div class="diffstat">4 files · <span class="plus">+516</span> −13</div>
+        </div>
+      </li>
+      <li class="tl-row entry">
+        <div class="tl-time"><span class="d">Aug 4</span><span class="t">23:28</span></div>
+        <div class="tl-rail"><span class="dot"></span></div>
+        <div class="tl-content">
+          <div class="entry-head"><h4>Align checkpoint_3.py callouts with the Checkpoint-3 spec</h4><span class="hash">4195d0e</span></div>
+          <p class="entry-p">The spec PDF wasn't available when the skeleton was first built. Once it was: dropped the remaining "Checkpoint N" prose per the Step-N/Check-In-#N convention, and added a Public codebase section — the spec requires the report itself, not just the repo, to link the codebase.</p>
+          <div class="diffstat">3 files · <span class="plus">+57</span> −15</div>
+        </div>
+      </li>
+    </ol>
   </section>
 
   <footer class="page">
     <p>
-      Threads sourced from local Claude Code session logs (14 in this
+      Threads sourced from local Claude Code session logs (15 in this
       checkout, 9 run inside git worktrees) covering this repository;
       commits from <code>git log --all --grep="Co-Authored-By: Claude"</code>.
       Each commit is attributed to the thread whose active time window
-      contains it. Full prompt/response transcripts for all 23 threads
+      contains it. Full prompt/response transcripts for all 24 threads
       are in <a href="logs/ytorresv/index.md"><code>docs/ai/logs/</code></a>.
       Generated 2026-08-04 — this file isn't wired into CI and won't
       update itself as new threads and commits land; regenerate by
