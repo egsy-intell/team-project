@@ -55,19 +55,29 @@ def _(mo):
             ]
         )
 
-    def task_callout(task_id, *, category, lead, summary, depends_on=None):
-        # Ties a section back to its row in
-        # planning/checkpoint-2/checkpoint2_tasks.csv, so readers (and other
+    def task_callout(
+        task_id,
+        *,
+        category,
+        lead,
+        summary,
+        depends_on=None,
+        guiding_questions=None,
+    ):
+        # Ties a section back to its row in the relevant
+        # planning/checkpoint-N/*.csv task list, so readers (and other
         # notebooks) can trace prose back to who owns it and what it's
-        # gated on.
-        return mo.callout(
-            mo.md(
-                f"**Task {task_id}** &middot; {category} &middot; "
-                f"Lead: {lead} &middot; Depends on: {depends_on or 'None'}"
-                f"\n\n{summary}"
-            ),
-            kind="info",
+        # gated on. guiding_questions are open prompts for the assignee
+        # to expand on, not yet answered here.
+        _body = (
+            f"**Task {task_id}** &middot; {category} &middot; "
+            f"Lead: {lead} &middot; Depends on: {depends_on or 'None'}"
+            f"\n\n{summary}"
         )
+        if guiding_questions:
+            _questions = "\n".join(f"* {q}" for q in guiding_questions)
+            _body += f"\n\n**Guiding questions:**\n{_questions}"
+        return mo.callout(mo.md(_body), kind="info")
 
     return (print_sections,)
 
