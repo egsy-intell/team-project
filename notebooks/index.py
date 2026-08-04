@@ -48,13 +48,7 @@ def _():
         from checkpoint_2 import app as checkpoint_2_app
         from checkpoint_3 import app as checkpoint_3_app
         from footer import app as footer_app
-    return (
-        checkpoint_1_app,
-        checkpoint_2_app,
-        checkpoint_3_app,
-        footer_app,
-        mo,
-    )
+    return checkpoint_1_app, checkpoint_2_app, checkpoint_3_app, footer_app, mo
 
 
 @app.cell(hide_code=True)

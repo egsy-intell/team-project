@@ -79,7 +79,7 @@ def _(mo):
             _body += f"\n\n**Guiding questions:**\n{_questions}"
         return mo.callout(mo.md(_body), kind="info")
 
-    return print_sections, task_callout
+    return (print_sections,)
 
 
 @app.cell(hide_code=True)
