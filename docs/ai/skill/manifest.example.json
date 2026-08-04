@@ -1,0 +1,36 @@
+{
+  "person": "jdoe",
+  "display_name": "Jane Doe",
+  "tool": "GitHub Copilot",
+  "tool_tier": "Copilot Individual (personal subscription)",
+  "how": "Pair-programmed notebook cells, debugged failing tests, and copyedited reader-facing prose.",
+  "why": "To move faster through repetitive/mechanical work (lint fixes, boilerplate) and sanity-check unfamiliar pandas/sklearn calls before committing to them.",
+  "total_commits": 40,
+  "date_range": "Jul 20–Aug 1",
+  "git_author_patterns": ["Jane Doe", "jdoe"],
+
+  "threads": [
+    {
+      "title": "Fixing the failing split-strategy test",
+      "branch": "fix-split-test",
+      "date": "Jul 20, 14:00 UTC",
+      "quote": "this test keeps failing with a KeyError on 'Study_smalling' - can you help me figure out why?",
+      "transcript": "01-fixing-the-split-test.md",
+      "prompts": 6,
+      "responses": 9,
+      "start": "2026-07-20T14:00:00+00:00",
+      "end": "2026-07-20T14:45:00+00:00"
+    },
+    {
+      "title": "Copyediting the problem statement",
+      "branch": "main",
+      "date": "Jul 22, 09:00 UTC",
+      "transcript": "02-copyediting-problem-statement.md",
+      "prompts": 3,
+      "responses": 3,
+      "commits": [
+        {"hash": "a1b2c3d", "subject": "Tighten problem-statement prose, fix a run-on sentence"}
+      ]
+    }
+  ]
+}

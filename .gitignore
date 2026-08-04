@@ -18,3 +18,7 @@ docs/notebooks/
 
 # Mac
 .DS_Store
+
+# Claude Code worktrees (each is a full checkout, own .venv/.git/caches -
+# local scratch space, never meant to be committed)
+.claude/worktrees/

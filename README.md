@@ -1,3 +1,21 @@
+## Contents
+
+- [Setup](#setup)
+  - [1. Install `uv`](#1-install-uv)
+  - [2. Install dependencies](#2-install-dependencies)
+  - [3. Run the notebooks](#3-run-the-notebooks)
+  - [4. (Optional) Run a notebook without cloning the repo](#4-optional-run-a-notebook-without-cloning-the-repo)
+  - [5. (Optional) VS Code extension](#5-optional-vs-code-extension)
+  - [6. (Optional) Project utility CLI](#6-optional-project-utility-cli)
+    - [Build the checkpoint slide deck](#build-the-checkpoint-slide-deck)
+    - [Print-friendly notebook export](#print-friendly-notebook-export)
+    - [AI-use disclosure page](#ai-use-disclosure-page)
+- [Marimo Quick Reference](#marimo-quick-reference)
+- [AI Use Disclosure](#ai-use-disclosure)
+  - [Project planning and exploration](#project-planning-and-exploration)
+  - [Pair-programming sessions](#pair-programming-sessions)
+- [CI/CD](#cicd)
+
 # Setup
 
 ## 1. Install `uv`
@@ -88,6 +106,24 @@ With no arguments this runs `marimo export html` locally against `notebooks/inde
 
 `--name` and `--output-dir` override the output filename (default: `<input stem>_clean.html`) and directory (default: current directory). Open the result in a browser and print/"Save as PDF" as usual — no extra tooling required at print time, the fix is baked into the file.
 
+### AI-use disclosure page
+
+Each teammate's individual AI Tool Use Policy disclosure
+(`docs/ai/<person>.html` and `docs/ai/logs/<person>/`) is generated from
+a small JSON manifest, not hand-written:
+
+```bash
+uv run python scripts/toolkit.py ai-disclosure <person>
+```
+
+`<person>` is a directory name under `docs/ai/logs/` holding that
+person's `_manifest.json` and transcript files. Pass `--skip-git` to
+skip automatic commit attribution (by git author + timestamp window,
+not by any commit trailer) and use only what's already listed in the
+manifest. See [`docs/ai/skill/README.md`](docs/ai/skill/README.md) for
+the full runbook — written so any AI coding agent can produce the
+manifest, not just Claude Code.
+
 # Marimo Quick Reference
 
 Marimo notebooks are just Python files — no hidden state, no `.ipynb` JSON.
@@ -100,6 +136,56 @@ Marimo notebooks are just Python files — no hidden state, no `.ipynb` JSON.
 - **Keyboard shortcuts**: `Ctrl/Cmd+Enter` runs a cell, `Ctrl/Cmd+Shift+Enter` runs all cells.
 
 Docs: https://docs.marimo.io
+
+# AI Use Disclosure
+
+This project used AI assistance throughout, per the course's AI Tool Use
+Policy ([direct link](https://purdue.brightspace.com/d2l/le/content/1565125/viewContent/21824036/View)), which requires an appendix disclosing: (1) exactly which AI tools were used and whether
+private/subscription/public, (2) the history of the exchange (prompts and
+responses) for each tool, (3) how each tool was used, and (4) why. Human
+team members made every substantive decision — problem scope, modeling
+approach, what to write and ship; AI tools were used as pairing and
+copyediting assistants, not as unsupervised authors.
+
+## Project planning and exploration
+
+Disclosed in full in the report itself: see the "AI usage appendix" (in
+`notebooks/footer.py`, rendered at the end of
+[the published report](https://egsy-intell.github.io/team-project/notebooks/)).
+
+- **Perplexity** — used early in the project to help scope and narrow the
+  prediction problem. Full shared-thread link is in the report's AI usage
+  appendix.
+- **Claude.ai** (web chat) — used to copyedit the project's markdown
+  prose. Full shared-thread link is also in the report's AI usage
+  appendix, which shows the complete prompt/response history.
+
+## Pair-programming sessions
+
+Each teammate discloses their own use of AI as a pairing tool below,
+per the policy above. See `docs/ai` for a thread by thread summary.
+Direct links are included below:
+
+- **Yaisiel (Yai) Torres** — Claude Code (Anthropic's agentic CLI/IDE
+  tool; subscription-based), throughout the project. History of exchange:
+  local session logs, timelined at
+  [`docs/ai/ytorresv.html`](https://egsy-intell.github.io/team-project/ai/ytorresv.html) (23 threads, 46
+  commits), with the full prompt/response transcript for every thread in
+  [`docs/ai/logs/ytorresv/`](docs/ai/logs/ytorresv/index.md). How: pair-programmed notebook implementation, debugging,
+  lint/CI fixes, git housekeeping (merges/conflict resolution), and
+  editorial/copyediting passes on reader-facing prose. Why: to work
+  through unfamiliar parts of the stack (marimo, the ∑TQ scoring logic,
+  the split-strategy design) step by step as a learning pairing partner
+  rather than a black box, and to move faster through repetitive
+  mechanical work (lint fixes, table formatting, merge conflicts) so more
+  time went to modeling/analysis decisions. Every commit this produced
+  carries a `Co-Authored-By: Claude Sonnet 5` trailer in its git history,
+  so this record is queryable rather than self-reported after the fact.
+- **Gulshan Raj Shetty (Raj)** — _add your tool(s), tier, how, and why
+  here._
+- **Emir Beg** — _add your tool(s), tier, how, and why here._
+- **Somyaranjan Sahu (Somya)** — _add your tool(s), tier, how, and why
+  here._
 
 # CI/CD
 

@@ -1,0 +1,38 @@
+# Pair-programming transcripts — Yai Torres
+
+Full prompt/response history for every Claude Code thread behind
+[Yai's pairing-log timeline](https://egsy-intell.github.io/team-project/ai/ytorresv.html), one file per thread,
+in chronological order. Each file's header lists the branch, session
+ID, time span, and the commit(s) that thread produced. Other
+teammates' disclosures live in their own sibling directory under
+`docs/ai/logs/`.
+
+1. [Getting marimo running](01-getting-marimo-running.md)
+2. [Reusing the merged frame in QA cells](02-reusing-the-merged-frame-in-qa-cells.md)
+3. [Scoping codespell off cache artifacts](03-scoping-codespell-off-cache-artifacts.md)
+4. [∑TQ groundwork and an outlier pass](04-sum-tq-groundwork-and-an-outlier-pass.md)
+5. [Making notebooks run via uvx from gh-pages](05-making-notebooks-run-via-uvx-from-gh-pages.md)
+6. [One PDF bug too many](06-one-pdf-bug-too-many.md)
+7. [Re-architecting for Checkpoint 2](07-re-architecting-for-checkpoint-2.md)
+8. [Designing Checkpoint 2's header hierarchy](08-designing-checkpoint-2-header-hierarchy.md)
+9. [Scoring ∑TQ, step by step](09-scoring-sum-tq-step-by-step.md)
+10. [Closing out the split-strategy task](10-closing-out-the-split-strategy-task.md)
+11. [Task 3.3 cleanup, round two](11-task-3-3-cleanup-round-two.md)
+12. [Lint triage on eval_plan_3_1](12-lint-triage-on-eval-plan-3-1.md)
+13. [Building the pandoc slide pipeline](13-building-the-pandoc-slide-pipeline.md)
+14. [Reconciling model_tech_4_4 with main](14-reconciling-model-tech-4-4-with-main.md)
+15. [Finishing Task 4.4 preprocessing](15-finishing-task-4-4-preprocessing.md)
+16. [Fixing index.py's composition limits](16-fixing-index-py-composition-limits.md)
+17. [Adding the team roles table](17-adding-the-team-roles-table.md)
+18. [Editorial revision across both checkpoints](18-editorial-revision-across-both-checkpoints.md)
+19. [A mermaid diagram, then more](19-a-mermaid-diagram-then-more.md)
+20. [Checking validation-metric coverage](20-checking-validation-metric-coverage.md)
+21. [Rewriting the Check-In #2 deck](21-rewriting-the-check-in-2-deck.md)
+22. [One more line-length fix](22-one-more-line-length-fix.md)
+23. [Timing the narration](23-timing-the-narration.md)
+
+Sourced from local Claude Code session logs (14 in this checkout, 9 run
+inside git worktrees under `claude/*` branches). Text-only: prompts and
+responses, no tool-call/tool-result mechanics. `_manifest.json` in this
+directory has the same data in machine-readable form, for regenerating
+this index if threads/commits change.
