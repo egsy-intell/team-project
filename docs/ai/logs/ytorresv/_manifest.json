@@ -481,5 +481,26 @@
         "Trim redundant/decorative tables and improve table readability"
       ]
     ]
+  },
+  {
+    "order": 24,
+    "sid": "a63c7b00",
+    "slug": "checkpoint-3-header-skeleton",
+    "fname": "24-checkpoint-3-header-skeleton.md",
+    "title": "Checkpoint 3 header skeleton, then aligning it with the spec",
+    "branch": "init-cp-3 → ai-disclosure-cp3",
+    "span": "Aug 4, 22:56–23:29 UTC",
+    "n_user": 9,
+    "n_asst": 28,
+    "commits": [
+      [
+        "e1222e7",
+        "Build Checkpoint 3 header skeleton (Step 5)"
+      ],
+      [
+        "4195d0e",
+        "Align checkpoint_3.py callouts with the Checkpoint-3 spec"
+      ]
+    ]
   }
 ]
