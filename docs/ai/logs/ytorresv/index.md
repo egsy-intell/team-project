@@ -1,11 +1,6 @@
 # Pair-programming transcripts — Yai Torres
 
-Full prompt/response history for every Claude Code thread behind
-[Yai's pairing-log timeline](https://egsy-intell.github.io/team-project/ai/ytorresv.html), one file per thread,
-in chronological order. Each file's header lists the branch, session
-ID, time span, and the commit(s) that thread produced. Other
-teammates' disclosures live in their own sibling directory under
-`docs/ai/logs/`.
+Full prompt/response history for every Claude Code thread behind [Yai's pairing-log timeline](../../ytorresv.html), one file per thread. Text-only: prompts and responses, no tool-call/tool-result mechanics.
 
 1. [Getting marimo running](01-getting-marimo-running.md)
 2. [Reusing the merged frame in QA cells](02-reusing-the-merged-frame-in-qa-cells.md)
@@ -32,8 +27,4 @@ teammates' disclosures live in their own sibling directory under
 23. [Timing the narration](23-timing-the-narration.md)
 24. [Checkpoint 3 header skeleton, then aligning it with the spec](24-checkpoint-3-header-skeleton.md)
 
-Sourced from local Claude Code session logs (15 in this checkout, 9 run
-inside git worktrees under `claude/*` branches). Text-only: prompts and
-responses, no tool-call/tool-result mechanics. `_manifest.json` in this
-directory has the same data in machine-readable form, for regenerating
-this index if threads/commits change.
+Other teammates' disclosures live in their own sibling directory under `docs/ai/logs/`.
