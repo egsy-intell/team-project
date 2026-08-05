@@ -388,6 +388,18 @@ def _(mo, task_callout):
                         "the team recommends for the deployment discussion "
                         "in T10?"
                     ),
+                    (
+                        "Per Check-In #2 peer feedback, does this section "
+                        "stay lighter on detail and lead with results, "
+                        "rather than listing every metric computed?"
+                    ),
+                    (
+                        "Per that same feedback, can we quantify how "
+                        "sparse the underlying site data is by state "
+                        "(e.g. ~5 sites/state on average across the "
+                        "bottom 15 states), and does that sparsity line "
+                        "up with where either model's errors concentrate?"
+                    ),
                 ],
             ),
         ]
@@ -433,6 +445,20 @@ def _(mo, task_callout):
                         "(interpretability vs. accuracy, or the McMahon "
                         "generalization gap) change the deployment "
                         "recommendation itself?"
+                    ),
+                    (
+                        "Per Check-In #2 peer feedback, does the "
+                        "conclusion explicitly acknowledge that "
+                        "state-level data sparsity limits how well the "
+                        "benchmarking generalizes across geography, "
+                        "rather than leaving that gap implicit?"
+                    ),
+                    (
+                        "Given that gap, does the narrative recommend "
+                        "narrowing the model's scope to a data-denser "
+                        "subregion, or framing it as exploratory rather "
+                        "than screening-ready — and which one does it "
+                        "land on?"
                     ),
                 ],
             ),
