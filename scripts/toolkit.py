@@ -584,8 +584,16 @@ def _validate_manifest(data: dict, manifest_path: Path) -> None:
                 f"{manifest_path}: threads[{i}]['transcript'] ({thread['transcript']}) "
                 f"does not exist in {manifest_path.parent}"
             )
-        if "commits" in thread and not isinstance(thread["commits"], list):
-            raise ManifestError(f"{manifest_path}: threads[{i}]['commits'] must be a list")
+        if "commits" in thread:
+            if not isinstance(thread["commits"], list):
+                raise ManifestError(f"{manifest_path}: threads[{i}]['commits'] must be a list")
+            for j, commit in enumerate(thread["commits"]):
+                if not isinstance(commit, dict) or "hash" not in commit or "subject" not in commit:
+                    raise ManifestError(
+                        f"{manifest_path}: threads[{i}]['commits'][{j}] must be an object "
+                        "with 'hash' and 'subject' keys (got "
+                        f"{commit!r})"
+                    )
         # Phases are all-or-nothing: a thread silently missing from every
         # phase section (because it had no 'phase' key) is worse than a
         # loud error here, since it would just vanish from the rendered
@@ -650,10 +658,13 @@ def _fill_commits_from_git(data: dict, repo_root: Path, pad_minutes: int = 20) -
         start_dt = datetime.fromisoformat(start)
         end_dt = datetime.fromisoformat(end)
         matches = [
-            (h, subj) for h, ts, subj in all_commits
+            (h, ts, subj) for h, ts, subj in all_commits
             if start_dt - pad <= ts <= end_dt + pad
         ]
-        thread["commits"] = [{"hash": h[:7], "subject": s} for h, s in matches]
+        thread["commits"] = [
+            {"hash": h[:7], "subject": s, "time": ts.strftime("%H:%M")}
+            for h, ts, s in matches
+        ]
 
 
 TIMELINE_CSS = """
@@ -703,7 +714,7 @@ TIMELINE_CSS = """
     font-family: -apple-system, "Segoe UI", system-ui, "Helvetica Neue", Arial, sans-serif;
     line-height: 1.5; -webkit-font-smoothing: antialiased;
   }
-  .wrap { max-width: 800px; margin: 0 auto; padding: 4rem 1.5rem 6rem; }
+  .wrap { max-width: 800px; margin: 0 auto; padding: 4rem 1.5rem 6rem; overflow-x: hidden; }
   code { font-family: ui-mono, "SF Mono", "Cascadia Code", Consolas, monospace; font-size: 0.92em; }
   a { color: var(--accent-ink); text-decoration-color: var(--line); }
   a:hover { text-decoration-color: currentColor; }
@@ -742,6 +753,30 @@ TIMELINE_CSS = """
   }
   .disclosure-item p { margin: 0; font-size: 0.86rem; color: var(--ink-soft); }
   @media (max-width: 560px) { .disclosure { grid-template-columns: 1fr; } }
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 1.25rem; margin: 0 0 3rem;
+    font-size: 0.78rem; color: var(--ink-faint);
+  }
+  .legend span { display: inline-flex; align-items: center; gap: 0.4rem; }
+  .legend .dot {
+    width: 9px; height: 9px; border-radius: 50%; background: var(--accent);
+    display: inline-block; flex: none; opacity: 0.55;
+  }
+  .legend .dot.thread { width: 11px; height: 11px; opacity: 1; }
+  .legend .dot.milestone {
+    width: 13px; height: 13px; background: var(--accent-soft);
+    border: 1.5px solid var(--accent); opacity: 1;
+  }
+  .toc {
+    display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0 0 3.5rem;
+    padding: 0; list-style: none;
+  }
+  .toc a {
+    display: block; font-size: 0.82rem; padding: 0.35rem 0.7rem;
+    border: 1px solid var(--line); border-radius: 999px; color: var(--ink-soft);
+    text-decoration: none; white-space: nowrap;
+  }
+  .toc a:hover { border-color: var(--accent); color: var(--accent-ink); }
   section.phase { margin-bottom: 2.75rem; }
   .tl-row { display: flex; align-items: flex-start; }
   .tl-time {
@@ -786,9 +821,16 @@ TIMELINE_CSS = """
   .diffstat { font-family: ui-mono, monospace; font-size: 0.68rem; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
   .diffstat .plus { color: var(--accent-ink); }
   @media (max-width: 620px) {
-    .tl-time { flex-basis: 3.4rem; width: 3.4rem; }
+    .wrap { padding: 2.5rem 1rem 4rem; }
+    .tl-time { flex-basis: 3.4rem; width: 3.4rem; padding-right: 0.5rem; }
     .stats { grid-template-columns: repeat(2, 1fr); }
     .entry-head { flex-direction: column; gap: 0.1rem; }
+    .thread-meta { line-height: 1.5; }
+  }
+  @media (max-width: 400px) {
+    .tl-time { flex-basis: 2.5rem; width: 2.5rem; padding-right: 0.4rem; }
+    .tl-rail { flex-basis: 1.2rem; width: 1.2rem; }
+    .stats { grid-template-columns: 1fr 1fr; }
   }
   footer.page { border-top: 1px solid var(--line); padding-top: 1.5rem; color: var(--ink-faint); font-size: 0.82rem; }
   footer.page a { color: inherit; }
@@ -802,10 +844,26 @@ def _esc(text: str) -> str:
     )
 
 
+def _split_day_time(date_str: str) -> tuple[str, str | None]:
+    # Display dates are either a bare day ("Aug 4") or "day, time"
+    # ("Aug 4, 22:56") - split so the time can render in its own
+    # smaller/fainter span, matching how commit timestamps are shown.
+    if "," in date_str:
+        day, _, time = date_str.partition(",")
+        return day.strip(), time.strip()
+    return date_str, None
+
+
+def _render_time_cell(date_str: str) -> str:
+    day, time = _split_day_time(date_str)
+    time_html = f'<span class="t">{_esc(time)}</span>' if time else ""
+    return f'<span class="d">{_esc(day)}</span>{time_html}'
+
+
 def _render_thread_row(thread: dict, logs_dir_name: str) -> str:
-    date = _esc(thread["date"])
     title = _esc(thread["title"])
     branch = _esc(thread["branch"])
+    thread_day, _ = _split_day_time(thread["date"])
     quote_html = ""
     if thread.get("quote"):
         quote_html = f'\n        <p class="thread-quote">&ldquo;{_esc(thread["quote"])}&rdquo;</p>'
@@ -818,19 +876,31 @@ def _render_thread_row(thread: dict, logs_dir_name: str) -> str:
     meta = " &middot; ".join(meta_bits)
 
     entries = ""
-    for hash_, subject in [(c["hash"], c["subject"]) for c in thread.get("commits", [])]:
+    for commit in thread.get("commits", []):
+        time_html = ""
+        if commit.get("time"):
+            time_html = (
+                f'<span class="d">{_esc(thread_day)}</span>'
+                f'<span class="t">{_esc(commit["time"])}</span>'
+            )
+        summary_html = ""
+        if commit.get("summary"):
+            summary_html = f'\n          <p class="entry-p">{_esc(commit["summary"])}</p>'
+        diffstat_html = ""
+        if commit.get("diffstat"):
+            diffstat_html = f'\n          <div class="diffstat">{commit["diffstat"]}</div>'
         entries += f"""      <li class="tl-row entry">
-        <div class="tl-time"></div>
+        <div class="tl-time">{time_html}</div>
         <div class="tl-rail"><span class="dot"></span></div>
         <div class="tl-content">
-          <div class="entry-head"><h4>{_esc(subject)}</h4><span class="hash">{_esc(hash_)}</span></div>
+          <div class="entry-head"><h4>{_esc(commit["subject"])}</h4><span class="hash">{_esc(commit["hash"])}</span></div>{summary_html}{diffstat_html}
         </div>
       </li>
 """
     entries_block = f'\n    <ol class="entries">\n{entries}    </ol>' if entries else ""
 
     return f"""    <div class="tl-row thread">
-      <div class="tl-time"><span class="d">{date}</span></div>
+      <div class="tl-time">{_render_time_cell(thread["date"])}</div>
       <div class="tl-rail"><span class="dot"></span></div>
       <div class="tl-content">
         <h3>{title}</h3>{quote_html}
@@ -856,9 +926,15 @@ def render_timeline_html(data: dict) -> str:
     if data.get("total_commits"):
         pct = round(100 * n_commits / data["total_commits"])
         stats.append(f'<div class="stat"><span class="n">{pct}%</span><span class="l">Of {display_name.split()[0]}\'s {data["total_commits"]} commits</span></div>')
-    if data.get("date_range"):
+    if data.get("date_range") and data.get("days"):
+        stats.append(
+            f'<div class="stat"><span class="n">{data["days"]}</span>'
+            f'<span class="l">Days, {_esc(data["date_range"])}</span></div>'
+        )
+    elif data.get("date_range"):
         stats.append(f'<div class="stat"><span class="n">{_esc(data["date_range"])}</span><span class="l">Span</span></div>')
 
+    toc_html = ""
     if data.get("phases"):
         body = ""
         seen_phases = []
@@ -866,6 +942,11 @@ def render_timeline_html(data: dict) -> str:
             phase_key = t.get("phase")
             if phase_key and phase_key not in seen_phases:
                 seen_phases.append(phase_key)
+        toc_items = "".join(
+            f'    <li><a href="#p{i}">{i}. {_esc(data["phases"][phase_key]["title"])}</a></li>\n'
+            for i, phase_key in enumerate(seen_phases, start=1)
+        )
+        toc_html = f'  <ul class="toc">\n{toc_items}  </ul>\n\n'
         for i, phase_key in enumerate(seen_phases, start=1):
             phase = data["phases"][phase_key]
             body += f"""  <section class="phase">
@@ -893,19 +974,46 @@ def render_timeline_html(data: dict) -> str:
         "https://purdue.brightspace.com/d2l/le/content/1565125/viewContent/21824036/View",
     )
 
+    lede = data.get("lede") or (
+        f"This page is {display_name}'s individual pair-programming disclosure under "
+        f'the course\'s <a href="{_esc(policy_link)}">AI Tool Use Policy</a>, which asks '
+        "for exactly which tools were used and their tier, the history of each "
+        "exchange, and how and why each tool was used."
+    )
+    methodology_note = data.get("methodology_note") or (
+        f"Generated from a manifest at "
+        f"<code>docs/ai/logs/{person}/_manifest.json</code> via "
+        f"<code>uv run python scripts/toolkit.py ai-disclosure {person}</code> - see "
+        f'<a href="skill/README.md">docs/ai/skill/</a> for how that manifest and its '
+        f'transcripts were put together, and <a href="skill/POLICY.md">the policy '
+        f"text</a> this disclosure responds to."
+    )
+    footer_note = data.get("footer_note") or (
+        "This page is generated, not hand-authored - see "
+        "<code>docs/ai/skill/README.md</code> to regenerate it after adding "
+        "threads or commits."
+    )
+    legend_html = ""
+    if data.get("phases"):
+        legend_html = """
+  <div class="legend">
+    <span><span class="dot milestone"></span> phase</span>
+    <span><span class="dot thread"></span> conversation thread</span>
+    <span><span class="dot"></span> commit</span>
+  </div>
+"""
+
     return f"""<title>Pairing Log &mdash; {display_name}</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="AI use disclosure for {display_name}, per the course AI Tool Use Policy.">
 <style>{TIMELINE_CSS}</style>
 
 <div class="wrap">
 
   <p class="eyebrow">AI Use Disclosure</p>
-  <h1>Every thread and commit where {tool} paired with {display_name.split()[0]} on this project</h1>
+  <h1>{data.get("h1") or f"Every thread and commit where {tool} paired with {display_name.split()[0]} on this project"}</h1>
   <p class="lede">
-    This page is {display_name}'s individual pair-programming disclosure under
-    the course's <a href="{_esc(policy_link)}">AI Tool Use Policy</a>, which asks
-    for exactly which tools were used and their tier, the history of each
-    exchange, and how and why each tool was used.
+    {lede}
   </p>
 
   <div class="disclosure">
@@ -934,19 +1042,12 @@ def render_timeline_html(data: dict) -> str:
   </div>
 
   <p class="note">
-    <strong>Methodology.</strong> Generated from a manifest at
-    <code>docs/ai/logs/{person}/_manifest.json</code> via
-    <code>uv run python scripts/toolkit.py ai-disclosure {person}</code> - see
-    <a href="skill/README.md">docs/ai/skill/</a> for how that manifest and its
-    transcripts were put together, and <a href="skill/POLICY.md">the policy
-    text</a> this disclosure responds to.
+    <strong>Methodology.</strong> {methodology_note}
   </p>
-
-{body}  <footer class="page">
+{legend_html}
+{toc_html}{body}  <footer class="page">
     <p>
-      This page is generated, not hand-authored - see
-      <code>docs/ai/skill/README.md</code> to regenerate it after adding
-      threads or commits.
+      {footer_note}
     </p>
   </footer>
 

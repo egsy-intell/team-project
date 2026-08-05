@@ -1,5 +1,6 @@
-<title>Pairing Log — PFAS Occurrence Risk Modeling</title>
-<meta name="description" content="A thread-by-thread, commit-by-commit timeline of Yai Torres and Claude pairing on this project.">
+<title>Pairing Log &mdash; Yai Torres</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="AI use disclosure for Yai Torres, per the course AI Tool Use Policy.">
 <style>
   @font-face {
     font-family: "ui-mono";
@@ -22,474 +23,188 @@
 
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #0c1412;
-      --surface: #121d1a;
-      --surface-2: #172521;
-      --ink: #e7efec;
-      --ink-soft: #a7bab3;
-      --ink-faint: #6d827b;
-      --line: #22332e;
-      --accent: #45b0a3;
-      --accent-soft: #16302c;
-      --accent-ink: #8fdccf;
-      color-scheme: dark;
+      --bg: #0c1412; --surface: #121d1a; --surface-2: #172521;
+      --ink: #e7efec; --ink-soft: #a7bab3; --ink-faint: #6d827b;
+      --line: #22332e; --accent: #45b0a3; --accent-soft: #16302c;
+      --accent-ink: #8fdccf; color-scheme: dark;
     }
   }
-
   :root[data-theme="dark"] {
-    --bg: #0c1412;
-    --surface: #121d1a;
-    --surface-2: #172521;
-    --ink: #e7efec;
-    --ink-soft: #a7bab3;
-    --ink-faint: #6d827b;
-    --line: #22332e;
-    --accent: #45b0a3;
-    --accent-soft: #16302c;
-    --accent-ink: #8fdccf;
-    color-scheme: dark;
+    --bg: #0c1412; --surface: #121d1a; --surface-2: #172521;
+    --ink: #e7efec; --ink-soft: #a7bab3; --ink-faint: #6d827b;
+    --line: #22332e; --accent: #45b0a3; --accent-soft: #16302c;
+    --accent-ink: #8fdccf; color-scheme: dark;
   }
-
   :root[data-theme="light"] {
-    --bg: #f4f7f6;
-    --surface: #ffffff;
-    --surface-2: #eaf0ee;
-    --ink: #12201c;
-    --ink-soft: #4f625c;
-    --ink-faint: #7c8c86;
-    --line: #d7e2de;
-    --accent: #1c7268;
-    --accent-soft: #e3f0ed;
-    --accent-ink: #0f4a44;
-    color-scheme: light;
+    --bg: #f4f7f6; --surface: #ffffff; --surface-2: #eaf0ee;
+    --ink: #12201c; --ink-soft: #4f625c; --ink-faint: #7c8c86;
+    --line: #d7e2de; --accent: #1c7268; --accent-soft: #e3f0ed;
+    --accent-ink: #0f4a44; color-scheme: light;
   }
 
   * { box-sizing: border-box; }
-
   body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--ink);
-    font-family: -apple-system, "Segoe UI", system-ui, "Helvetica Neue",
-      Arial, sans-serif;
-    line-height: 1.5;
-    -webkit-font-smoothing: antialiased;
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, "Segoe UI", system-ui, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.5; -webkit-font-smoothing: antialiased;
   }
-
-  .wrap {
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 4rem 1.5rem 6rem;
-  }
-
-  code {
-    font-family: ui-mono, "SF Mono", "Cascadia Code", Consolas, monospace;
-    font-size: 0.92em;
-  }
-
+  .wrap { max-width: 800px; margin: 0 auto; padding: 4rem 1.5rem 6rem; overflow-x: hidden; }
+  code { font-family: ui-mono, "SF Mono", "Cascadia Code", Consolas, monospace; font-size: 0.92em; }
   a { color: var(--accent-ink); text-decoration-color: var(--line); }
   a:hover { text-decoration-color: currentColor; }
-  a:focus-visible, button:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-  }
-
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .eyebrow {
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--accent-ink);
-    margin: 0 0 0.75rem;
+    font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--accent-ink); margin: 0 0 0.75rem;
   }
-
-  h1 {
-    font-size: clamp(1.9rem, 4vw, 2.5rem);
-    line-height: 1.15;
-    letter-spacing: -0.01em;
-    margin: 0 0 0.9rem;
-    text-wrap: balance;
-  }
-
-  .lede {
-    font-size: 1.05rem;
-    color: var(--ink-soft);
-    max-width: 62ch;
-    margin: 0 0 2rem;
-  }
-
+  h1 { font-size: clamp(1.9rem, 4vw, 2.5rem); line-height: 1.15; letter-spacing: -0.01em; margin: 0 0 0.9rem; text-wrap: balance; }
+  .lede { font-size: 1.05rem; color: var(--ink-soft); max-width: 62ch; margin: 0 0 2rem; }
   .lede strong { color: var(--ink); font-weight: 600; }
-
   .stats {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1px;
-    background: var(--line);
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    overflow: hidden;
-    margin-bottom: 1.75rem;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1px; background: var(--line); border: 1px solid var(--line);
+    border-radius: 10px; overflow: hidden; margin-bottom: 1.75rem;
   }
-
   .stat { background: var(--surface); padding: 0.9rem 1rem; }
-
   .stat .n {
-    font-family: ui-mono, monospace;
-    font-variant-numeric: tabular-nums;
-    font-size: 1.35rem;
-    font-weight: 600;
-    color: var(--accent-ink);
-    display: block;
+    font-family: ui-mono, monospace; font-variant-numeric: tabular-nums;
+    font-size: 1.35rem; font-weight: 600; color: var(--accent-ink); display: block;
   }
-
-  .stat .l {
-    font-size: 0.72rem;
-    color: var(--ink-faint);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-  }
-
+  .stat .l { font-size: 0.72rem; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.06em; }
   .note {
-    font-size: 0.88rem;
-    color: var(--ink-faint);
-    border-left: 2px solid var(--line);
-    padding-left: 0.9rem;
-    margin: 0 0 2rem;
+    font-size: 0.88rem; color: var(--ink-faint); border-left: 2px solid var(--line);
+    padding-left: 0.9rem; margin: 0 0 2rem;
   }
-
   .disclosure {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1px;
-    background: var(--line);
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    overflow: hidden;
-    margin: 0 0 1.75rem;
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px;
+    background: var(--line); border: 1px solid var(--line); border-radius: 10px;
+    overflow: hidden; margin: 0 0 1.75rem;
   }
-
   .disclosure-item { background: var(--surface); padding: 1rem 1.15rem; }
-
   .disclosure-item .dl-label {
-    display: block;
-    font-size: 0.68rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--accent-ink);
-    margin-bottom: 0.4rem;
+    display: block; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--accent-ink); margin-bottom: 0.4rem;
   }
-
-  .disclosure-item p {
-    margin: 0;
-    font-size: 0.86rem;
-    color: var(--ink-soft);
-  }
-
-  @media (max-width: 560px) {
-    .disclosure { grid-template-columns: 1fr; }
-  }
-
+  .disclosure-item p { margin: 0; font-size: 0.86rem; color: var(--ink-soft); }
+  @media (max-width: 560px) { .disclosure { grid-template-columns: 1fr; } }
   .legend {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1.25rem;
-    margin: 0 0 3rem;
-    font-size: 0.78rem;
-    color: var(--ink-faint);
+    display: flex; flex-wrap: wrap; gap: 1.25rem; margin: 0 0 3rem;
+    font-size: 0.78rem; color: var(--ink-faint);
   }
-
   .legend span { display: inline-flex; align-items: center; gap: 0.4rem; }
-
   .legend .dot {
-    width: 9px; height: 9px; border-radius: 50%;
-    background: var(--accent); display: inline-block; flex: none;
-    opacity: 0.55;
+    width: 9px; height: 9px; border-radius: 50%; background: var(--accent);
+    display: inline-block; flex: none; opacity: 0.55;
   }
-
   .legend .dot.thread { width: 11px; height: 11px; opacity: 1; }
   .legend .dot.milestone {
     width: 13px; height: 13px; background: var(--accent-soft);
     border: 1.5px solid var(--accent); opacity: 1;
   }
-
   .toc {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem;
-    margin: 0 0 3.5rem;
-    padding: 0;
-    list-style: none;
+    display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0 0 3.5rem;
+    padding: 0; list-style: none;
   }
-
   .toc a {
-    display: block;
-    font-size: 0.82rem;
-    padding: 0.35rem 0.7rem;
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    color: var(--ink-soft);
-    text-decoration: none;
-    white-space: nowrap;
+    display: block; font-size: 0.82rem; padding: 0.35rem 0.7rem;
+    border: 1px solid var(--line); border-radius: 999px; color: var(--ink-soft);
+    text-decoration: none; white-space: nowrap;
   }
-
   .toc a:hover { border-color: var(--accent); color: var(--accent-ink); }
-
-  /* ---- timeline ---- */
-
   section.phase { margin-bottom: 2.75rem; }
-
-  .tl-row {
-    display: flex;
-    align-items: flex-start;
-  }
-
+  .tl-row { display: flex; align-items: flex-start; }
   .tl-time {
-    flex: 0 0 4.75rem;
-    width: 4.75rem;
-    text-align: right;
-    padding-right: 0.9rem;
-    padding-top: 0.2rem;
-    font-family: ui-mono, monospace;
-    font-variant-numeric: tabular-nums;
-    line-height: 1.4;
+    flex: 0 0 4.75rem; width: 4.75rem; text-align: right; padding-right: 0.9rem;
+    padding-top: 0.2rem; font-family: ui-mono, monospace; font-variant-numeric: tabular-nums; line-height: 1.4;
   }
-
-  .tl-time .d {
-    display: block;
-    font-size: 0.72rem;
-    color: var(--ink-soft);
-    font-weight: 600;
-  }
-
-  .tl-time .t {
-    display: block;
-    font-size: 0.66rem;
-    color: var(--ink-faint);
-  }
-
-  .tl-rail {
-    flex: 0 0 1.6rem;
-    width: 1.6rem;
-    position: relative;
-    align-self: stretch;
-  }
-
+  .tl-time .d { display: block; font-size: 0.72rem; color: var(--ink-soft); font-weight: 600; }
+  .tl-time .t { display: block; font-size: 0.66rem; color: var(--ink-faint); }
+  .tl-rail { flex: 0 0 1.6rem; width: 1.6rem; position: relative; align-self: stretch; }
   .tl-rail::before {
-    content: "";
-    position: absolute;
-    left: 50%;
-    top: 0;
-    bottom: 0;
-    width: 1px;
-    background: var(--line);
-    transform: translateX(-50%);
+    content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 1px;
+    background: var(--line); transform: translateX(-50%);
   }
-
   .tl-rail .dot {
-    position: absolute;
-    left: 50%;
-    top: 0.55rem;
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: var(--accent);
-    opacity: 0.55;
-    transform: translate(-50%, -50%);
-    box-shadow: 0 0 0 3px var(--bg);
+    position: absolute; left: 50%; top: 0.55rem; width: 7px; height: 7px; border-radius: 50%;
+    background: var(--accent); opacity: 0.55; transform: translate(-50%, -50%); box-shadow: 0 0 0 3px var(--bg);
   }
-
-  .tl-row.thread .tl-rail .dot {
-    width: 10px;
-    height: 10px;
-    opacity: 1;
-  }
-
+  .tl-row.thread .tl-rail .dot { width: 10px; height: 10px; opacity: 1; }
   .tl-row.milestone .tl-rail::before { top: 0.7rem; }
-
   .tl-row.milestone .tl-rail .dot {
-    width: 1.55rem;
-    height: 1.55rem;
-    border-radius: 50%;
-    background: var(--accent-soft);
-    border: 1.5px solid var(--accent);
-    opacity: 1;
-    top: 0.7rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: ui-mono, monospace;
-    font-size: 0.65rem;
-    font-weight: 700;
-    color: var(--accent-ink);
-    box-shadow: 0 0 0 3px var(--bg);
+    width: 1.55rem; height: 1.55rem; border-radius: 50%; background: var(--accent-soft);
+    border: 1.5px solid var(--accent); opacity: 1; top: 0.7rem; display: flex; align-items: center;
+    justify-content: center; font-family: ui-mono, monospace; font-size: 0.65rem; font-weight: 700;
+    color: var(--accent-ink); box-shadow: 0 0 0 3px var(--bg);
   }
-
   .tl-content { flex: 1 1 auto; min-width: 0; padding-bottom: 1.2rem; }
-
   .tl-row.milestone .tl-content { padding-top: 0.2rem; padding-bottom: 0.9rem; }
   .tl-row.thread .tl-content { padding-bottom: 0.7rem; }
-
-  .tl-row.milestone h2 {
-    font-size: 1.15rem;
-    margin: 0 0 0.35rem;
-    letter-spacing: -0.005em;
-    scroll-margin-top: 1.5rem;
-  }
-
-  .phase-blurb {
-    color: var(--ink-soft);
-    font-size: 0.94rem;
-    margin: 0;
-    max-width: 58ch;
-  }
-
-  .tl-row.thread h3 {
-    font-size: 1rem;
-    font-weight: 700;
-    margin: 0 0 0.3rem;
-    letter-spacing: -0.003em;
-  }
-
+  .tl-row.milestone h2 { font-size: 1.15rem; margin: 0 0 0.35rem; letter-spacing: -0.005em; scroll-margin-top: 1.5rem; }
+  .phase-blurb { color: var(--ink-soft); font-size: 0.94rem; margin: 0; max-width: 58ch; }
+  .tl-row.thread h3 { font-size: 1rem; font-weight: 700; margin: 0 0 0.3rem; letter-spacing: -0.003em; }
   .thread-quote {
-    margin: 0 0 0.4rem;
-    padding: 0.15rem 0 0.15rem 0.75rem;
-    border-left: 2px solid var(--accent);
-    color: var(--ink-soft);
-    font-size: 0.87rem;
-    font-style: italic;
-    max-width: 56ch;
+    margin: 0 0 0.4rem; padding: 0.15rem 0 0.15rem 0.75rem; border-left: 2px solid var(--accent);
+    color: var(--ink-soft); font-size: 0.87rem; font-style: italic; max-width: 56ch;
   }
-
-  .thread-meta {
-    font-family: ui-mono, monospace;
-    font-size: 0.68rem;
-    color: var(--ink-faint);
-    font-variant-numeric: tabular-nums;
-  }
-
+  .thread-meta { font-family: ui-mono, monospace; font-size: 0.68rem; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
   ol.entries { list-style: none; margin: 0 0 0.3rem; padding: 0; }
-
-  .entry-head {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 0.75rem;
-  }
-
-  .entry-head h4 {
-    font-size: 0.93rem;
-    font-weight: 600;
-    margin: 0 0 0.28rem;
-    letter-spacing: -0.003em;
-    color: var(--ink);
-  }
-
-  .entry-head .hash {
-    font-family: ui-mono, monospace;
-    font-size: 0.66rem;
-    color: var(--ink-faint);
-    flex: 0 0 auto;
-    padding-top: 0.12rem;
-  }
-
-  .tl-content p.entry-p {
-    margin: 0 0 0.4rem;
-    color: var(--ink-soft);
-    font-size: 0.87rem;
-    max-width: 55ch;
-  }
-
-  .diffstat {
-    font-family: ui-mono, monospace;
-    font-size: 0.68rem;
-    color: var(--ink-faint);
-    font-variant-numeric: tabular-nums;
-  }
-
+  .entry-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; }
+  .entry-head h4 { font-size: 0.93rem; font-weight: 600; margin: 0 0 0.28rem; letter-spacing: -0.003em; color: var(--ink); }
+  .entry-head .hash { font-family: ui-mono, monospace; font-size: 0.66rem; color: var(--ink-faint); flex: 0 0 auto; padding-top: 0.12rem; }
+  .tl-content p.entry-p { margin: 0 0 0.4rem; color: var(--ink-soft); font-size: 0.87rem; max-width: 55ch; }
+  .diffstat { font-family: ui-mono, monospace; font-size: 0.68rem; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
   .diffstat .plus { color: var(--accent-ink); }
-
   @media (max-width: 620px) {
-    .tl-time { flex-basis: 3.4rem; width: 3.4rem; }
+    .wrap { padding: 2.5rem 1rem 4rem; }
+    .tl-time { flex-basis: 3.4rem; width: 3.4rem; padding-right: 0.5rem; }
     .stats { grid-template-columns: repeat(2, 1fr); }
     .entry-head { flex-direction: column; gap: 0.1rem; }
+    .thread-meta { line-height: 1.5; }
   }
-
-  footer.page {
-    border-top: 1px solid var(--line);
-    padding-top: 1.5rem;
-    color: var(--ink-faint);
-    font-size: 0.82rem;
+  @media (max-width: 400px) {
+    .tl-time { flex-basis: 2.5rem; width: 2.5rem; padding-right: 0.4rem; }
+    .tl-rail { flex-basis: 1.2rem; width: 1.2rem; }
+    .stats { grid-template-columns: 1fr 1fr; }
   }
-
+  footer.page { border-top: 1px solid var(--line); padding-top: 1.5rem; color: var(--ink-faint); font-size: 0.82rem; }
   footer.page a { color: inherit; }
 </style>
 
 <div class="wrap">
 
-  <p class="eyebrow">PFAS Occurrence Risk Modeling — AI Use Disclosure</p>
-  <h1>Every thread and commit where Claude paired with me on this project</h1>
+  <p class="eyebrow">AI Use Disclosure</p>
+  <h1>Every thread and commit where Claude Code paired with Yai on this project</h1>
   <p class="lede">
-    I'm <strong>Yai Torres</strong>, one of four people on this GRAD 50400
-    project (Group 14). This page is my individual pair-programming disclosure under
-    the course's
-    <a href="https://purdue.brightspace.com/d2l/le/content/1565125/viewContent/21824036/View">AI Tool Use Policy</a>,
-    which asks for exactly which tools were used and their tier, the
-    history of each exchange, and how and why each tool was used —
-    answered below, then backed by a real timeline instead of a
-    paraphrase.
+    I'm <strong>Yai Torres</strong>, one of four people on this GRAD 50400 project (Group 14). This page is my individual pair-programming disclosure under the course's <a href="https://purdue.brightspace.com/d2l/le/content/1565125/viewContent/21824036/View">AI Tool Use Policy</a>, which asks for exactly which tools were used and their tier, the history of each exchange, and how and why each tool was used — answered below, then backed by a real timeline instead of a paraphrase.
   </p>
 
   <div class="disclosure">
     <div class="disclosure-item">
       <span class="dl-label">Tool &amp; tier</span>
-      <p>Claude Code, Anthropic's agentic CLI/IDE tool, used under a
-      Claude subscription — not the free or public tier.</p>
+      <p>Claude Code &mdash; Claude subscription — not the free or public tier.</p>
     </div>
     <div class="disclosure-item">
       <span class="dl-label">How</span>
-      <p>Pair-programmed notebook implementation, debugging, lint/CI
-      fixes, git housekeeping (merges/conflicts), and editorial passes on
-      reader-facing prose.</p>
+      <p>Pair-programmed notebook implementation, debugging, lint/CI fixes, git housekeeping (merges/conflicts), and editorial passes on reader-facing prose.</p>
     </div>
     <div class="disclosure-item">
       <span class="dl-label">Why</span>
-      <p>To work through unfamiliar parts of the stack step by step as a
-      learning partner rather than a black box, and to move faster
-      through mechanical work so more time went to modeling/analysis
-      calls.</p>
+      <p>To work through unfamiliar parts of the stack step by step as a learning partner rather than a black box, and to move faster through mechanical work so more time went to modeling/analysis calls.</p>
     </div>
     <div class="disclosure-item">
       <span class="dl-label">History of the exchange</span>
-      <p>Every thread below links its full prompt/response transcript;
-      all 24 are also collected in
-      <a href="logs/ytorresv/index.md"><code>docs/ai/logs/</code></a>.</p>
+      <p>Every thread below links its full prompt/response transcript; all
+      24 are also collected in
+      <a href="logs/ytorresv/index.md"><code>docs/ai/logs/ytorresv/</code></a>.</p>
     </div>
   </div>
 
   <div class="stats">
-    <div class="stat"><span class="n">24</span><span class="l">Threads</span></div>
-    <div class="stat"><span class="n">48</span><span class="l">Commits with Claude</span></div>
-    <div class="stat"><span class="n">18%</span><span class="l">Of my 268 commits</span></div>
-    <div class="stat"><span class="n">25</span><span class="l">Days, Jul&nbsp;11–Aug&nbsp;4</span></div>
+    <div class="stat"><span class="n">24</span><span class="l">Threads</span></div><div class="stat"><span class="n">48</span><span class="l">Commits with Claude Code</span></div><div class="stat"><span class="n">18%</span><span class="l">Of Yai's 268 commits</span></div><div class="stat"><span class="n">25</span><span class="l">Days, Jul 11–Aug 4</span></div>
   </div>
 
   <p class="note">
-    <strong>Methodology.</strong> The 48 commits are every commit carrying
-    a <code>Co-Authored-By: Claude Sonnet 5</code> trailer. The 24 threads
-    are the actual coding sessions behind them — some run directly on
-    <code>main</code>/a feature branch in this checkout, others in a git
-    worktree under a <code>claude/*</code> branch — matched to each commit
-    by timestamp (a commit is attributed to the thread whose active window
-    contains it). I'm the author and committer of record on every commit:
-    I decided what to build, which fix to take, and when a section was
-    actually done. Quoted lines are the thread's own opening message,
-    lightly trimmed for length; full transcripts are linked, not
-    reconstructed dialogue. See
-    <a href="../notebooks/index.html">the published report</a> for the
-    project itself, or its closing "AI usage appendix" for the team's
-    external chat-thread disclosures (Perplexity, Claude.ai) covering
-    project planning and exploration rather than pair-programming.
+    <strong>Methodology.</strong> The 48 commits are every commit carrying a <code>Co-Authored-By: Claude Sonnet 5</code> trailer. The 24 threads are the actual coding sessions behind them — some run directly on <code>main</code>/a feature branch in this checkout, others in a git worktree under a <code>claude/*</code> branch — matched to each commit by timestamp (a commit is attributed to the thread whose active window contains it). I'm the author and committer of record on every commit: I decided what to build, which fix to take, and when a section was actually done. Quoted lines are the thread's own opening message, lightly trimmed for length; full transcripts are linked, not reconstructed dialogue. See <a href="../notebooks/index.html">the published report</a> for the project itself, or its closing "AI usage appendix" for the team's external chat-thread disclosures (Perplexity, Claude.ai) covering project planning and exploration rather than pair-programming.
   </p>
 
   <div class="legend">
@@ -500,11 +215,11 @@
 
   <ul class="toc">
     <li><a href="#p1">1. Kickoff</a></li>
-    <li><a href="#p2">2. Cleaning &amp; the risk target</a></li>
-    <li><a href="#p3">3. Checkpoint 2 + ∑TQ scoring</a></li>
+    <li><a href="#p2">2. Cleaning, joins, and the risk target</a></li>
+    <li><a href="#p3">3. Cutting PDF export, standing up Checkpoint 2, scoring ∑TQ</a></li>
     <li><a href="#p4">4. The study-grouped split</a></li>
     <li><a href="#p5">5. Slide-deck pipeline</a></li>
-    <li><a href="#p6">6. Modeling techniques</a></li>
+    <li><a href="#p6">6. Modeling techniques for Model A</a></li>
     <li><a href="#p7">7. One flowing report</a></li>
     <li><a href="#p8">8. Check-In #2 deck rewrite</a></li>
     <li><a href="#p9">9. Final polish</a></li>
@@ -519,14 +234,13 @@
         <p class="phase-blurb">The first commit on the repo — before there was a checkpoint to write, there was tooling to set up.</p>
       </div>
     </div>
-
     <div class="tl-row thread">
       <div class="tl-time"><span class="d">Jul 11</span><span class="t">16:45</span></div>
       <div class="tl-rail"><span class="dot"></span></div>
       <div class="tl-content">
         <h3>Getting marimo running</h3>
-        <p class="thread-quote">"where does that marimo install comes from?"</p>
-        <p class="thread-meta">branch main · 18 turns · 7 min · <a href="logs/ytorresv/01-getting-marimo-running.md">full transcript →</a></p>
+        <p class="thread-quote">&ldquo;where does that marimo install comes from?&rdquo;</p>
+        <p class="thread-meta">branch main &middot; 6 prompts, 7 responses &middot; <a href="logs/ytorresv/01-getting-marimo-running.md">full transcript &rarr;</a></p>
       </div>
     </div>
     <ol class="entries">
@@ -535,7 +249,7 @@
         <div class="tl-rail"><span class="dot"></span></div>
         <div class="tl-content">
           <div class="entry-head"><h4>Add marimo setup and usage instructions</h4><span class="hash">9bbe512</span></div>
-          <p class="entry-p">Picked marimo as the notebook framework, added it to <code>pyproject.toml</code>, generated the lockfile, and wrote up how the team should install uv/marimo and open notebooks.</p>
+          <p class="entry-p">Picked marimo as the notebook framework, added it to &lt;code&gt;pyproject.toml&lt;/code&gt;, generated the lockfile, and wrote up how the team should install uv/marimo and open notebooks.</p>
           <div class="diffstat">6 files · <span class="plus">+535</span> −8</div>
         </div>
       </li>
@@ -551,13 +265,12 @@
         <p class="phase-blurb">Step 2 of the report: deduping cleanup logic, then the decision that reshaped the whole project — swapping a median split for an EPA toxicity-quotient target.</p>
       </div>
     </div>
-
     <div class="tl-row thread">
       <div class="tl-time"><span class="d">Jul 18</span><span class="t">21:49</span></div>
       <div class="tl-rail"><span class="dot"></span></div>
       <div class="tl-content">
         <h3>Reusing the merged frame in QA cells</h3>
-        <p class="thread-meta">branch GRS_Data_Explore · 18 turns · 4 min · <a href="logs/ytorresv/02-reusing-the-merged-frame-in-qa-cells.md">full transcript →</a></p>
+        <p class="thread-meta">branch GRS_Data_Explore &middot; 1 prompts, 6 responses &middot; <a href="logs/ytorresv/02-reusing-the-merged-frame-in-qa-cells.md">full transcript &rarr;</a></p>
       </div>
     </div>
     <ol class="entries">
@@ -566,7 +279,7 @@
         <div class="tl-rail"><span class="dot"></span></div>
         <div class="tl-content">
           <div class="entry-head"><h4>Reuse ss_merged_df in Smalling/Seawolf quality assessment cells</h4><span class="hash">b38b12d</span></div>
-          <p class="entry-p">The quality-assessment cells were silently re-deriving their own cleaned data instead of reusing <code>ss_merged_df</code>. Repointed both at the shared frame so cleanup and the join's left-only rows stay consistent.</p>
+          <p class="entry-p">The quality-assessment cells were silently re-deriving their own cleaned data instead of reusing &lt;code&gt;ss_merged_df&lt;/code&gt;. Repointed both at the shared frame so cleanup and the join's left-only rows stay consistent.</p>
           <div class="diffstat">1 file · <span class="plus">+83</span> −98</div>
         </div>
       </li>
@@ -580,14 +293,13 @@
         </div>
       </li>
     </ol>
-
     <div class="tl-row thread">
       <div class="tl-time"><span class="d">Jul 19</span><span class="t">18:03</span></div>
       <div class="tl-rail"><span class="dot"></span></div>
       <div class="tl-content">
         <h3>Scoping codespell off cache artifacts</h3>
-        <p class="thread-quote">"seems like the codespell check is going through some files that are artifacts of a build. Could you make sure that the check runs only on the notebook files in the repo? […] we're getting cache directories under notebooks and the spelling is leaking into them."</p>
-        <p class="thread-meta">branch claude/codespell-notebook-scope-afe0b9 (worktree) · 22 turns · 2 min · <a href="logs/ytorresv/03-scoping-codespell-off-cache-artifacts.md">full transcript →</a></p>
+        <p class="thread-quote">&ldquo;seems like the codespell check is going through some files that are artifacts of a build. Could you make sure that the check runs only on the notebook files in the repo? […] we're getting cache directories under notebooks and the spelling is leaking into them.&rdquo;</p>
+        <p class="thread-meta">branch claude/codespell-notebook-scope-afe0b9 (worktree) &middot; 2 prompts, 6 responses &middot; <a href="logs/ytorresv/03-scoping-codespell-off-cache-artifacts.md">full transcript &rarr;</a></p>
       </div>
     </div>
     <ol class="entries">
@@ -596,18 +308,17 @@
         <div class="tl-rail"><span class="dot"></span></div>
         <div class="tl-content">
           <div class="entry-head"><h4>Scope codespell to notebook files, not marimo cache artifacts</h4><span class="hash">a2b6219</span></div>
-          <p class="entry-p">Scoped the autofix workflow's spellcheck to <code>notebooks/*.py</code> only, per the bug report above.</p>
+          <p class="entry-p">Scoped the autofix workflow's spellcheck to &lt;code&gt;notebooks/*.py&lt;/code&gt; only, per the bug report above.</p>
           <div class="diffstat">2 files · <span class="plus">+2</span> −2</div>
         </div>
       </li>
     </ol>
-
     <div class="tl-row thread">
       <div class="tl-time"><span class="d">Jul 19</span><span class="t">20:10</span></div>
       <div class="tl-rail"><span class="dot"></span></div>
       <div class="tl-content">
         <h3>∑TQ groundwork and an outlier pass</h3>
-        <p class="thread-meta">branch Outliers · 137 turns · 2 h 10 min · <a href="logs/ytorresv/04-sum-tq-groundwork-and-an-outlier-pass.md">full transcript →</a></p>
+        <p class="thread-meta">branch Outliers &middot; 19 prompts, 45 responses &middot; <a href="logs/ytorresv/04-sum-tq-groundwork-and-an-outlier-pass.md">full transcript &rarr;</a></p>
       </div>
     </div>
     <ol class="entries">
@@ -639,14 +350,13 @@
         </div>
       </li>
     </ol>
-
     <div class="tl-row thread">
       <div class="tl-time"><span class="d">Jul 19</span><span class="t">22:57</span></div>
       <div class="tl-rail"><span class="dot"></span></div>
       <div class="tl-content">
         <h3>Making notebooks run via uvx from gh-pages</h3>
-        <p class="thread-quote">"I want to publish under gh-pages branch a version of the notebook that could be run by uvx as I understand that it's possible. Ideally there should be a new scripts directory that people could hit and run all the operations in the notebook and load the data. would that be possible?"</p>
-        <p class="thread-meta">branch claude/notebook-uvx-gh-pages-17b43a (worktree) · 177 turns · 3 h 28 min · <a href="logs/ytorresv/05-making-notebooks-run-via-uvx-from-gh-pages.md">full transcript →</a></p>
+        <p class="thread-quote">&ldquo;I want to publish under gh-pages branch a version of the notebook that could be run by uvx as I understand that it's possible. Ideally there should be a new scripts directory that people could hit and run all the operations in the notebook and load the data. would that be possible?&rdquo;</p>
+        <p class="thread-meta">branch claude/notebook-uvx-gh-pages-17b43a (worktree) &middot; 8 prompts, 63 responses &middot; <a href="logs/ytorresv/05-making-notebooks-run-via-uvx-from-gh-pages.md">full transcript &rarr;</a></p>
       </div>
     </div>
     <ol class="entries">
@@ -655,7 +365,7 @@
         <div class="tl-rail"><span class="dot"></span></div>
         <div class="tl-content">
           <div class="entry-head"><h4>Make notebooks runnable via uvx from gh-pages, no clone required</h4><span class="hash">f8bd312</span></div>
-          <p class="entry-p">Added PEP 723 dependency headers plus a fallback that pulls data and sibling notebooks from GitHub when there's no local checkout — so <code>uvx marimo edit --sandbox &lt;url&gt;</code> works straight off gh-pages.</p>
+          <p class="entry-p">Added PEP 723 dependency headers plus a fallback that pulls data and sibling notebooks from GitHub when there's no local checkout — so &lt;code&gt;uvx marimo edit --sandbox &lt;url&gt;&lt;/code&gt; works straight off gh-pages.</p>
           <div class="diffstat">5 files · <span class="plus">+232</span> −17</div>
         </div>
       </li>
@@ -669,7 +379,7 @@
         </div>
       </li>
       <li class="tl-row entry">
-        <div class="tl-time"><span class="d">Jul 20</span><span class="t">02:45</span></div>
+        <div class="tl-time"><span class="d">Jul 19</span><span class="t">02:45</span></div>
         <div class="tl-rail"><span class="dot"></span></div>
         <div class="tl-content">
           <div class="entry-head"><h4>Hide boilerplate/plumbing cells in checkpoint_1 notebook</h4><span class="hash">e1c931a</span></div>
@@ -689,14 +399,13 @@
         <p class="phase-blurb">Four separate threads inside one long day: a bug report that killed a broken export path, the second checkpoint notebook's scaffolding, and the ∑TQ scoring work behind Task PW.</p>
       </div>
     </div>
-
     <div class="tl-row thread">
       <div class="tl-time"><span class="d">Jul 25</span><span class="t">12:44</span></div>
       <div class="tl-rail"><span class="dot"></span></div>
       <div class="tl-content">
         <h3>One PDF bug too many</h3>
-        <p class="thread-quote">"There are still empty pages in the exported PDF, we also still have the problem of blank pages (see pages 12-14). In addition, the tooltip is still showing up (see page 8). Let's work on the following: 1. Fix the blank pag[es…]"</p>
-        <p class="thread-meta">branch claude/pdf-blank-pages-tooltips-3b77f6 (worktree) · 266 turns · 55 min · <a href="logs/ytorresv/06-one-pdf-bug-too-many.md">full transcript →</a></p>
+        <p class="thread-quote">&ldquo;There are still empty pages in the exported PDF, we also still have the problem of blank pages (see pages 12-14). In addition, the tooltip is still showing up (see page 8). Let's work on the following: 1. Fix the blank pag[es…]&rdquo;</p>
+        <p class="thread-meta">branch claude/pdf-blank-pages-tooltips-3b77f6 (worktree) &middot; 9 prompts, 94 responses &middot; <a href="logs/ytorresv/06-one-pdf-bug-too-many.md">full transcript &rarr;</a></p>
       </div>
     </div>
     <ol class="entries">
@@ -705,7 +414,7 @@
         <div class="tl-rail"><span class="dot"></span></div>
         <div class="tl-content">
           <div class="entry-head"><h4>Drop PDF export, simplify viz to a shared DRY 3×3 grid helper</h4><span class="hash">635c76f</span></div>
-          <p class="entry-p">That bug report was the last straw on three unfixable upstream marimo PDF bugs (cropped tables, a kernel-toast bleeding into screenshots, a blank-page stitching bug) — pulled the plug entirely. Also collapsed duplicated per-section plotting code into one <code>make_plot_grid()</code> helper.</p>
+          <p class="entry-p">That bug report was the last straw on three unfixable upstream marimo PDF bugs (cropped tables, a kernel-toast bleeding into screenshots, a blank-page stitching bug) — pulled the plug entirely. Also collapsed duplicated per-section plotting code into one &lt;code&gt;make_plot_grid()&lt;/code&gt; helper.</p>
           <div class="diffstat">6 files · <span class="plus">+132</span> −900</div>
         </div>
       </li>
@@ -719,14 +428,13 @@
         </div>
       </li>
     </ol>
-
     <div class="tl-row thread">
       <div class="tl-time"><span class="d">Jul 25</span><span class="t">18:01</span></div>
       <div class="tl-rail"><span class="dot"></span></div>
       <div class="tl-content">
         <h3>Re-architecting for Checkpoint 2</h3>
-        <p class="thread-quote">"I would like to re-architect this project's pipeline to integrate checkpoint #2 deliverables. We already have checkpoint_1.py, so the idea is to add a checkpoint_2.py, and a new, gh-pages only artifact call[ed] index.html, with an index.py counterpart […]"</p>
-        <p class="thread-meta">branch claude/pipeline-checkpoint-2-integration-3336f3 (worktree) · 61 turns · 17 min · <a href="logs/ytorresv/07-re-architecting-for-checkpoint-2.md">full transcript →</a></p>
+        <p class="thread-quote">&ldquo;I would like to re-architect this project's pipeline to integrate checkpoint #2 deliverables. We already have checkpoint_1.py, so the idea is to add a checkpoint_2.py, and a new, gh-pages only artifact call[ed] index.html, with an index.py counterpart […]&rdquo;</p>
+        <p class="thread-meta">branch claude/pipeline-checkpoint-2-integration-3336f3 (worktree) &middot; 3 prompts, 22 responses &middot; <a href="logs/ytorresv/07-re-architecting-for-checkpoint-2.md">full transcript &rarr;</a></p>
       </div>
     </div>
     <ol class="entries">
@@ -735,7 +443,7 @@
         <div class="tl-rail"><span class="dot"></span></div>
         <div class="tl-content">
           <div class="entry-head"><h4>Add checkpoint_2.py and composed index.py notebooks</h4><span class="hash">29033c6</span></div>
-          <p class="entry-p">Stood up <code>checkpoint_2.py</code> as a stub that pulls cleaned frames out of checkpoint 1 via marimo's <code>app.embed()</code>, and <code>index.py</code> to stack both into one combined gh-pages artifact.</p>
+          <p class="entry-p">Stood up &lt;code&gt;checkpoint_2.py&lt;/code&gt; as a stub that pulls cleaned frames out of checkpoint 1 via marimo's &lt;code&gt;app.embed()&lt;/code&gt;, and &lt;code&gt;index.py&lt;/code&gt; to stack both into one combined gh-pages artifact.</p>
           <div class="diffstat">2 files · <span class="plus">+136</span></div>
         </div>
       </li>
@@ -749,14 +457,13 @@
         </div>
       </li>
     </ol>
-
     <div class="tl-row thread">
       <div class="tl-time"><span class="d">Jul 25</span><span class="t">18:26</span></div>
       <div class="tl-rail"><span class="dot"></span></div>
       <div class="tl-content">
         <h3>Designing Checkpoint 2's header hierarchy</h3>
-        <p class="thread-quote">"let's work on checkpoint_2.py skeleton. Please develop the optimal header hierarchy for the checkpoint_2.py deliverable. Specs: 1. Must comply with the checkpoint-2 specs and follow immediately after checkpoint_1.py […]"</p>
-        <p class="thread-meta">branch claude/checkpoint-2-headers-5e074a (worktree) · 79 turns · 31 min · <a href="logs/ytorresv/08-designing-checkpoint-2-header-hierarchy.md">full transcript →</a></p>
+        <p class="thread-quote">&ldquo;let's work on checkpoint_2.py skeleton. Please develop the optimal header hierarchy for the checkpoint_2.py deliverable. Specs: 1. Must comply with the checkpoint-2 specs and follow immediately after checkpoint_1.py […]&rdquo;</p>
+        <p class="thread-meta">branch claude/checkpoint-2-headers-5e074a (worktree) &middot; 4 prompts, 23 responses &middot; <a href="logs/ytorresv/08-designing-checkpoint-2-header-hierarchy.md">full transcript &rarr;</a></p>
       </div>
     </div>
     <ol class="entries">
@@ -765,19 +472,18 @@
         <div class="tl-rail"><span class="dot"></span></div>
         <div class="tl-content">
           <div class="entry-head"><h4>Build Checkpoint 2 header skeleton, formalize PW as a task</h4><span class="hash">bb3e789</span></div>
-          <p class="entry-p">Built out the full Step 3/Step 4 header hierarchy, each subsection tied to its task ID and owner via a shared <code>task_callout()</code> helper, and formalized Task PW (the ∑TQ scoring work) as a tracked task.</p>
+          <p class="entry-p">Built out the full Step 3/Step 4 header hierarchy, each subsection tied to its task ID and owner via a shared &lt;code&gt;task_callout()&lt;/code&gt; helper, and formalized Task PW (the ∑TQ scoring work) as a tracked task.</p>
           <div class="diffstat">3 files · <span class="plus">+387</span> −22</div>
         </div>
       </li>
     </ol>
-
     <div class="tl-row thread">
       <div class="tl-time"><span class="d">Jul 25</span><span class="t">19:19</span></div>
       <div class="tl-rail"><span class="dot"></span></div>
       <div class="tl-content">
         <h3>Scoring ∑TQ, step by step</h3>
-        <p class="thread-quote">"Yeah. Let's leave the compounds w/o TQ as NaN, also remember, you should be a pairing partner. The point is to work with you on a step by step basis and learn how everything is put together."</p>
-        <p class="thread-meta">branch pw-toxicity-quotients · 365 turns · 2 h 24 min · <a href="logs/ytorresv/09-scoring-sum-tq-step-by-step.md">full transcript →</a></p>
+        <p class="thread-quote">&ldquo;Yeah. Let's leave the compounds w/o TQ as NaN, also remember, you should be a pairing partner. The point is to work with you on a step by step basis and learn how everything is put together.&rdquo;</p>
+        <p class="thread-meta">branch pw-toxicity-quotients &middot; 39 prompts, 130 responses &middot; <a href="logs/ytorresv/09-scoring-sum-tq-step-by-step.md">full transcript &rarr;</a></p>
       </div>
     </div>
     <ol class="entries">
@@ -786,7 +492,7 @@
         <div class="tl-rail"><span class="dot"></span></div>
         <div class="tl-content">
           <div class="entry-head"><h4>Score ∑TQ toxicity quotients for Smalling and McMahon (Task PW)</h4><span class="hash">97d5aff</span></div>
-          <p class="entry-p">Scored ∑TQ for both studies against EPA/state benchmarks via a shared <code>calc_scored_df()</code> helper — the actual work behind Task PW — documenting why the two studies' sums aren't directly comparable (missing GenX benchmark, differing non-detect convention).</p>
+          <p class="entry-p">Scored ∑TQ for both studies against EPA/state benchmarks via a shared &lt;code&gt;calc_scored_df()&lt;/code&gt; helper — the actual work behind Task PW — documenting why the two studies' sums aren't directly comparable (missing GenX benchmark, differing non-detect convention).</p>
           <div class="diffstat">4 files · <span class="plus">+234</span> −60</div>
         </div>
       </li>
@@ -795,7 +501,7 @@
         <div class="tl-rail"><span class="dot"></span></div>
         <div class="tl-content">
           <div class="entry-head"><h4>Display ∑TQ summary tables to fix autofix-lint/ruff conflict</h4><span class="hash">ee7b593</span></div>
-          <p class="entry-p">The new ∑TQ dataframes had no in-notebook consumer, so autofix and ruff started fighting over them the same way as earlier. Added real <code>describe()</code> summary tables, which also surfaces the distributions the prose already cited.</p>
+          <p class="entry-p">The new ∑TQ dataframes had no in-notebook consumer, so autofix and ruff started fighting over them the same way as earlier. Added real &lt;code&gt;describe()&lt;/code&gt; summary tables, which also surfaces the distributions the prose already cited.</p>
           <div class="diffstat">1 file · <span class="plus">+34</span></div>
         </div>
       </li>
@@ -804,7 +510,7 @@
         <div class="tl-rail"><span class="dot"></span></div>
         <div class="tl-content">
           <div class="entry-head"><h4>Restore return tuples the autofix-lint workflow's earlier run stripped</h4><span class="hash">5f9ff44</span></div>
-          <p class="entry-p">A rebase silently reverted an autofix edit already made upstream. Restored it and confirmed <code>marimo check --fix</code> is a no-op again.</p>
+          <p class="entry-p">A rebase silently reverted an autofix edit already made upstream. Restored it and confirmed &lt;code&gt;marimo check --fix&lt;/code&gt; is a no-op again.</p>
           <div class="diffstat">1 file · <span class="plus">+2</span> −2</div>
         </div>
       </li>
@@ -820,18 +526,17 @@
         <p class="phase-blurb">Closing out Tasks 3.1–3.3: the split-strategy design, plus the lint housekeeping that comes with finishing a section.</p>
       </div>
     </div>
-
     <div class="tl-row thread">
       <div class="tl-time"><span class="d">Jul 26</span><span class="t">22:10</span></div>
       <div class="tl-rail"><span class="dot"></span></div>
       <div class="tl-content">
         <h3>Closing out the split-strategy task</h3>
-        <p class="thread-meta">branch Return-Task-callout-in-Checkpoint-1 · 98 turns · overnight session · <a href="logs/ytorresv/10-closing-out-the-split-strategy-task.md">full transcript →</a></p>
+        <p class="thread-meta">branch Return-Task-callout-in-Checkpoint-1 &middot; 23 prompts, 38 responses &middot; <a href="logs/ytorresv/10-closing-out-the-split-strategy-task.md">full transcript &rarr;</a></p>
       </div>
     </div>
     <ol class="entries">
       <li class="tl-row entry">
-        <div class="tl-time"><span class="d">Jul 27</span><span class="t">09:28</span></div>
+        <div class="tl-time"><span class="d">Jul 26</span><span class="t">09:28</span></div>
         <div class="tl-rail"><span class="dot"></span></div>
         <div class="tl-content">
           <div class="entry-head"><h4>Mark Task 3.3 complete: drop callout, mark CSV done</h4><span class="hash">066ae73</span></div>
@@ -840,22 +545,21 @@
         </div>
       </li>
       <li class="tl-row entry">
-        <div class="tl-time"><span class="d">Jul 27</span><span class="t">09:46</span></div>
+        <div class="tl-time"><span class="d">Jul 26</span><span class="t">09:46</span></div>
         <div class="tl-rail"><span class="dot"></span></div>
         <div class="tl-content">
           <div class="entry-head"><h4>Remove unreachable empty-partition guard in split search</h4><span class="hash">dbeb67d</span></div>
-          <p class="entry-p">The guard could never actually fire — <code>held_out_count</code> is bounded so it can't hold out zero or all studies. Dead code that read as if a real edge case existed.</p>
+          <p class="entry-p">The guard could never actually fire — &lt;code&gt;held_out_count&lt;/code&gt; is bounded so it can't hold out zero or all studies. Dead code that read as if a real edge case existed.</p>
           <div class="diffstat">1 file · −2</div>
         </div>
       </li>
     </ol>
-
     <div class="tl-row thread">
       <div class="tl-time"><span class="d">Jul 28</span><span class="t">08:49</span></div>
       <div class="tl-rail"><span class="dot"></span></div>
       <div class="tl-content">
         <h3>Task 3.3 cleanup, round two</h3>
-        <p class="thread-meta">branch Return-Task-callout-in-Checkpoint-1 · 33 turns · 5 min · <a href="logs/ytorresv/11-task-3-3-cleanup-round-two.md">full transcript →</a></p>
+        <p class="thread-meta">branch Return-Task-callout-in-Checkpoint-1 &middot; 2 prompts, 4 responses &middot; <a href="logs/ytorresv/11-task-3-3-cleanup-round-two.md">full transcript &rarr;</a></p>
       </div>
     </div>
     <ol class="entries">
@@ -869,14 +573,13 @@
         </div>
       </li>
     </ol>
-
     <div class="tl-row thread">
       <div class="tl-time"><span class="d">Jul 28</span><span class="t">13:26</span></div>
       <div class="tl-rail"><span class="dot"></span></div>
       <div class="tl-content">
         <h3>Lint triage on eval_plan_3_1</h3>
-        <p class="thread-quote">"can you fix the linting/checks for this branch that I'm on?"</p>
-        <p class="thread-meta">branch eval_plan_3_1 · 83 turns · 24 min · <a href="logs/ytorresv/12-lint-triage-on-eval-plan-3-1.md">full transcript →</a></p>
+        <p class="thread-quote">&ldquo;can you fix the linting/checks for this branch that I'm on?&rdquo;</p>
+        <p class="thread-meta">branch eval_plan_3_1 &middot; 5 prompts, 31 responses &middot; <a href="logs/ytorresv/12-lint-triage-on-eval-plan-3-1.md">full transcript &rarr;</a></p>
       </div>
     </div>
     <ol class="entries">
@@ -894,7 +597,7 @@
         <div class="tl-rail"><span class="dot"></span></div>
         <div class="tl-content">
           <div class="entry-head"><h4>fix: dedupe Task 3.1 metadata in checkpoint_2 write-up cell</h4><span class="hash">05afe69</span></div>
-          <p class="entry-p">A write-up cell was restating Task 3.1's metadata as plain bold text right under the real <code>task_callout()</code> card that already showed it. Dropped the duplicate.</p>
+          <p class="entry-p">A write-up cell was restating Task 3.1's metadata as plain bold text right under the real &lt;code&gt;task_callout()&lt;/code&gt; card that already showed it. Dropped the duplicate.</p>
           <div class="diffstat">1 file · −3</div>
         </div>
       </li>
@@ -903,7 +606,7 @@
         <div class="tl-rail"><span class="dot"></span></div>
         <div class="tl-content">
           <div class="entry-head"><h4>refactor: consolidate checkpoint_2's pandas/sklearn imports</h4><span class="hash">3b92ae6</span></div>
-          <p class="entry-p">pandas/sklearn were each imported locally in two different cells. Consolidated into one shared setup cell, matching the <code>make_plot_grid</code> pattern — plus a ruff.toml exception for the import-not-at-top-level rule every marimo cell violates by design.</p>
+          <p class="entry-p">pandas/sklearn were each imported locally in two different cells. Consolidated into one shared setup cell, matching the &lt;code&gt;make_plot_grid&lt;/code&gt; pattern — plus a ruff.toml exception for the import-not-at-top-level rule every marimo cell violates by design.</p>
           <div class="diffstat">2 files · <span class="plus">+42</span> −15</div>
         </div>
       </li>
@@ -928,14 +631,13 @@
         <p class="phase-blurb">A detour into tooling: getting the Checkpoint 2 presentation out of hand-edited PowerPoint.</p>
       </div>
     </div>
-
     <div class="tl-row thread">
       <div class="tl-time"><span class="d">Jul 29</span><span class="t">09:04</span></div>
       <div class="tl-rail"><span class="dot"></span></div>
       <div class="tl-content">
         <h3>Building the pandoc slide pipeline</h3>
-        <p class="thread-quote">"I would like to add a new, pandoc-centered presentation pipeline to the project…" (with a sample deck and the team-roster CSV attached for reference)</p>
-        <p class="thread-meta">branch claude/pandoc-presentation-pipeline-6401e7 (worktree) · 157 turns · 1 h 17 min · <a href="logs/ytorresv/13-building-the-pandoc-slide-pipeline.md">full transcript →</a></p>
+        <p class="thread-quote">&ldquo;I would like to add a new, pandoc-centered presentation pipeline to the project…&quot; (with a sample deck and the team-roster CSV attached for reference)&rdquo;</p>
+        <p class="thread-meta">branch claude/pandoc-presentation-pipeline-6401e7 (worktree) &middot; 7 prompts, 50 responses &middot; <a href="logs/ytorresv/13-building-the-pandoc-slide-pipeline.md">full transcript &rarr;</a></p>
       </div>
     </div>
     <ol class="entries">
@@ -944,7 +646,7 @@
         <div class="tl-rail"><span class="dot"></span></div>
         <div class="tl-content">
           <div class="entry-head"><h4>Add pandoc markdown-to-pptx presentation pipeline</h4><span class="hash">041e27d</span></div>
-          <p class="entry-p">Built a pandoc pipeline (<code>preso/</code> + <code>scripts/build_presentation.py</code>) so the team can regenerate the slide deck for OneDrive without hand-editing PowerPoint. Seeded it from checkpoint 1's findings with speaker notes split across the team.</p>
+          <p class="entry-p">Built a pandoc pipeline (&lt;code&gt;preso/&lt;/code&gt; + &lt;code&gt;scripts/build_presentation.py&lt;/code&gt;) so the team can regenerate the slide deck for OneDrive without hand-editing PowerPoint. Seeded it from checkpoint 1's findings with speaker notes split across the team.</p>
           <div class="diffstat">11 files · <span class="plus">+653</span> −6</div>
         </div>
       </li>
@@ -960,14 +662,13 @@
         <p class="phase-blurb">Tasks 4.1–4.4: compute/tooling analysis and preprocessing for the baseline model.</p>
       </div>
     </div>
-
     <div class="tl-row thread">
       <div class="tl-time"><span class="d">Jul 30</span><span class="t">11:41</span></div>
       <div class="tl-rail"><span class="dot"></span></div>
       <div class="tl-content">
         <h3>Reconciling model_tech_4_4 with main</h3>
-        <p class="thread-quote">"can you reconcile this branch with main, merge and push?"</p>
-        <p class="thread-meta">branch model_tech_4_4 · 73 turns · 11 h 29 min · <a href="logs/ytorresv/14-reconciling-model-tech-4-4-with-main.md">full transcript →</a></p>
+        <p class="thread-quote">&ldquo;can you reconcile this branch with main, merge and push?&rdquo;</p>
+        <p class="thread-meta">branch model_tech_4_4 &middot; 10 prompts, 26 responses &middot; <a href="logs/ytorresv/14-reconciling-model-tech-4-4-with-main.md">full transcript &rarr;</a></p>
       </div>
     </div>
     <ol class="entries">
@@ -981,14 +682,13 @@
         </div>
       </li>
     </ol>
-
     <div class="tl-row thread">
       <div class="tl-time"><span class="d">Jul 30</span><span class="t">23:30</span></div>
       <div class="tl-rail"><span class="dot"></span></div>
       <div class="tl-content">
         <h3>Finishing Task 4.4 preprocessing</h3>
-        <p class="thread-quote">"can you explain the onehot encoder drop first again?"</p>
-        <p class="thread-meta">branch model_tech_4_4 · 130 turns · 35 min · <a href="logs/ytorresv/15-finishing-task-4-4-preprocessing.md">full transcript →</a></p>
+        <p class="thread-quote">&ldquo;can you explain the onehot encoder drop first again?&rdquo;</p>
+        <p class="thread-meta">branch model_tech_4_4 &middot; 14 prompts, 44 responses &middot; <a href="logs/ytorresv/15-finishing-task-4-4-preprocessing.md">full transcript &rarr;</a></p>
       </div>
     </div>
     <ol class="entries">
@@ -1011,7 +711,7 @@
         </div>
       </li>
       <li class="tl-row entry">
-        <div class="tl-time"><span class="d">Jul 31</span><span class="t">00:04</span></div>
+        <div class="tl-time"><span class="d">Jul 30</span><span class="t">00:04</span></div>
         <div class="tl-rail"><span class="dot"></span></div>
         <div class="tl-content">
           <div class="entry-head"><h4>Mark Task 4.4 complete, strip its task-tracking scaffolding</h4><span class="hash">11fe714</span></div>
@@ -1031,14 +731,13 @@
         <p class="phase-blurb">The editorial pass that mattered most, spread across five threads in one evening: making index.py read as a single document instead of two stapled-together checkpoints.</p>
       </div>
     </div>
-
     <div class="tl-row thread">
       <div class="tl-time"><span class="d">Jul 31</span><span class="t">19:52</span></div>
       <div class="tl-rail"><span class="dot"></span></div>
       <div class="tl-content">
         <h3>Fixing index.py's composition limits</h3>
-        <p class="thread-quote">"One of the last times we worked on the project directories infra I thought that composing notebooks would be enough (checkpoint1+2 = index), but i'm getting to find out some limitations: 1. Repeated imports 2. Conclusio[n and references should be under checkpoint 2 now, not 1…]"</p>
-        <p class="thread-meta">branch claude/project-dirs-index-composition-88c0f2 (worktree) · 69 turns · 26 min · <a href="logs/ytorresv/16-fixing-index-py-composition-limits.md">full transcript →</a></p>
+        <p class="thread-quote">&ldquo;One of the last times we worked on the project directories infra I thought that composing notebooks would be enough (checkpoint1+2 = index), but i'm getting to find out some limitations: 1. Repeated imports 2. Conclusio[n and references should be under checkpoint 2 now, not 1…]&rdquo;</p>
+        <p class="thread-meta">branch claude/project-dirs-index-composition-88c0f2 (worktree) &middot; 2 prompts, 20 responses &middot; <a href="logs/ytorresv/16-fixing-index-py-composition-limits.md">full transcript &rarr;</a></p>
       </div>
     </div>
     <ol class="entries">
@@ -1047,19 +746,18 @@
         <div class="tl-rail"><span class="dot"></span></div>
         <div class="tl-content">
           <div class="entry-head"><h4>Compose index.py's trailing content via a shared footer.py</h4><span class="hash">59a2e16</span></div>
-          <p class="entry-p">index.py's mechanical embedding put checkpoint 1's conclusion before checkpoint 2's body instead of after it, and duplicated it besides. Pulled all trailing content into a new <code>footer.py</code> embedded last, with both conclusions merged into one narrative.</p>
+          <p class="entry-p">index.py's mechanical embedding put checkpoint 1's conclusion before checkpoint 2's body instead of after it, and duplicated it besides. Pulled all trailing content into a new &lt;code&gt;footer.py&lt;/code&gt; embedded last, with both conclusions merged into one narrative.</p>
           <div class="diffstat">4 files · <span class="plus">+235</span> −150</div>
         </div>
       </li>
     </ol>
-
     <div class="tl-row thread">
       <div class="tl-time"><span class="d">Jul 31</span><span class="t">20:24</span></div>
       <div class="tl-rail"><span class="dot"></span></div>
       <div class="tl-content">
         <h3>Adding the team roles table</h3>
-        <p class="thread-quote">"We omitted adding the delegation of tasks section from checkpoint 1 contents, let's fix that. Please use the attached CSV to add team roles and tasks table to checkpoin[t 1…]"</p>
-        <p class="thread-meta">branch claude/add-team-roles-tasks-5e1583 (worktree) · 143 turns · 51 min · <a href="logs/ytorresv/17-adding-the-team-roles-table.md">full transcript →</a></p>
+        <p class="thread-quote">&ldquo;We omitted adding the delegation of tasks section from checkpoint 1 contents, let's fix that. Please use the attached CSV to add team roles and tasks table to checkpoin[t 1…]&rdquo;</p>
+        <p class="thread-meta">branch claude/add-team-roles-tasks-5e1583 (worktree) &middot; 6 prompts, 45 responses &middot; <a href="logs/ytorresv/17-adding-the-team-roles-table.md">full transcript &rarr;</a></p>
       </div>
     </div>
     <ol class="entries">
@@ -1068,19 +766,18 @@
         <div class="tl-rail"><span class="dot"></span></div>
         <div class="tl-content">
           <div class="entry-head"><h4>Add team roles/task delegation table; de-checkpoint self-references</h4><span class="hash">424a25b</span></div>
-          <p class="entry-p">The report was missing the spec's required "identify task leads" section. Added a team-roles table grounded in commit history, and swept every self-referential "Checkpoint 1/2" mention into "Step N" language.</p>
+          <p class="entry-p">The report was missing the spec's required &quot;identify task leads&quot; section. Added a team-roles table grounded in commit history, and swept every self-referential &quot;Checkpoint 1/2&quot; mention into &quot;Step N&quot; language.</p>
           <div class="diffstat">3 files · <span class="plus">+75</span> −34</div>
         </div>
       </li>
     </ol>
-
     <div class="tl-row thread">
       <div class="tl-time"><span class="d">Jul 31</span><span class="t">21:22</span></div>
       <div class="tl-rail"><span class="dot"></span></div>
       <div class="tl-content">
         <h3>Editorial revision across both checkpoints</h3>
-        <p class="thread-quote">"let's go through an editorial revision of checkpoint one, two and the footer files. At the end of this exercise we should: 1. have an index.py (composed version) that flows as a single document 2. code blocks should be minimize[d, only show code that gives weight to a section…]"</p>
-        <p class="thread-meta">branch claude/editorial-checkpoints-footer-2a7f6c (worktree) · 195 turns · 39 min · <a href="logs/ytorresv/18-editorial-revision-across-both-checkpoints.md">full transcript →</a></p>
+        <p class="thread-quote">&ldquo;let's go through an editorial revision of checkpoint one, two and the footer files. At the end of this exercise we should: 1. have an index.py (composed version) that flows as a single document 2. code blocks should be minimize[d, only show code that gives weight to a section…]&rdquo;</p>
+        <p class="thread-meta">branch claude/editorial-checkpoints-footer-2a7f6c (worktree) &middot; 3 prompts, 51 responses &middot; <a href="logs/ytorresv/18-editorial-revision-across-both-checkpoints.md">full transcript &rarr;</a></p>
       </div>
     </div>
     <ol class="entries">
@@ -1094,14 +791,13 @@
         </div>
       </li>
     </ol>
-
     <div class="tl-row thread">
       <div class="tl-time"><span class="d">Jul 31</span><span class="t">22:44</span></div>
       <div class="tl-rail"><span class="dot"></span></div>
       <div class="tl-content">
         <h3>A mermaid diagram, then more</h3>
-        <p class="thread-quote">"I'm thinking it might be worthwhile to add a mermaid diagram to visualize the prediction processing pipeline in the diff. What do you think? Is that possible with morimo?"</p>
-        <p class="thread-meta">branch task3.5 · 37 turns · 11 min · <a href="logs/ytorresv/19-a-mermaid-diagram-then-more.md">full transcript →</a></p>
+        <p class="thread-quote">&ldquo;I'm thinking it might be worthwhile to add a mermaid diagram to visualize the prediction processing pipeline in the diff. What do you think? Is that possible with morimo?&rdquo;</p>
+        <p class="thread-meta">branch task3.5 &middot; 3 prompts, 24 responses &middot; <a href="logs/ytorresv/19-a-mermaid-diagram-then-more.md">full transcript &rarr;</a></p>
       </div>
     </div>
     <ol class="entries">
@@ -1133,14 +829,13 @@
         </div>
       </li>
     </ol>
-
     <div class="tl-row thread">
       <div class="tl-time"><span class="d">Jul 31</span><span class="t">22:59</span></div>
       <div class="tl-rail"><span class="dot"></span></div>
       <div class="tl-content">
         <h3>Checking validation-metric coverage</h3>
-        <p class="thread-quote">"would the validation metrics [we've] set in the report cover both models?"</p>
-        <p class="thread-meta">branch Model-Section-and-Justification · 93 turns · 1 h 01 min · <a href="logs/ytorresv/20-checking-validation-metric-coverage.md">full transcript →</a></p>
+        <p class="thread-quote">&ldquo;would the validation metrics [we've] set in the report cover both models?&rdquo;</p>
+        <p class="thread-meta">branch Model-Section-and-Justification &middot; 15 prompts, 37 responses &middot; <a href="logs/ytorresv/20-checking-validation-metric-coverage.md">full transcript &rarr;</a></p>
       </div>
     </div>
     <ol class="entries">
@@ -1165,13 +860,12 @@
         <p class="phase-blurb">One long thread carried nearly the entire slide rewrite, slide by slide, as the modeling work behind it landed.</p>
       </div>
     </div>
-
     <div class="tl-row thread">
       <div class="tl-time"><span class="d">Aug 1</span><span class="t">01:07</span></div>
       <div class="tl-rail"><span class="dot"></span></div>
       <div class="tl-content">
         <h3>Rewriting the Check-In #2 deck</h3>
-        <p class="thread-meta">branch index-cleanup · 157 turns · 10 h 33 min (spans an overnight gap) · <a href="logs/ytorresv/21-rewriting-the-check-in-2-deck.md">full transcript →</a></p>
+        <p class="thread-meta">branch index-cleanup &middot; 20 prompts, 64 responses &middot; <a href="logs/ytorresv/21-rewriting-the-check-in-2-deck.md">full transcript &rarr;</a></p>
       </div>
     </div>
     <ol class="entries">
@@ -1180,7 +874,7 @@
         <div class="tl-rail"><span class="dot"></span></div>
         <div class="tl-content">
           <div class="entry-head"><h4>Rewrite Check-In #2 deck script and add a pinned reference-template flag</h4><span class="hash">3c71233</span></div>
-          <p class="entry-p">Refreshed the script for current task status, reassigned speaking parts to match actual ownership, and fixed a pandoc gotcha where giving <code>#</code> dividers their own speaker notes silently collapsed the deck's slide level.</p>
+          <p class="entry-p">Refreshed the script for current task status, reassigned speaking parts to match actual ownership, and fixed a pandoc gotcha where giving &lt;code&gt;#&lt;/code&gt; dividers their own speaker notes silently collapsed the deck's slide level.</p>
           <div class="diffstat">2 files · <span class="plus">+107</span> −44</div>
         </div>
       </li>
@@ -1216,7 +910,7 @@
         <div class="tl-rail"><span class="dot"></span></div>
         <div class="tl-content">
           <div class="entry-head"><h4>Reframe What's Next around the spec's actual Step 5 requirements</h4><span class="hash">9309f8f</span></div>
-          <p class="entry-p">The deck undersold Step 5 as just "train, evaluate, report." Per the course spec, it also requires a deployment discussion, peer-review integration, and publishing the codebase link — added those explicitly.</p>
+          <p class="entry-p">The deck undersold Step 5 as just &quot;train, evaluate, report.&quot; Per the course spec, it also requires a deployment discussion, peer-review integration, and publishing the codebase link — added those explicitly.</p>
           <div class="diffstat">1 file · <span class="plus">+6</span> −2</div>
         </div>
       </li>
@@ -1234,18 +928,17 @@
         <div class="tl-rail"><span class="dot"></span></div>
         <div class="tl-content">
           <div class="entry-head"><h4>Align Validation &amp; Trade-offs and What's Next into one throughline</h4><span class="hash">201b09a</span></div>
-          <p class="entry-p">The two slides were both independently claiming to cover "what's next" and restating each other. Split the responsibilities so each slide covers one leg of a single path.</p>
+          <p class="entry-p">The two slides were both independently claiming to cover &quot;what's next&quot; and restating each other. Split the responsibilities so each slide covers one leg of a single path.</p>
           <div class="diffstat">1 file · <span class="plus">+7</span> −7</div>
         </div>
       </li>
     </ol>
-
     <div class="tl-row thread">
       <div class="tl-time"><span class="d">Aug 1</span><span class="t">12:24</span></div>
       <div class="tl-rail"><span class="dot"></span></div>
       <div class="tl-content">
         <h3>One more line-length fix</h3>
-        <p class="thread-meta">branch preso-second-iteration · 68 turns · 28 min · <a href="logs/ytorresv/22-one-more-line-length-fix.md">full transcript →</a></p>
+        <p class="thread-meta">branch preso-second-iteration &middot; 7 prompts, 20 responses &middot; <a href="logs/ytorresv/22-one-more-line-length-fix.md">full transcript &rarr;</a></p>
       </div>
     </div>
     <ol class="entries">
@@ -1270,19 +963,18 @@
         <p class="phase-blurb">The most recent thread in this log — table hygiene ahead of the next review pass.</p>
       </div>
     </div>
-
     <div class="tl-row thread">
       <div class="tl-time"><span class="d">Aug 1</span><span class="t">18:28</span></div>
       <div class="tl-rail"><span class="dot"></span></div>
       <div class="tl-content">
         <h3>Timing the narration</h3>
-        <p class="thread-quote">"how much time does the introductory section has? problem statement + regulatory landscape?"</p>
-        <p class="thread-meta">branch Update--PPT-Narration-for-Raj · 71 turns · spans into Aug 2 · <a href="logs/ytorresv/23-timing-the-narration.md">full transcript →</a></p>
+        <p class="thread-quote">&ldquo;how much time does the introductory section has? problem statement + regulatory landscape?&rdquo;</p>
+        <p class="thread-meta">branch Update--PPT-Narration-for-Raj &middot; 13 prompts, 24 responses &middot; <a href="logs/ytorresv/23-timing-the-narration.md">full transcript &rarr;</a></p>
       </div>
     </div>
     <ol class="entries">
       <li class="tl-row entry">
-        <div class="tl-time"><span class="d">Aug 2</span><span class="t">16:08</span></div>
+        <div class="tl-time"><span class="d">Aug 1</span><span class="t">16:08</span></div>
         <div class="tl-rail"><span class="dot"></span></div>
         <div class="tl-content">
           <div class="entry-head"><h4>Trim redundant/decorative tables and improve table readability</h4><span class="hash">d1f5c48</span></div>
@@ -1291,14 +983,13 @@
         </div>
       </li>
     </ol>
-
     <div class="tl-row thread">
       <div class="tl-time"><span class="d">Aug 4</span><span class="t">22:56</span></div>
       <div class="tl-rail"><span class="dot"></span></div>
       <div class="tl-content">
         <h3>Checkpoint 3 header skeleton, then aligning it with the spec</h3>
-        <p class="thread-quote">"let's initialize checkpoint-3 as we've done in the past"</p>
-        <p class="thread-meta">branch init-cp-3 → ai-disclosure-cp3 · 37 turns · 33 min · <a href="logs/ytorresv/24-checkpoint-3-header-skeleton.md">full transcript →</a></p>
+        <p class="thread-quote">&ldquo;let's initialize checkpoint-3 as we've done in the past&rdquo;</p>
+        <p class="thread-meta">branch init-cp-3 → ai-disclosure-cp3 &middot; 9 prompts, 28 responses &middot; <a href="logs/ytorresv/24-checkpoint-3-header-skeleton.md">full transcript &rarr;</a></p>
       </div>
     </div>
     <ol class="entries">
@@ -1316,7 +1007,7 @@
         <div class="tl-rail"><span class="dot"></span></div>
         <div class="tl-content">
           <div class="entry-head"><h4>Align checkpoint_3.py callouts with the Checkpoint-3 spec</h4><span class="hash">4195d0e</span></div>
-          <p class="entry-p">The spec PDF wasn't available when the skeleton was first built. Once it was: dropped the remaining "Checkpoint N" prose per the Step-N/Check-In-#N convention, and added a Public codebase section — the spec requires the report itself, not just the repo, to link the codebase.</p>
+          <p class="entry-p">The spec PDF wasn't available when the skeleton was first built. Once it was: dropped the remaining &quot;Checkpoint N&quot; prose per the Step-N/Check-In-#N convention, and added a Public codebase section — the spec requires the report itself, not just the repo, to link the codebase.</p>
           <div class="diffstat">3 files · <span class="plus">+57</span> −15</div>
         </div>
       </li>
@@ -1325,15 +1016,7 @@
 
   <footer class="page">
     <p>
-      Threads sourced from local Claude Code session logs (15 in this
-      checkout, 9 run inside git worktrees) covering this repository;
-      commits from <code>git log --all --grep="Co-Authored-By: Claude"</code>.
-      Each commit is attributed to the thread whose active time window
-      contains it. Full prompt/response transcripts for all 24 threads
-      are in <a href="logs/ytorresv/index.md"><code>docs/ai/logs/</code></a>.
-      Generated 2026-08-04 — this file isn't wired into CI and won't
-      update itself as new threads and commits land; regenerate by
-      re-running that matching process.
+      Threads sourced from local Claude Code session logs (15 in this checkout, 9 run inside git worktrees) covering this repository; commits from <code>git log --all --grep="Co-Authored-By: Claude"</code>. Each commit is attributed to the thread whose active time window contains it. Full prompt/response transcripts for all 24 threads are in <a href="logs/ytorresv/index.md"><code>docs/ai/logs/</code></a>. Regenerate after adding threads or commits with <code>uv run python scripts/toolkit.py ai-disclosure ytorresv</code>.
     </p>
   </footer>
 

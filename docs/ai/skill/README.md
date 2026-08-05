@@ -108,15 +108,33 @@ convention). Required top-level fields:
 | `threads` | array | See below |
 
 Optional top-level fields: `total_commits` (your all-time commit count,
-enables a "% of my commits" stat), `date_range` (display string),
+enables a "% of my commits" stat), `date_range` (display string) and
+`days` (integer — together render a "N Days, {date_range}" stat;
+`date_range` alone renders as a plain "Span" stat instead),
 `git_author_patterns` (see Step 2), `policy_url` (defaults to the
-Brightspace link), `phases` (see below).
+Brightspace link), `phases` (see below). You can also override the
+page's generated copy if the default wording doesn't fit your voice:
+`h1`, `lede`, `methodology_note`, `footer_note` (each is raw HTML,
+unescaped — see [`docs/ai/ytorresv.html`](../ytorresv.html)'s manifest
+for a first-person example of all four).
 
 Each entry in `threads` needs `title`, `branch`, `date` (display
-string), and `transcript` (filename, relative to the manifest — must
-exist alongside it). Optional per-thread: `quote` (a real, trimmed
-opening line — not paraphrased), `prompts`/`responses` (turn counts),
-`start`/`end`/`commits` (Step 2), and `phase`.
+string — `"Jul 1"` or `"Jul 1, 10:00"`), and `transcript` (filename,
+relative to the manifest — must exist alongside it). Optional
+per-thread: `quote` (a real, trimmed opening line — not paraphrased),
+`prompts`/`responses` (turn counts), `start`/`end`/`commits` (Step 2),
+and `phase`.
+
+Each entry in a thread's `commits` list must be an object with `hash`
+and `subject` — `{"hash": "abc1234", "subject": "Fix the thing"}`, not
+a bare `[hash, subject]` pair (the renderer errors clearly if you get
+this wrong, rather than silently mis-rendering). Optional per-commit:
+`time` (display string, shown next to the thread's date), `summary`
+(one or two sentences on what the commit did — rendered as a
+paragraph under the commit), and `diffstat` (a display string, e.g.
+`'2 files &middot; <span class="plus">+10</span> -3'` — raw HTML,
+unescaped, so you can bold the insertion count the way the existing
+pages do).
 
 `phases` is entirely optional narrative structure — grouping threads
 into milestones with their own heading and blurb, the way
@@ -124,7 +142,9 @@ into milestones with their own heading and blurb, the way
 chronological list; use it if you want the same "Kickoff → ... → Final
 polish" arc treatment. If you use it, **every** thread needs a `phase`
 key (the renderer errors instead of silently dropping unphased threads
-into nowhere).
+into nowhere), and the page gains a jump-nav (`<ul class="toc">`,
+auto-built from your phase titles/order) and a small dot legend above
+the timeline.
 
 Full worked example: [`manifest.example.json`](manifest.example.json)
 (with matching placeholder transcripts alongside it in this directory —

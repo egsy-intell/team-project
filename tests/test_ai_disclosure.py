@@ -81,6 +81,9 @@ def test_ai_disclosure_renders_html_and_logs_index(tmp_path):
     # The four policy questions are answered explicitly.
     assert "Tool &amp; tier" in html
     assert "History of the exchange" in html
+    # A real viewport meta tag, not just responsive CSS - without this
+    # mobile browsers render at desktop width and the CSS never kicks in.
+    assert '<meta name="viewport" content="width=device-width, initial-scale=1">' in html
     # Balanced markup: this is templated HTML, not a fixed fixture, so a
     # gross tag-balance check is worth more here than in most tests.
     assert html.count("<div") == html.count("</div>")
@@ -163,6 +166,63 @@ def test_ai_disclosure_phases_render_milestones(tmp_path):
     html = (tmp_path / "docs" / "ai" / "fullyphased.html").read_text()
     assert 'class="tl-row milestone"' in html
     assert "Kickoff" in html
+
+
+def test_ai_disclosure_commit_summary_and_diffstat_render(tmp_path):
+    manifest = json.loads(json.dumps(VALID_MANIFEST))
+    manifest["threads"][0]["commits"][0]["summary"] = "Explained the thing in detail."
+    manifest["threads"][0]["commits"][0]["diffstat"] = '2 files &middot; <span class="plus">+10</span> -3'
+    manifest["threads"][0]["commits"][0]["time"] = "14:32"
+    _write_manifest(tmp_path, "diffstatperson", manifest)
+
+    result = _run_ai_disclosure(tmp_path, "diffstatperson", "--skip-git")
+    assert result.returncode == 0, result.stderr
+
+    html = (tmp_path / "docs" / "ai" / "diffstatperson.html").read_text()
+    assert '<p class="entry-p">Explained the thing in detail.</p>' in html
+    assert '<div class="diffstat">2 files &middot; <span class="plus">+10</span> -3</div>' in html
+    assert '<span class="t">14:32</span>' in html
+
+
+def test_ai_disclosure_malformed_commit_fails_clearly(tmp_path):
+    manifest = json.loads(json.dumps(VALID_MANIFEST))
+    # A legacy [hash, subject] pair instead of the required {"hash":
+    # ..., "subject": ...} object - this exact shape once slipped into
+    # a committed manifest and broke rendering silently downstream.
+    manifest["threads"][0]["commits"] = [["abc1234", "Do the thing"]]
+    _write_manifest(tmp_path, "malformedcommit", manifest)
+
+    result = _run_ai_disclosure(tmp_path, "malformedcommit", "--skip-git")
+    assert result.returncode == 1
+    assert "must be an object with 'hash' and 'subject' keys" in result.stderr
+
+
+def test_ai_disclosure_days_and_date_range_stat(tmp_path):
+    manifest = json.loads(json.dumps(VALID_MANIFEST))
+    manifest["days"] = 2
+    _write_manifest(tmp_path, "daysperson", manifest)
+
+    result = _run_ai_disclosure(tmp_path, "daysperson", "--skip-git")
+    assert result.returncode == 0, result.stderr
+
+    html = (tmp_path / "docs" / "ai" / "daysperson.html").read_text()
+    assert '<span class="n">2</span><span class="l">Days, Jul 1-2</span>' in html
+
+
+def test_ai_disclosure_phases_render_legend_and_toc(tmp_path):
+    manifest = json.loads(json.dumps(VALID_MANIFEST))
+    manifest["phases"] = {"kickoff": {"title": "Kickoff", "blurb": "Start."}}
+    for t in manifest["threads"]:
+        t["phase"] = "kickoff"
+    _write_manifest(tmp_path, "legendperson", manifest)
+
+    result = _run_ai_disclosure(tmp_path, "legendperson", "--skip-git")
+    assert result.returncode == 0, result.stderr
+
+    html = (tmp_path / "docs" / "ai" / "legendperson.html").read_text()
+    assert 'class="legend"' in html
+    assert '<ul class="toc">' in html
+    assert '<a href="#p1">1. Kickoff</a>' in html
 
 
 def test_ai_disclosure_example_manifest_from_skill_dir_is_valid(tmp_path):

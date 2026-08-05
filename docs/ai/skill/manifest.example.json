@@ -29,7 +29,13 @@
       "prompts": 3,
       "responses": 3,
       "commits": [
-        {"hash": "a1b2c3d", "subject": "Tighten problem-statement prose, fix a run-on sentence"}
+        {
+          "hash": "a1b2c3d",
+          "subject": "Tighten problem-statement prose, fix a run-on sentence",
+          "time": "09:12",
+          "summary": "Cut a run-on sentence in the problem statement and tightened the surrounding paragraph for clarity.",
+          "diffstat": "1 file &middot; <span class=\"plus\">+4</span> -6"
+        }
       ]
     }
   ]
