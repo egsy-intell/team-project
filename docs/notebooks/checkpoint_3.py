@@ -126,40 +126,18 @@ def _(mo):
 
 
 @app.cell(hide_code=True)
-def _(mo, task_callout):
-    mo.vstack(
-        [
-            mo.md("### Triage peer feedback"),
-            task_callout(
-                "T3",
-                category="Feedback integration",
-                lead="Yai, Somyaranjan",
-                summary=(
-                    "Review the peer feedback received on Check-In #2 "
-                    "and select at least one item the team will "
-                    "integrate into the final submission."
-                ),
-                guiding_questions=[
-                    (
-                        "Which feedback items are actionable within the "
-                        "remaining Step 5 timeline versus out of scope for "
-                        "this submission?"
-                    ),
-                    (
-                        "Does any item conflict with a decision the team "
-                        "already made in the Step 3-4 report (e.g. the "
-                        "groundwater hold-out, the risk-tier thresholds), "
-                        "and if so, which one wins?"
-                    ),
-                    (
-                        "Is the selected item a modeling change, an "
-                        "evaluation change, or a writeup/clarity change — "
-                        "and does that determine who should own T4?"
-                    ),
-                ],
-            ),
-        ]
-    )
+def _(mo):
+    mo.md("""
+    ### Feedback selected for integration
+
+    Peer review on Check-In #2 surfaced two items the team is
+    integrating into this submission: keeping the results sections
+    lighter on detail and leading with results, and quantifying the
+    underlying site-count sparsity (e.g. ~5 sites/state on average
+    across the bottom 15 states) to acknowledge the geographic
+    generalizability limit it creates. Both are threaded into T9's
+    and T10's guiding questions below.
+    """)
     return
 
 
@@ -171,7 +149,7 @@ def _(mo, task_callout):
             task_callout(
                 "T4",
                 category="Feedback integration",
-                lead="Owner set by T3",
+                lead="Yai, Somyaranjan",
                 depends_on="T3",
                 summary=(
                     "Make the scoped change identified in T3, in "
@@ -388,6 +366,18 @@ def _(mo, task_callout):
                         "the team recommends for the deployment discussion "
                         "in T10?"
                     ),
+                    (
+                        "Per Check-In #2 peer feedback, does this section "
+                        "stay lighter on detail and lead with results, "
+                        "rather than listing every metric computed?"
+                    ),
+                    (
+                        "Per that same feedback, can we quantify how "
+                        "sparse the underlying site data is by state "
+                        "(e.g. ~5 sites/state on average across the "
+                        "bottom 15 states), and does that sparsity line "
+                        "up with where either model's errors concentrate?"
+                    ),
                 ],
             ),
         ]
@@ -433,6 +423,20 @@ def _(mo, task_callout):
                         "(interpretability vs. accuracy, or the McMahon "
                         "generalization gap) change the deployment "
                         "recommendation itself?"
+                    ),
+                    (
+                        "Per Check-In #2 peer feedback, does the "
+                        "conclusion explicitly acknowledge that "
+                        "state-level data sparsity limits how well the "
+                        "benchmarking generalizes across geography, "
+                        "rather than leaving that gap implicit?"
+                    ),
+                    (
+                        "Given that gap, does the narrative recommend "
+                        "narrowing the model's scope to a data-denser "
+                        "subregion, or framing it as exploratory rather "
+                        "than screening-ready — and which one does it "
+                        "land on?"
                     ),
                 ],
             ),
