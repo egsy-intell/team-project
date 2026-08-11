@@ -187,39 +187,533 @@ def _(mo):
 
 
 @app.cell(hide_code=True)
-def _(mo, task_callout):
+def _(mo):
+    mo.md("""
+    ### Build baseline model
+
+    Model A is the multinomial logistic-regression baseline proposed in
+    Step 4. It is trained only on `tapwater_train_df` using study-grouped
+    cross-validation. The held-out test partition is not used in T5 and
+    remains untouched for T7.
+
+    T5 also uses an explicit predictor allowlist so raw PFAS
+    concentrations, ∑TQ fields, identifiers, and study labels cannot
+    accidentally enter the model.
+    """)
+    return
+
+
+@app.cell
+def _(tapwater_train_df):
+    import warnings as _warnings
+
+    import numpy as _np
+    import pandas as _pd
+    from sklearn.base import BaseEstimator as _BaseEstimator
+    from sklearn.base import TransformerMixin as _TransformerMixin
+    from sklearn.compose import ColumnTransformer as _ColumnTransformer
+    from sklearn.impute import SimpleImputer as _SimpleImputer
+    from sklearn.linear_model import LogisticRegression as _LogisticRegression
+    from sklearn.metrics import f1_score as _f1_score
+    from sklearn.metrics import precision_score as _precision_score
+    from sklearn.metrics import recall_score as _recall_score
+    from sklearn.model_selection import GridSearchCV as _GridSearchCV
+    from sklearn.model_selection import (
+        StratifiedGroupKFold as _StratifiedGroupKFold,
+    )
+    from sklearn.pipeline import Pipeline as _Pipeline
+    from sklearn.preprocessing import OneHotEncoder as _OneHotEncoder
+    from sklearn.preprocessing import StandardScaler as _StandardScaler
+
+    # Approved Seawolf landscape / land-use predictors.
+    _numeric_features = [
+        "number_pfas_sites_proximal",
+        "mean_dist_to_pfas_site",
+        "Burn_Area_5k_frac",
+        "Burn_area_50k_frac",
+        "Urbn_burn_5k_frac",
+        "Urbn_burn_50k_frac",
+        "OpenWater",
+        "PerennialIceSnow",
+        "DevelopedOpenSpace",
+        "DevelopedLowIntensity",
+        "DevelopedMediumIntensity",
+        "DevelopedHighIntensity",
+        "Barren",
+        "DeciduousForest",
+        "EvergreenForest",
+        "MixedForest",
+        "DwarfScrub",
+        "ShrubScrub",
+        "GrasslandHerbaceous",
+        "SedgeHerbaceous",
+        "Moss",
+        "PastureHay",
+        "CultivatedCrop",
+        "WoodyWetlands",
+        "EmergentHerbaceousWetlands",
+    ]
+    _categorical_features = ["State", "Site Type"]
+
+    _numeric_features = [
+        c for c in _numeric_features if c in tapwater_train_df.columns
+    ]
+    _categorical_features = [
+        c for c in _categorical_features if c in tapwater_train_df.columns
+    ]
+    _features = _numeric_features + _categorical_features
+
+    if not _numeric_features:
+        raise ValueError("Model A could not find the Seawolf predictors.")
+
+    _X_train = tapwater_train_df[_features].copy()
+    _y_train = tapwater_train_df["pfas_risk_tier"].astype(str)
+    _groups = tapwater_train_df["study_group"].astype(str)
+
+    _n_splits = min(5, _groups.nunique())
+    _grouped_cv = _StratifiedGroupKFold(
+        n_splits=_n_splits,
+        shuffle=True,
+        random_state=42,
+    )
+
+    # Check whether a validation fold contains a categorical level that
+    # is absent from that fold's fitting studies.
+    _unseen_rows = []
+    for _fold, (_fit_idx, _valid_idx) in enumerate(
+        _grouped_cv.split(_X_train, _y_train, groups=_groups),
+        start=1,
+    ):
+        _fit_part = _X_train.iloc[_fit_idx]
+        _valid_part = _X_train.iloc[_valid_idx]
+
+        for _column in _categorical_features:
+            _fit_levels = set(
+                _fit_part[_column].dropna().astype(str).str.strip()
+            )
+            _valid_levels = set(
+                _valid_part[_column].dropna().astype(str).str.strip()
+            )
+            _unseen = sorted(_valid_levels - _fit_levels)
+
+            if _unseen:
+                _unseen_rows.append(
+                    {
+                        "Fold": _fold,
+                        "Feature": _column,
+                        "Unseen categories": ", ".join(_unseen),
+                    }
+                )
+
+    model_a_unseen_categories = _pd.DataFrame(_unseen_rows)
+
+    class _SkewLog1p(_BaseEstimator, _TransformerMixin):
+        """Learn skewed numeric columns inside each training fold."""
+
+        def __init__(self, threshold=1.0):
+            self.threshold = threshold
+
+        def fit(self, X, y=None):
+            _frame = X.copy()
+            self.feature_names_in_ = _np.asarray(
+                _frame.columns, dtype=object
+            )
+            _skew = _frame.skew(numeric_only=True)
+            self.skewed_features_ = [
+                c
+                for c in _frame.columns
+                if _skew.get(c, 0.0) > self.threshold
+                and (_frame[c].dropna() >= 0).all()
+            ]
+            return self
+
+        def transform(self, X):
+            _frame = X.copy()
+            for _column in self.skewed_features_:
+                _frame[_column] = _np.log1p(_frame[_column])
+            return _frame
+
+        def get_feature_names_out(self, input_features=None):
+            if input_features is None:
+                input_features = self.feature_names_in_
+            return _np.asarray(input_features, dtype=object)
+
+    _numeric_pipeline = _Pipeline(
+        [
+            ("skew_log1p", _SkewLog1p(threshold=1.0)),
+            ("imputer", _SimpleImputer(strategy="median")),
+            ("scaler", _StandardScaler()),
+        ]
+    )
+
+    # Step 4 proposed drop="first". With grouped CV, an unseen State
+    # would also be encoded as all zeros, making it indistinguishable
+    # from the dropped reference State. Keeping all one-hot columns
+    # avoids that ambiguity. L2 regularization handles the redundancy.
+    _categorical_pipeline = _Pipeline(
+        [
+            ("imputer", _SimpleImputer(strategy="most_frequent")),
+            (
+                "onehot",
+                _OneHotEncoder(
+                    handle_unknown="ignore",
+                    drop=None,
+                ),
+            ),
+        ]
+    )
+
+    _preprocessor = _ColumnTransformer(
+        [
+            ("num", _numeric_pipeline, _numeric_features),
+            ("cat", _categorical_pipeline, _categorical_features),
+        ],
+        remainder="drop",
+    )
+
+    # LogisticRegression uses L2 regularization by default.
+    _pipeline = _Pipeline(
+        [
+            ("preprocessor", _preprocessor),
+            (
+                "model",
+                _LogisticRegression(
+                    solver="lbfgs",
+                    max_iter=2000,
+                ),
+            ),
+        ]
+    )
+
+    # Small Step 4 tuning grid.
+    _param_grid = {
+        "model__C": [0.1, 1.0, 10.0],
+        "model__class_weight": [None, "balanced"],
+    }
+
+    def _macro_f1(estimator, X_valid, y_valid):
+        _pred = estimator.predict(X_valid)
+        return _f1_score(
+            y_valid, _pred, average="macro", zero_division=0
+        )
+
+    def _mcl_recall(estimator, X_valid, y_valid):
+        _pred = estimator.predict(X_valid)
+        return _recall_score(
+            y_valid,
+            _pred,
+            labels=["mcl_exceedance"],
+            average="macro",
+            zero_division=0,
+        )
+
+    def _mcl_precision(estimator, X_valid, y_valid):
+        _pred = estimator.predict(X_valid)
+        return _precision_score(
+            y_valid,
+            _pred,
+            labels=["mcl_exceedance"],
+            average="macro",
+            zero_division=0,
+        )
+
+    _scoring = {
+        "macro_f1": _macro_f1,
+        "mcl_recall": _mcl_recall,
+        "mcl_precision": _mcl_precision,
+    }
+
+    # First enforce the Step 3 high-risk recall and precision floors.
+    # Among eligible candidates, choose the highest macro-F1.
+    # If none qualify, keep the highest-recall model for T7 diagnostics.
+    def _select_best(cv_results):
+        _recall = _np.asarray(cv_results["mean_test_mcl_recall"])
+        _precision = _np.asarray(cv_results["mean_test_mcl_precision"])
+        _macro = _np.asarray(cv_results["mean_test_macro_f1"])
+
+        _eligible = (_recall >= 0.70) & (_precision >= 0.45)
+
+        if _eligible.any():
+            _idx = _np.flatnonzero(_eligible)
+            return int(_idx[_np.nanargmax(_macro[_idx])])
+
+        _best_recall = _np.nanmax(_recall)
+        _idx = _np.flatnonzero(_recall == _best_recall)
+        return int(_idx[_np.nanargmax(_macro[_idx])])
+
+    model_a_grid_search = _GridSearchCV(
+        estimator=_pipeline,
+        param_grid=_param_grid,
+        scoring=_scoring,
+        refit=_select_best,
+        cv=_grouped_cv,
+        n_jobs=-1,
+        error_score="raise",
+    )
+
+    # Unknown categories are audited above. Suppress repeated sklearn
+    # warnings during every grid-search fold.
+    with _warnings.catch_warnings():
+        _warnings.filterwarnings(
+            "ignore",
+            message="Found unknown categories.*",
+            category=UserWarning,
+        )
+        model_a_grid_search.fit(
+            _X_train,
+            _y_train,
+            groups=_groups,
+        )
+
+    model_a_best_estimator = model_a_grid_search.best_estimator_
+
+    _cv = model_a_grid_search.cv_results_
+    model_a_cv_results = _pd.DataFrame(
+        {
+            "C": _cv["param_model__C"],
+            "Class weight": [
+                "unweighted" if x is None else str(x)
+                for x in _cv["param_model__class_weight"]
+            ],
+            "CV macro F1": _cv["mean_test_macro_f1"],
+            "CV mcl recall": _cv["mean_test_mcl_recall"],
+            "CV mcl precision": _cv["mean_test_mcl_precision"],
+        }
+    )
+    model_a_cv_results["Selected"] = False
+    model_a_cv_results.loc[
+        model_a_grid_search.best_index_, "Selected"
+    ] = True
+    model_a_cv_results = model_a_cv_results.sort_values(
+        ["Selected", "CV macro F1"],
+        ascending=[False, False],
+    ).reset_index(drop=True)
+
+    _pre = model_a_best_estimator.named_steps["preprocessor"]
+    _model = model_a_best_estimator.named_steps["model"]
+    _encoded_count = len(_pre.get_feature_names_out())
+    _skewed_count = len(
+        _pre.named_transformers_["num"]
+        .named_steps["skew_log1p"]
+        .skewed_features_
+    )
+
+    _selected = model_a_cv_results[
+        model_a_cv_results["Selected"]
+    ].iloc[0]
+
+    model_a_training_summary = _pd.DataFrame(
+        [
+            {
+                "Training rows": len(_X_train),
+                "Study groups": _groups.nunique(),
+                "Raw predictors": len(_features),
+                "Encoded predictors": _encoded_count,
+                "log1p predictors": _skewed_count,
+                "Best C": model_a_grid_search.best_params_["model__C"],
+                "Best class weight": (
+                    "unweighted"
+                    if model_a_grid_search.best_params_[
+                        "model__class_weight"
+                    ]
+                    is None
+                    else model_a_grid_search.best_params_[
+                        "model__class_weight"
+                    ]
+                ),
+                "CV macro F1": round(_selected["CV macro F1"], 4),
+                "CV mcl recall": round(_selected["CV mcl recall"], 4),
+                "CV mcl precision": round(
+                    _selected["CV mcl precision"], 4
+                ),
+                "Iterations used": int(_np.max(_model.n_iter_)),
+            }
+        ]
+    )
+
+    return (
+        model_a_best_estimator,
+        model_a_cv_results,
+        model_a_training_summary,
+        model_a_unseen_categories,
+    )
+
+
+@app.cell
+def _(model_a_best_estimator):
+    import numpy as _np
+    import pandas as _pd
+
+    _pre = model_a_best_estimator.named_steps["preprocessor"]
+    _model = model_a_best_estimator.named_steps["model"]
+    _feature_names = _pre.get_feature_names_out()
+    _classes = list(_model.classes_)
+
+    _mcl_idx = _classes.index("mcl_exceedance")
+    _coefficients = _model.coef_[_mcl_idx]
+
+    _coef_df = _pd.DataFrame(
+        {
+            "Feature": _feature_names,
+            "Coefficient": _coefficients,
+        }
+    )
+    _coef_df["Abs coefficient"] = _coef_df["Coefficient"].abs()
+    _coef_df["Direction"] = _np.where(
+        _coef_df["Coefficient"] > 0,
+        "positive",
+        _np.where(_coef_df["Coefficient"] < 0, "negative", "zero"),
+    )
+
+    model_a_top_coefficients = (
+        _coef_df.sort_values("Abs coefficient", ascending=False)
+        .head(12)
+        .reset_index(drop=True)
+    )
+
+    # Only test direction where there is a reasonable prior expectation.
+    _expected = {
+        "number_pfas_sites_proximal": "positive",
+        "mean_dist_to_pfas_site": "negative",
+        "DevelopedMediumIntensity": "positive",
+        "DevelopedHighIntensity": "positive",
+        "Urbn_burn_5k_frac": "positive",
+        "Urbn_burn_50k_frac": "positive",
+    }
+
+    _rows = []
+    for _feature, _expected_direction in _expected.items():
+        _row = _coef_df[
+            _coef_df["Feature"] == f"num__{_feature}"
+        ]
+        if _row.empty:
+            continue
+
+        _value = float(_row.iloc[0]["Coefficient"])
+        _observed = (
+            "positive"
+            if _value > 0
+            else "negative"
+            if _value < 0
+            else "zero"
+        )
+        _rows.append(
+            {
+                "Feature": _feature,
+                "Expected": _expected_direction,
+                "Observed": _observed,
+                "Coefficient": round(_value, 4),
+                "Matches": _observed == _expected_direction,
+            }
+        )
+
+    model_a_direction_audit = _pd.DataFrame(_rows)
+
+    return model_a_direction_audit, model_a_top_coefficients
+
+
+@app.cell(hide_code=True)
+def _(
+    mo,
+    model_a_cv_results,
+    model_a_direction_audit,
+    model_a_top_coefficients,
+    model_a_training_summary,
+    model_a_unseen_categories,
+):
+    if model_a_unseen_categories.empty:
+        _unseen_text = (
+            "No unseen categorical levels appeared in the grouped folds."
+        )
+        _unseen_view = mo.md(_unseen_text)
+    else:
+        _features = ", ".join(
+            sorted(model_a_unseen_categories["Feature"].unique())
+        )
+        _unseen_text = (
+            "Yes. Grouped cross-validation produced categorical levels "
+            f"in {_features} that were not present in one or more fitting "
+            "folds. `handle_unknown='ignore'` prevents a failure, but "
+            "Step 4's `drop='first'` would make an unseen category look "
+            "the same as the dropped reference category. T5 therefore "
+            "uses full one-hot encoding (`drop=None`)."
+        )
+        _unseen_view = mo.ui.table(model_a_unseen_categories)
+
+    if model_a_direction_audit.empty:
+        _coef_text = (
+            "No pre-specified directional checks were available in the "
+            "final feature matrix."
+        )
+    else:
+        _counter = model_a_direction_audit[
+            ~model_a_direction_audit["Matches"]
+        ]
+        if _counter.empty:
+            _coef_text = (
+                "All predictors with a clear prior expectation have "
+                "high-risk coefficients in the expected direction. This "
+                "supports the Step 4 interpretability claim, while the "
+                "coefficients should still be treated as associations, "
+                "not causal effects."
+            )
+        else:
+            _names = ", ".join(_counter["Feature"].tolist())
+            _coef_text = (
+                f"The coefficients remain inspectable, but {_names} run "
+                "counter to the expected high-risk direction. This does "
+                "not automatically invalidate Model A; it shows that "
+                "effects are conditional on the other correlated "
+                "predictors and should not be read causally."
+            )
+
+    _state_count = int(
+        model_a_top_coefficients["Feature"]
+        .astype(str)
+        .str.startswith("cat__State_")
+        .sum()
+    )
+    if _state_count:
+        _coef_text += (
+            f" {_state_count} of the 12 largest absolute coefficients "
+            "are State indicators, so geographic effects also need "
+            "cautious interpretation."
+        )
+
     mo.vstack(
         [
-            mo.md("### Build baseline model"),
-            task_callout(
-                "T5",
-                category="Step 5 - Model Training",
-                lead="Raj",
-                depends_on="T1",
-                summary=(
-                    "Implement and train the interpretable baseline "
-                    "classifier (Model A) proposed in Step 4, using the "
-                    "Step 3-4 report's study-grouped training partition "
-                    "and tuning grid."
-                ),
-                guiding_questions=[
-                    (
-                        "Does the actual training run surface any predictor "
-                        "or preprocessing issue the Step 4 proposal didn't "
-                        "anticipate (e.g. a category unseen in a training "
-                        "fold)?"
-                    ),
-                    (
-                        "Do the tuned coefficients support the "
-                        "interpretability claim made in Step 4, or do any "
-                        "of them run counter to the expected direction?"
-                    ),
-                ],
+            mo.md("#### Training and tuning summary"),
+            mo.ui.table(model_a_training_summary),
+            mo.md("#### Tuning grid results"),
+            mo.ui.table(model_a_cv_results.round(4)),
+            mo.md("#### Unseen-category audit"),
+            _unseen_view,
+            mo.md("#### Largest coefficients for `mcl_exceedance`"),
+            mo.ui.table(
+                model_a_top_coefficients[
+                    ["Feature", "Coefficient", "Direction"]
+                ].round(4)
+            ),
+            mo.md("#### Expected-direction check"),
+            mo.ui.table(model_a_direction_audit),
+            mo.md(
+                f"""
+                #### T5 findings summary
+
+                {_unseen_text}
+
+                The training implementation also showed that the earlier
+                generic feature-selection approach could allow raw PFAS
+                concentration or outcome-related fields into the model.
+                T5 avoids this leakage by using an explicit allowlist of
+                landscape, land-use, State, and Site Type predictors.
+
+                {_coef_text}
+                """
             ),
         ]
     )
     return
-
 
 @app.cell(hide_code=True)
 def _(mo, task_callout):
