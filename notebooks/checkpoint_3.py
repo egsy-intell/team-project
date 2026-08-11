@@ -530,7 +530,6 @@ def _(tapwater_train_df):
             }
         ]
     )
-
     return (
         model_a_best_estimator,
         model_a_cv_results,
@@ -608,7 +607,6 @@ def _(model_a_best_estimator):
         )
 
     model_a_direction_audit = _pd.DataFrame(_rows)
-
     return model_a_direction_audit, model_a_top_coefficients
 
 
@@ -714,6 +712,7 @@ def _(
         ]
     )
     return
+
 
 @app.cell(hide_code=True)
 def _(mo, task_callout):
