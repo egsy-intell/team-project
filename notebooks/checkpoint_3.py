@@ -193,8 +193,8 @@ def _(mo):
 
     Model A is the multinomial logistic-regression baseline proposed in
     Step 4. It is trained only on `tapwater_train_df` using study-grouped
-    cross-validation. 
-    
+    cross-validation.
+
     *To be removed *The held-out test partition is not used in T5 and
     remains untouched for T7*
 
