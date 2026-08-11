@@ -229,44 +229,21 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    ### Baseline model A Implementation
+    ### Shared setup for Model A & Model B
 
-    Model A is the multinomial logistic-regression baseline proposed in
-    Step 4. It is trained only on `tapwater_train_df` using study-grouped
-    cross-validation; the held-out test partition is not used here and
-    remains untouched for T7.
-
-    This also uses an explicit predictor allowlist so raw PFAS
-    concentrations, ∑TQ fields, identifiers, and study labels cannot
-    accidentally enter the model.
+    Per the Step 4 proposals, Model B (T6) reuses Model A's approved
+    predictor set, grouped cross-validation strategy, and two-stage
+    selection rule verbatim. These are defined once here so both
+    models train against identical folds and criteria.
     """)
     return
 
 
-@app.cell
-def _(
-    BaseEstimator,
-    ColumnTransformer,
-    GridSearchCV,
-    LogisticRegression,
-    OneHotEncoder,
-    PRECISION_FLOOR,
-    Pipeline,
-    RECALL_FLOOR,
-    SimpleImputer,
-    StandardScaler,
-    StratifiedGroupKFold,
-    TransformerMixin,
-    f1_score,
-    np,
-    pd,
-    precision_score,
-    recall_score,
-    tapwater_train_df,
-    warnings,
-):
-    # Approved Seawolf landscape / land-use predictors.
-    _numeric_features = [
+@app.cell(hide_code=True)
+def _(tapwater_train_df):
+    # Approved Seawolf landscape / land-use predictors, shared by
+    # Model A and Model B per the Step 4 proposal.
+    _candidate_numeric_predictors = [
         "number_pfas_sites_proximal",
         "mean_dist_to_pfas_site",
         "Burn_Area_5k_frac",
@@ -293,41 +270,157 @@ def _(
         "WoodyWetlands",
         "EmergentHerbaceousWetlands",
     ]
-    _categorical_features = ["State", "Site Type"]
+    _candidate_categorical_predictors = ["State", "Site Type"]
 
-    _numeric_features = [
-        c for c in _numeric_features if c in tapwater_train_df.columns
+    numeric_predictors = [
+        c
+        for c in _candidate_numeric_predictors
+        if c in tapwater_train_df.columns
     ]
-    _categorical_features = [
-        c for c in _categorical_features if c in tapwater_train_df.columns
+    categorical_predictors = [
+        c
+        for c in _candidate_categorical_predictors
+        if c in tapwater_train_df.columns
     ]
-    _features = _numeric_features + _categorical_features
+    model_predictors = numeric_predictors + categorical_predictors
 
-    if not _numeric_features:
-        raise ValueError("Model A could not find the Seawolf predictors.")
+    if not numeric_predictors:
+        raise ValueError("Could not find the Seawolf predictors.")
+    return categorical_predictors, model_predictors, numeric_predictors
 
-    _X_train = tapwater_train_df[_features].copy()
-    _y_train = tapwater_train_df["pfas_risk_tier"].astype(str)
-    _groups = tapwater_train_df["study_group"].astype(str)
 
-    _n_splits = min(5, _groups.nunique())
-    _grouped_cv = StratifiedGroupKFold(
-        n_splits=_n_splits,
+@app.cell(hide_code=True)
+def _(StratifiedGroupKFold, tapwater_train_df):
+    # Grouped CV strategy shared by Model A and Model B, so both
+    # models' tuning candidates are scored on identical folds.
+    study_groups = tapwater_train_df["study_group"].astype(str)
+    grouped_cv = StratifiedGroupKFold(
+        n_splits=min(5, study_groups.nunique()),
         shuffle=True,
         random_state=42,
     )
+    return grouped_cv, study_groups
+
+
+@app.cell(hide_code=True)
+def _(
+    PRECISION_FLOOR,
+    RECALL_FLOOR,
+    f1_score,
+    np,
+    precision_score,
+    recall_score,
+):
+    # CV scoring and two-stage selection rule shared by Model A and
+    # Model B: first enforce the Step 3 high-risk recall/precision
+    # floors (RECALL_FLOOR/PRECISION_FLOOR, defined in
+    # checkpoint_2.py), then choose the highest macro-F1 among
+    # eligible candidates. If none qualify, keep the highest-recall
+    # candidate for T7 diagnostics.
+    def _macro_f1(estimator, X_valid, y_valid):
+        _pred = estimator.predict(X_valid)
+        return f1_score(y_valid, _pred, average="macro", zero_division=0)
+
+    def _mcl_recall(estimator, X_valid, y_valid):
+        _pred = estimator.predict(X_valid)
+        return recall_score(
+            y_valid,
+            _pred,
+            labels=["mcl_exceedance"],
+            average="macro",
+            zero_division=0,
+        )
+
+    def _mcl_precision(estimator, X_valid, y_valid):
+        _pred = estimator.predict(X_valid)
+        return precision_score(
+            y_valid,
+            _pred,
+            labels=["mcl_exceedance"],
+            average="macro",
+            zero_division=0,
+        )
+
+    tier_model_scoring = {
+        "macro_f1": _macro_f1,
+        "mcl_recall": _mcl_recall,
+        "mcl_precision": _mcl_precision,
+    }
+
+    def select_best_tier_model(cv_results):
+        _recall = np.asarray(cv_results["mean_test_mcl_recall"])
+        _precision = np.asarray(cv_results["mean_test_mcl_precision"])
+        _macro = np.asarray(cv_results["mean_test_macro_f1"])
+
+        _eligible = (_recall >= RECALL_FLOOR) & (
+            _precision >= PRECISION_FLOOR
+        )
+
+        if _eligible.any():
+            _idx = np.flatnonzero(_eligible)
+            return int(_idx[np.nanargmax(_macro[_idx])])
+
+        _best_recall = np.nanmax(_recall)
+        _idx = np.flatnonzero(_recall == _best_recall)
+        return int(_idx[np.nanargmax(_macro[_idx])])
+
+    return select_best_tier_model, tier_model_scoring
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md("""
+    ### Baseline model A Implementation
+
+    Model A is the multinomial logistic-regression baseline proposed in
+    Step 4. It is trained only on `tapwater_train_df` using study-grouped
+    cross-validation; the held-out test partition is not used here and
+    remains untouched for T7.
+
+    This also uses an explicit predictor allowlist so raw PFAS
+    concentrations, ∑TQ fields, identifiers, and study labels cannot
+    accidentally enter the model.
+    """)
+    return
+
+
+@app.cell
+def _(
+    BaseEstimator,
+    ColumnTransformer,
+    GridSearchCV,
+    LogisticRegression,
+    OneHotEncoder,
+    Pipeline,
+    SimpleImputer,
+    StandardScaler,
+    TransformerMixin,
+    categorical_predictors,
+    grouped_cv,
+    model_predictors,
+    np,
+    numeric_predictors,
+    pd,
+    select_best_tier_model,
+    study_groups,
+    tapwater_train_df,
+    tier_model_scoring,
+    warnings,
+):
+    _X_train = tapwater_train_df[model_predictors].copy()
+    _y_train = tapwater_train_df["pfas_risk_tier"].astype(str)
 
     # Check whether a validation fold contains a categorical level that
     # is absent from that fold's fitting studies.
     _unseen_rows = []
     for _fold, (_fit_idx, _valid_idx) in enumerate(
-        _grouped_cv.split(_X_train, _y_train, groups=_groups),
+        grouped_cv.split(_X_train, _y_train, groups=study_groups),
         start=1,
     ):
         _fit_part = _X_train.iloc[_fit_idx]
         _valid_part = _X_train.iloc[_valid_idx]
 
-        for _column in _categorical_features:
+        for _column in categorical_predictors:
             _fit_levels = set(
                 _fit_part[_column].dropna().astype(str).str.strip()
             )
@@ -405,8 +498,8 @@ def _(
 
     _preprocessor = ColumnTransformer(
         [
-            ("num", _numeric_pipeline, _numeric_features),
-            ("cat", _categorical_pipeline, _categorical_features),
+            ("num", _numeric_pipeline, numeric_predictors),
+            ("cat", _categorical_pipeline, categorical_predictors),
         ],
         remainder="drop",
     )
@@ -431,65 +524,12 @@ def _(
         "model__class_weight": [None, "balanced"],
     }
 
-    def _macro_f1(estimator, X_valid, y_valid):
-        _pred = estimator.predict(X_valid)
-        return f1_score(
-            y_valid, _pred, average="macro", zero_division=0
-        )
-
-    def _mcl_recall(estimator, X_valid, y_valid):
-        _pred = estimator.predict(X_valid)
-        return recall_score(
-            y_valid,
-            _pred,
-            labels=["mcl_exceedance"],
-            average="macro",
-            zero_division=0,
-        )
-
-    def _mcl_precision(estimator, X_valid, y_valid):
-        _pred = estimator.predict(X_valid)
-        return precision_score(
-            y_valid,
-            _pred,
-            labels=["mcl_exceedance"],
-            average="macro",
-            zero_division=0,
-        )
-
-    _scoring = {
-        "macro_f1": _macro_f1,
-        "mcl_recall": _mcl_recall,
-        "mcl_precision": _mcl_precision,
-    }
-
-    # First enforce the Step 3 high-risk recall and precision floors
-    # (RECALL_FLOOR/PRECISION_FLOOR, defined in checkpoint_2.py).
-    # Among eligible candidates, choose the highest macro-F1.
-    # If none qualify, keep the highest-recall model for T7 diagnostics.
-    def _select_best(cv_results):
-        _recall = np.asarray(cv_results["mean_test_mcl_recall"])
-        _precision = np.asarray(cv_results["mean_test_mcl_precision"])
-        _macro = np.asarray(cv_results["mean_test_macro_f1"])
-
-        _eligible = (_recall >= RECALL_FLOOR) & (
-            _precision >= PRECISION_FLOOR
-        )
-
-        if _eligible.any():
-            _idx = np.flatnonzero(_eligible)
-            return int(_idx[np.nanargmax(_macro[_idx])])
-
-        _best_recall = np.nanmax(_recall)
-        _idx = np.flatnonzero(_recall == _best_recall)
-        return int(_idx[np.nanargmax(_macro[_idx])])
-
     model_a_grid_search = GridSearchCV(
         estimator=_pipeline,
         param_grid=_param_grid,
-        scoring=_scoring,
-        refit=_select_best,
-        cv=_grouped_cv,
+        scoring=tier_model_scoring,
+        refit=select_best_tier_model,
+        cv=grouped_cv,
         n_jobs=-1,
         error_score="raise",
     )
@@ -505,7 +545,7 @@ def _(
         model_a_grid_search.fit(
             _X_train,
             _y_train,
-            groups=_groups,
+            groups=study_groups,
         )
 
     model_a_best_estimator = model_a_grid_search.best_estimator_
@@ -549,8 +589,8 @@ def _(
         [
             {
                 "Training rows": len(_X_train),
-                "Study groups": _groups.nunique(),
-                "Raw predictors": len(_features),
+                "Study groups": study_groups.nunique(),
+                "Raw predictors": len(model_predictors),
                 "Encoded predictors": _encoded_count,
                 "log1p predictors": _skewed_count,
                 "Best C": model_a_grid_search.best_params_["model__C"],
