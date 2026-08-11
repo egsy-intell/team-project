@@ -3,7 +3,7 @@ T1,Finalize classification pipeline,"Resolve treatment of the two unbenchmarked 
 T2,Verify source citations,Confirm state-agency primary sources in Table S5 and the authoritative CDM Smith EPA Final PFAS Regulations fact sheet URL for the methods section.,Yai,2026-08-04,2026-08-06,,Done
 T3,Triage Checkpoint 2 peer feedback,Review peer feedback received today; select at least one item the team will integrate into the final submission (required by the spec).,"Yai, Somyaranjan",2026-08-04,2026-08-05,,Done
 T4,Implement feedback change,"Make the scoped change identified in T3, in whichever part of the pipeline/notebook it touches.","Yai, Somyaranjan",2026-08-06,2026-08-07,T3,Pending
-T5,Build baseline model,Implement and train the interpretable baseline classifier (carries the Step 4 proposal into Step 5 execution). Unblocked as of today since T1 is done.,Raj,2026-08-04,2026-08-07,T1,Pending
+T5,Build baseline model,Implement and train the interpretable baseline classifier (carries the Step 4 proposal into Step 5 execution). Unblocked as of today since T1 is done.,Raj,2026-08-04,2026-08-07,T1,Complete
 T6,Build competing model,Implement and train the competing ensemble model (carries the Step 4 proposal into Step 5 execution). Unblocked as of today since T1 is done.,Emir,2026-08-04,2026-08-07,T1,Pending
 T7,Run predictions & retune,"Score both trained models on the held-out test set; evaluate and retune to improve accuracy. Run as joint execution, with Yai pairing directly with Somya through the step.","Yai, Somyaranjan",2026-08-08,2026-08-10,"T5, T6",Pending
 T8,Scalability / deployment metric,Optional scalability and deployment-metric analysis on the competing model.,Emir,2026-08-08,2026-08-10,T6,Pending

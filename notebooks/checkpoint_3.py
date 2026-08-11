@@ -60,7 +60,52 @@ async def _(checkpoint_2_app):
     checkpoint_2_result = await checkpoint_2_app.embed()
     tapwater_train_df = checkpoint_2_result.defs["tapwater_train_df"]
     tapwater_test_df = checkpoint_2_result.defs["tapwater_test_df"]
-    return tapwater_test_df, tapwater_train_df
+    RECALL_FLOOR = checkpoint_2_result.defs["RECALL_FLOOR"]
+    PRECISION_FLOOR = checkpoint_2_result.defs["PRECISION_FLOOR"]
+    return (
+        PRECISION_FLOOR,
+        RECALL_FLOOR,
+        tapwater_test_df,
+        tapwater_train_df,
+    )
+
+
+@app.cell(hide_code=True)
+def _():
+    # Shared third-party imports for this notebook, defined once so
+    # downstream cells take them as parameters instead of each
+    # re-importing numpy/pandas/sklearn locally.
+    import warnings
+
+    import numpy as np
+    import pandas as pd
+    from sklearn.base import BaseEstimator, TransformerMixin
+    from sklearn.compose import ColumnTransformer
+    from sklearn.impute import SimpleImputer
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.metrics import f1_score, precision_score, recall_score
+    from sklearn.model_selection import GridSearchCV, StratifiedGroupKFold
+    from sklearn.pipeline import Pipeline
+    from sklearn.preprocessing import OneHotEncoder, StandardScaler
+
+    return (
+        BaseEstimator,
+        ColumnTransformer,
+        GridSearchCV,
+        LogisticRegression,
+        OneHotEncoder,
+        Pipeline,
+        SimpleImputer,
+        StandardScaler,
+        StratifiedGroupKFold,
+        TransformerMixin,
+        f1_score,
+        np,
+        pd,
+        precision_score,
+        recall_score,
+        warnings,
+    )
 
 
 @app.cell(hide_code=True)
@@ -193,10 +238,8 @@ def _(mo):
 
     Model A is the multinomial logistic-regression baseline proposed in
     Step 4. It is trained only on `tapwater_train_df` using study-grouped
-    cross-validation.
-
-    *To be removed *The held-out test partition is not used in T5 and
-    remains untouched for T7*
+    cross-validation; the held-out test partition is not used here and
+    remains untouched for T7.
 
     This also uses an explicit predictor allowlist so raw PFAS
     concentrations, ∑TQ fields, identifiers, and study labels cannot
@@ -206,27 +249,27 @@ def _(mo):
 
 
 @app.cell
-def _(tapwater_train_df):
-    import warnings as _warnings
-
-    import numpy as _np
-    import pandas as _pd
-    from sklearn.base import BaseEstimator as _BaseEstimator
-    from sklearn.base import TransformerMixin as _TransformerMixin
-    from sklearn.compose import ColumnTransformer as _ColumnTransformer
-    from sklearn.impute import SimpleImputer as _SimpleImputer
-    from sklearn.linear_model import LogisticRegression as _LogisticRegression
-    from sklearn.metrics import f1_score as _f1_score
-    from sklearn.metrics import precision_score as _precision_score
-    from sklearn.metrics import recall_score as _recall_score
-    from sklearn.model_selection import GridSearchCV as _GridSearchCV
-    from sklearn.model_selection import (
-        StratifiedGroupKFold as _StratifiedGroupKFold,
-    )
-    from sklearn.pipeline import Pipeline as _Pipeline
-    from sklearn.preprocessing import OneHotEncoder as _OneHotEncoder
-    from sklearn.preprocessing import StandardScaler as _StandardScaler
-
+def _(
+    BaseEstimator,
+    ColumnTransformer,
+    GridSearchCV,
+    LogisticRegression,
+    OneHotEncoder,
+    PRECISION_FLOOR,
+    Pipeline,
+    RECALL_FLOOR,
+    SimpleImputer,
+    StandardScaler,
+    StratifiedGroupKFold,
+    TransformerMixin,
+    f1_score,
+    np,
+    pd,
+    precision_score,
+    recall_score,
+    tapwater_train_df,
+    warnings,
+):
     # Approved Seawolf landscape / land-use predictors.
     _numeric_features = [
         "number_pfas_sites_proximal",
@@ -273,7 +316,7 @@ def _(tapwater_train_df):
     _groups = tapwater_train_df["study_group"].astype(str)
 
     _n_splits = min(5, _groups.nunique())
-    _grouped_cv = _StratifiedGroupKFold(
+    _grouped_cv = StratifiedGroupKFold(
         n_splits=_n_splits,
         shuffle=True,
         random_state=42,
@@ -307,9 +350,9 @@ def _(tapwater_train_df):
                     }
                 )
 
-    model_a_unseen_categories = _pd.DataFrame(_unseen_rows)
+    model_a_unseen_categories = pd.DataFrame(_unseen_rows)
 
-    class _SkewLog1p(_BaseEstimator, _TransformerMixin):
+    class _SkewLog1p(BaseEstimator, TransformerMixin):
         """Learn skewed numeric columns inside each training fold."""
 
         def __init__(self, threshold=1.0):
@@ -317,7 +360,7 @@ def _(tapwater_train_df):
 
         def fit(self, X, y=None):
             _frame = X.copy()
-            self.feature_names_in_ = _np.asarray(
+            self.feature_names_in_ = np.asarray(
                 _frame.columns, dtype=object
             )
             _skew = _frame.skew(numeric_only=True)
@@ -332,19 +375,19 @@ def _(tapwater_train_df):
         def transform(self, X):
             _frame = X.copy()
             for _column in self.skewed_features_:
-                _frame[_column] = _np.log1p(_frame[_column])
+                _frame[_column] = np.log1p(_frame[_column])
             return _frame
 
         def get_feature_names_out(self, input_features=None):
             if input_features is None:
                 input_features = self.feature_names_in_
-            return _np.asarray(input_features, dtype=object)
+            return np.asarray(input_features, dtype=object)
 
-    _numeric_pipeline = _Pipeline(
+    _numeric_pipeline = Pipeline(
         [
             ("skew_log1p", _SkewLog1p(threshold=1.0)),
-            ("imputer", _SimpleImputer(strategy="median")),
-            ("scaler", _StandardScaler()),
+            ("imputer", SimpleImputer(strategy="median")),
+            ("scaler", StandardScaler()),
         ]
     )
 
@@ -352,12 +395,12 @@ def _(tapwater_train_df):
     # would also be encoded as all zeros, making it indistinguishable
     # from the dropped reference State. Keeping all one-hot columns
     # avoids that ambiguity. L2 regularization handles the redundancy.
-    _categorical_pipeline = _Pipeline(
+    _categorical_pipeline = Pipeline(
         [
-            ("imputer", _SimpleImputer(strategy="most_frequent")),
+            ("imputer", SimpleImputer(strategy="most_frequent")),
             (
                 "onehot",
-                _OneHotEncoder(
+                OneHotEncoder(
                     handle_unknown="ignore",
                     drop=None,
                 ),
@@ -365,7 +408,7 @@ def _(tapwater_train_df):
         ]
     )
 
-    _preprocessor = _ColumnTransformer(
+    _preprocessor = ColumnTransformer(
         [
             ("num", _numeric_pipeline, _numeric_features),
             ("cat", _categorical_pipeline, _categorical_features),
@@ -374,12 +417,12 @@ def _(tapwater_train_df):
     )
 
     # LogisticRegression uses L2 regularization by default.
-    _pipeline = _Pipeline(
+    _pipeline = Pipeline(
         [
             ("preprocessor", _preprocessor),
             (
                 "model",
-                _LogisticRegression(
+                LogisticRegression(
                     solver="lbfgs",
                     max_iter=2000,
                 ),
@@ -395,13 +438,13 @@ def _(tapwater_train_df):
 
     def _macro_f1(estimator, X_valid, y_valid):
         _pred = estimator.predict(X_valid)
-        return _f1_score(
+        return f1_score(
             y_valid, _pred, average="macro", zero_division=0
         )
 
     def _mcl_recall(estimator, X_valid, y_valid):
         _pred = estimator.predict(X_valid)
-        return _recall_score(
+        return recall_score(
             y_valid,
             _pred,
             labels=["mcl_exceedance"],
@@ -411,7 +454,7 @@ def _(tapwater_train_df):
 
     def _mcl_precision(estimator, X_valid, y_valid):
         _pred = estimator.predict(X_valid)
-        return _precision_score(
+        return precision_score(
             y_valid,
             _pred,
             labels=["mcl_exceedance"],
@@ -425,25 +468,28 @@ def _(tapwater_train_df):
         "mcl_precision": _mcl_precision,
     }
 
-    # First enforce the Step 3 high-risk recall and precision floors.
+    # First enforce the Step 3 high-risk recall and precision floors
+    # (RECALL_FLOOR/PRECISION_FLOOR, defined in checkpoint_2.py).
     # Among eligible candidates, choose the highest macro-F1.
     # If none qualify, keep the highest-recall model for T7 diagnostics.
     def _select_best(cv_results):
-        _recall = _np.asarray(cv_results["mean_test_mcl_recall"])
-        _precision = _np.asarray(cv_results["mean_test_mcl_precision"])
-        _macro = _np.asarray(cv_results["mean_test_macro_f1"])
+        _recall = np.asarray(cv_results["mean_test_mcl_recall"])
+        _precision = np.asarray(cv_results["mean_test_mcl_precision"])
+        _macro = np.asarray(cv_results["mean_test_macro_f1"])
 
-        _eligible = (_recall >= 0.70) & (_precision >= 0.45)
+        _eligible = (_recall >= RECALL_FLOOR) & (
+            _precision >= PRECISION_FLOOR
+        )
 
         if _eligible.any():
-            _idx = _np.flatnonzero(_eligible)
-            return int(_idx[_np.nanargmax(_macro[_idx])])
+            _idx = np.flatnonzero(_eligible)
+            return int(_idx[np.nanargmax(_macro[_idx])])
 
-        _best_recall = _np.nanmax(_recall)
-        _idx = _np.flatnonzero(_recall == _best_recall)
-        return int(_idx[_np.nanargmax(_macro[_idx])])
+        _best_recall = np.nanmax(_recall)
+        _idx = np.flatnonzero(_recall == _best_recall)
+        return int(_idx[np.nanargmax(_macro[_idx])])
 
-    model_a_grid_search = _GridSearchCV(
+    model_a_grid_search = GridSearchCV(
         estimator=_pipeline,
         param_grid=_param_grid,
         scoring=_scoring,
@@ -455,8 +501,8 @@ def _(tapwater_train_df):
 
     # Unknown categories are audited above. Suppress repeated sklearn
     # warnings during every grid-search fold.
-    with _warnings.catch_warnings():
-        _warnings.filterwarnings(
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
             "ignore",
             message="Found unknown categories.*",
             category=UserWarning,
@@ -470,7 +516,7 @@ def _(tapwater_train_df):
     model_a_best_estimator = model_a_grid_search.best_estimator_
 
     _cv = model_a_grid_search.cv_results_
-    model_a_cv_results = _pd.DataFrame(
+    model_a_cv_results = pd.DataFrame(
         {
             "C": _cv["param_model__C"],
             "Class weight": [
@@ -504,7 +550,7 @@ def _(tapwater_train_df):
         model_a_cv_results["Selected"]
     ].iloc[0]
 
-    model_a_training_summary = _pd.DataFrame(
+    model_a_training_summary = pd.DataFrame(
         [
             {
                 "Training rows": len(_X_train),
@@ -528,7 +574,7 @@ def _(tapwater_train_df):
                 "CV mcl precision": round(
                     _selected["CV mcl precision"], 4
                 ),
-                "Iterations used": int(_np.max(_model.n_iter_)),
+                "Iterations used": int(np.max(_model.n_iter_)),
             }
         ]
     )
@@ -541,10 +587,7 @@ def _(tapwater_train_df):
 
 
 @app.cell
-def _(model_a_best_estimator):
-    import numpy as _np
-    import pandas as _pd
-
+def _(model_a_best_estimator, np, pd):
     _pre = model_a_best_estimator.named_steps["preprocessor"]
     _model = model_a_best_estimator.named_steps["model"]
     _feature_names = _pre.get_feature_names_out()
@@ -553,17 +596,17 @@ def _(model_a_best_estimator):
     _mcl_idx = _classes.index("mcl_exceedance")
     _coefficients = _model.coef_[_mcl_idx]
 
-    _coef_df = _pd.DataFrame(
+    _coef_df = pd.DataFrame(
         {
             "Feature": _feature_names,
             "Coefficient": _coefficients,
         }
     )
     _coef_df["Abs coefficient"] = _coef_df["Coefficient"].abs()
-    _coef_df["Direction"] = _np.where(
+    _coef_df["Direction"] = np.where(
         _coef_df["Coefficient"] > 0,
         "positive",
-        _np.where(_coef_df["Coefficient"] < 0, "negative", "zero"),
+        np.where(_coef_df["Coefficient"] < 0, "negative", "zero"),
     )
 
     model_a_top_coefficients = (
@@ -608,7 +651,7 @@ def _(model_a_best_estimator):
             }
         )
 
-    model_a_direction_audit = _pd.DataFrame(_rows)
+    model_a_direction_audit = pd.DataFrame(_rows)
     return model_a_direction_audit, model_a_top_coefficients
 
 
