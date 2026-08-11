@@ -60,7 +60,10 @@ async def _(checkpoint_2_app):
     checkpoint_2_result = await checkpoint_2_app.embed()
     tapwater_train_df = checkpoint_2_result.defs["tapwater_train_df"]
     tapwater_test_df = checkpoint_2_result.defs["tapwater_test_df"]
-    return tapwater_test_df, tapwater_train_df
+    preprocess_tapwater_features = checkpoint_2_result.defs[
+        "preprocess_tapwater_features"
+    ]
+    return tapwater_test_df, tapwater_train_df, preprocess_tapwater_features
 
 
 @app.cell(hide_code=True)
@@ -254,6 +257,85 @@ def _(mo, task_callout):
         ]
     )
     return
+
+
+@app.cell
+def _(
+    mo,
+    tapwater_train_df,
+    tapwater_test_df,
+    preprocess_tapwater_features,
+):
+    """T6: Train competing ensemble (RandomForest) with grouped CV.
+
+    Returns: dict with keys `model`, `preprocessor`, `cv_results`,
+    `artifact_path` so downstream cells can import the trained model.
+    """
+    import joblib
+    import os
+    from datetime import datetime
+
+    from sklearn.ensemble import RandomForestClassifier
+    from sklearn.model_selection import RandomizedSearchCV
+    from sklearn.model_selection import StratifiedGroupKFold
+
+    _out = preprocess_tapwater_features(tapwater_train_df, tapwater_test_df)
+
+    X_train = _out["X_train"]
+    y_train = _out["y_train"]
+    groups = tapwater_train_df["study_group"]
+
+    # conservative random-forest tuning grid (keeps compute small)
+    param_dist = {
+        "n_estimators": [100, 200, 300],
+        "max_depth": [None, 10, 20],
+        "min_samples_leaf": [1, 2, 4],
+    }
+
+    cv = StratifiedGroupKFold(n_splits=5)
+
+    rf = RandomForestClassifier(random_state=42, n_jobs=-1)
+
+    search = RandomizedSearchCV(
+        rf,
+        param_dist,
+        n_iter=6,
+        scoring="f1_macro",
+        cv=cv.split(X_train, y_train, groups=groups),
+        return_train_score=True,
+        n_jobs=1,
+        random_state=42,
+    )
+
+    search.fit(X_train, y_train)
+
+    # artifact path
+    os.makedirs("data/models", exist_ok=True)
+    artifact_path = (
+        f"data/models/model_b_{datetime.now().strftime('%Y%m%d_%H%M%S')}.joblib"
+    )
+    joblib.dump({"model": search.best_estimator_, "preprocessor": _out["preprocessor"]}, artifact_path)
+
+    cv_results = (
+        {
+            "best_params": search.best_params_,
+            "best_score": round(float(search.best_score_), 4),
+        }
+    )
+
+    mo.vstack([
+        mo.md("#### T6: RandomForest (Model B) training summary"),
+        mo.md(f"**Best params:** {search.best_params_}"),
+        mo.md(f"**CV best score (macro-F1):** {cv_results['best_score']}"),
+        mo.md(f"**Artifact saved:** {artifact_path}"),
+    ])
+
+    return {
+        "model": search.best_estimator_,
+        "preprocessor": _out["preprocessor"],
+        "cv_results": cv_results,
+        "artifact_path": artifact_path,
+    }
 
 
 @app.cell(hide_code=True)
