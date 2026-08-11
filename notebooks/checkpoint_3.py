@@ -189,14 +189,16 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    ### Build baseline model
+    ### Baseline model A Implementation
 
     Model A is the multinomial logistic-regression baseline proposed in
     Step 4. It is trained only on `tapwater_train_df` using study-grouped
-    cross-validation. The held-out test partition is not used in T5 and
-    remains untouched for T7.
+    cross-validation. 
+    
+    *To be removed *The held-out test partition is not used in T5 and
+    remains untouched for T7*
 
-    T5 also uses an explicit predictor allowlist so raw PFAS
+    This also uses an explicit predictor allowlist so raw PFAS
     concentrations, ∑TQ fields, identifiers, and study labels cannot
     accidentally enter the model.
     """)
