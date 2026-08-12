@@ -194,17 +194,17 @@
     <div class="disclosure-item">
       <span class="dl-label">History of the exchange</span>
       <p>Every thread below links its full prompt/response transcript; all
-      26 are also collected in
+      29 are also collected in
       <a href="logs/ytorresv/index.md"><code>docs/ai/logs/ytorresv/</code></a>.</p>
     </div>
   </div>
 
   <div class="stats">
-    <div class="stat"><span class="n">26</span><span class="l">Threads</span></div><div class="stat"><span class="n">50</span><span class="l">Commits with Claude Code</span></div><div class="stat"><span class="n">45%</span><span class="l">Of Yai's 110 commits</span></div><div class="stat"><span class="n">28</span><span class="l">Days, Jul 11–Aug 7</span></div>
+    <div class="stat"><span class="n">29</span><span class="l">Threads</span></div><div class="stat"><span class="n">56</span><span class="l">Commits with Claude Code</span></div><div class="stat"><span class="n">43%</span><span class="l">Of Yai's 131 commits</span></div><div class="stat"><span class="n">33</span><span class="l">Days, Jul 11–Aug 12</span></div>
   </div>
 
   <p class="note">
-    <strong>Methodology.</strong> The 50 commits are every commit carrying a <code>Co-Authored-By: Claude Sonnet 5</code> trailer. The 26 threads are the actual coding sessions behind them — some run directly on <code>main</code>/a feature branch in this checkout, others in a git worktree under a <code>claude/*</code> branch — matched to each commit by timestamp (a commit is attributed to the thread whose active window contains it). I'm the author and committer of record on every commit: I decided what to build, which fix to take, and when a section was actually done. Quoted lines are the thread's own opening message, lightly trimmed for length; full transcripts are linked, not reconstructed dialogue. See <a href="../notebooks/index.html">the published report</a> for the project itself, or its closing "AI usage appendix" for the team's external chat-thread disclosures (Perplexity, Claude.ai) covering project planning and exploration rather than pair-programming.
+    <strong>Methodology.</strong> The 56 commits are every commit carrying a <code>Co-Authored-By: Claude Sonnet 5</code> trailer. The 29 threads are the actual coding sessions behind them — some run directly on <code>main</code>/a feature branch in this checkout, others in a git worktree under a <code>claude/*</code> branch — matched to each commit by timestamp (a commit is attributed to the thread whose active window contains it). I'm the author and committer of record on every commit: I decided what to build, which fix to take, and when a section was actually done. Quoted lines are the thread's own opening message, lightly trimmed for length; full transcripts are linked, not reconstructed dialogue. See <a href="../notebooks/index.html">the published report</a> for the project itself, or its closing "AI usage appendix" for the team's external chat-thread disclosures (Perplexity, Claude.ai) covering project planning and exploration rather than pair-programming.
   </p>
 
   <div class="legend">
@@ -224,6 +224,7 @@
     <li><a href="#p8">8. Check-In #2 deck rewrite</a></li>
     <li><a href="#p9">9. Final polish</a></li>
     <li><a href="#p10">10. Closing out Step 5 planning</a></li>
+    <li><a href="#p11">11. Unblocking T7, then reviewing Model B</a></li>
   </ul>
 
   <section class="phase">
@@ -1066,9 +1067,107 @@
     </ol>
   </section>
 
+  <section class="phase">
+    <div class="tl-row milestone" id="p11">
+      <div class="tl-time"></div>
+      <div class="tl-rail"><span class="dot">11</span></div>
+      <div class="tl-content">
+        <h2>Unblocking T7, then reviewing Model B</h2>
+        <p class="phase-blurb">Re-disclosing two already-merged PRs, moving the retuning story from T7 to T6, building T7's held-out scoring harness ahead of Model B landing, then reviewing and DRYing Model B's training cells once it did.</p>
+      </div>
+    </div>
+    <div class="tl-row thread">
+      <div class="tl-time"><span class="d">Aug 11</span><span class="t">22:27</span></div>
+      <div class="tl-rail"><span class="dot"></span></div>
+      <div class="tl-content">
+        <h3>Updating the disclosure for PRs #77 and #78</h3>
+        <p class="thread-quote">&ldquo;let's update my AI disclosure based on the last two commits&rdquo;</p>
+        <p class="thread-meta">branch main → ai-disclosure-pr77-78 &middot; 3 prompts, 12 responses &middot; <a href="logs/ytorresv/27-updating-disclosure-for-prs-77-78.md">full transcript &rarr;</a></p>
+      </div>
+    </div>
+    <ol class="entries">
+      <li class="tl-row entry">
+        <div class="tl-time"><span class="d">Aug 11</span><span class="t">22:59</span></div>
+        <div class="tl-rail"><span class="dot"></span></div>
+        <div class="tl-content">
+          <div class="entry-head"><h4>Add ytorresv AI disclosure threads for PRs #77 and #78 (#81)</h4><span class="hash">cc5f481</span></div>
+          <p class="entry-p">Added the two threads (25, 26) covering PRs #77/#78 to this same manifest, corrected the stale &lt;code&gt;total_commits&lt;/code&gt; count, and updated the README pairing-sessions bullet.</p>
+          <div class="diffstat">6 files · <span class="plus">+579</span> −12</div>
+        </div>
+      </li>
+    </ol>
+    <div class="tl-row thread">
+      <div class="tl-time"><span class="d">Aug 11</span><span class="t">22:37</span></div>
+      <div class="tl-rail"><span class="dot"></span></div>
+      <div class="tl-content">
+        <h3>T6/T7 retuning guidance, then T7 prep placeholder cells</h3>
+        <p class="thread-quote">&ldquo;the model A training and tuning landed. Can we check what tasks we can start for T7? What's the story so far based on findings and can you setup a list of sub-tasks we can follow up on while model B lands?&rdquo;</p>
+        <p class="thread-meta">branch validation-model-a-init → cp3-t6-t7-tuning-guidance → t7-prep-placeholder-cells &middot; 24 prompts, 102 responses &middot; <a href="logs/ytorresv/28-t6-t7-retuning-and-prep-placeholders.md">full transcript &rarr;</a></p>
+      </div>
+    </div>
+    <ol class="entries">
+      <li class="tl-row entry">
+        <div class="tl-time"><span class="d">Aug 11</span><span class="t">22:54</span></div>
+        <div class="tl-rail"><span class="dot"></span></div>
+        <div class="tl-content">
+          <div class="entry-head"><h4>CP-3: Move retuning guidance from T7 to T6 (#80)</h4><span class="hash">37cc3be</span></div>
+          <p class="entry-p">Reframed T7's guiding questions as pure evaluation of two already-tuned models rather than a retuning pass, and added a tuning-parity note to T6 so Model B reuses T5's grouped-CV recipe — mirrored in the task CSV.</p>
+          <div class="diffstat">2 files · <span class="plus">+16</span> −13</div>
+        </div>
+      </li>
+      <li class="tl-row entry">
+        <div class="tl-time"><span class="d">Aug 11</span><span class="t">08:55</span></div>
+        <div class="tl-rail"><span class="dot"></span></div>
+        <div class="tl-content">
+          <div class="entry-head"><h4>CP-3: T7 prep placeholder cells (unblocked ahead of T6) (#82)</h4><span class="hash">ce66a39</span></div>
+          <p class="entry-p">Built a held-out scoring harness, per-study error-rate breakdown, a class-weight ad hoc test, and a Model A vs. Model B comparison table/chart as T7 prep work dry-run against Model A alone, ahead of Model B landing — including a real finding: Model A collapses to the majority class on held-out sites.</p>
+          <div class="diffstat">1 file · <span class="plus">+398</span> −1</div>
+        </div>
+      </li>
+    </ol>
+    <div class="tl-row thread">
+      <div class="tl-time"><span class="d">Aug 12</span><span class="t">07:03</span></div>
+      <div class="tl-rail"><span class="dot"></span></div>
+      <div class="tl-content">
+        <h3>Reviewing Model B, then DRYing its training cells</h3>
+        <p class="thread-quote">&ldquo;The teammate working on task T6 asked me to take a look at his progress, and give some additional feedback. [...] Could you provide some ToDos he could follow up with?&rdquo;</p>
+        <p class="thread-meta">branch Emir_working_main → Fresh_Emir_working &middot; 6 prompts, 23 responses &middot; <a href="logs/ytorresv/29-reviewing-and-drying-model-b.md">full transcript &rarr;</a></p>
+      </div>
+    </div>
+    <ol class="entries">
+      <li class="tl-row entry">
+        <div class="tl-time"><span class="d">Aug 12</span><span class="t">13:51</span></div>
+        <div class="tl-rail"><span class="dot"></span></div>
+        <div class="tl-content">
+          <div class="entry-head"><h4>Extract shared CV-results table builder for Model A/B training</h4><span class="hash">1925da5</span></div>
+          <p class="entry-p">Extracted a shared &lt;code&gt;build_cv_results_table()&lt;/code&gt; helper and pointed Model A's training cell at it, removing near-duplicate CV-summary boilerplate ahead of Model B needing the same table.</p>
+          <div class="diffstat">1 file · <span class="plus">+51</span> −58</div>
+        </div>
+      </li>
+      <li class="tl-row entry">
+        <div class="tl-time"><span class="d">Aug 12</span><span class="t">13:52</span></div>
+        <div class="tl-rail"><span class="dot"></span></div>
+        <div class="tl-content">
+          <div class="entry-head"><h4>Split Model B's cell into training + display, matching Model A</h4><span class="hash">de5d2de</span></div>
+          <p class="entry-p">Split Model B's training cell into separate training and display cells using the new helper, matching Model A's existing structure.</p>
+          <div class="diffstat">1 file · <span class="plus">+19</span> −20</div>
+        </div>
+      </li>
+      <li class="tl-row entry">
+        <div class="tl-time"><span class="d">Aug 12</span><span class="t">13:54</span></div>
+        <div class="tl-rail"><span class="dot"></span></div>
+        <div class="tl-content">
+          <div class="entry-head"><h4>Revert T7 to Pending: guiding questions not yet answered in prose</h4><span class="hash">8b69f44</span></div>
+          <p class="entry-p">Reverted T7's task status back to Pending after finding a teammate's PR had marked it Complete even though its guiding questions weren't yet answered in prose.</p>
+          <div class="diffstat">2 files · <span class="plus">+41</span> −10</div>
+        </div>
+      </li>
+    </ol>
+  </section>
+
   <footer class="page">
     <p>
-      Threads sourced from local Claude Code session logs (17 in this checkout, 9 run inside git worktrees) covering this repository; commits from <code>git log --all --grep="Co-Authored-By: Claude"</code>. Each commit is attributed to the thread whose active time window contains it, except two threads (Aug 5, Aug 7) whose commits merged days later via PR — those list their commit manually rather than by timestamp window. Full prompt/response transcripts for all 26 threads are in <a href="logs/ytorresv/index.md"><code>docs/ai/logs/</code></a>. Regenerate after adding threads or commits with <code>uv run python scripts/toolkit.py ai-disclosure ytorresv</code>.
+      Threads sourced from local Claude Code session logs (20 in this checkout, 9 run inside git worktrees) covering this repository; commits from <code>git log --all --grep="Co-Authored-By: Claude"</code>. Each commit is attributed to the thread whose active time window contains it, except two threads (Aug 5, Aug 7) whose commits merged days later via PR — those list their commit manually rather than by timestamp window. Full prompt/response transcripts for all 29 threads are in <a href="logs/ytorresv/index.md"><code>docs/ai/logs/</code></a>. Regenerate after adding threads or commits with <code>uv run python scripts/toolkit.py ai-disclosure ytorresv</code>.
     </p>
   </footer>
 
