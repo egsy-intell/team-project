@@ -5,13 +5,13 @@
   "tool_tier": "Claude subscription — not the free or public tier",
   "how": "Pair-programmed notebook implementation, debugging, lint/CI fixes, git housekeeping (merges/conflicts), and editorial passes on reader-facing prose.",
   "why": "To work through unfamiliar parts of the stack step by step as a learning partner rather than a black box, and to move faster through mechanical work so more time went to modeling/analysis calls.",
-  "total_commits": 110,
-  "date_range": "Jul 11–Aug 7",
-  "days": 28,
+  "total_commits": 131,
+  "date_range": "Jul 11–Aug 12",
+  "days": 33,
   "policy_url": "https://purdue.brightspace.com/d2l/le/content/1565125/viewContent/21824036/View",
   "lede": "I'm <strong>Yai Torres</strong>, one of four people on this GRAD 50400 project (Group 14). This page is my individual pair-programming disclosure under the course's <a href=\"https://purdue.brightspace.com/d2l/le/content/1565125/viewContent/21824036/View\">AI Tool Use Policy</a>, which asks for exactly which tools were used and their tier, the history of each exchange, and how and why each tool was used — answered below, then backed by a real timeline instead of a paraphrase.",
-  "methodology_note": "The 50 commits are every commit carrying a <code>Co-Authored-By: Claude Sonnet 5</code> trailer. The 26 threads are the actual coding sessions behind them — some run directly on <code>main</code>/a feature branch in this checkout, others in a git worktree under a <code>claude/*</code> branch — matched to each commit by timestamp (a commit is attributed to the thread whose active window contains it). I'm the author and committer of record on every commit: I decided what to build, which fix to take, and when a section was actually done. Quoted lines are the thread's own opening message, lightly trimmed for length; full transcripts are linked, not reconstructed dialogue. See <a href=\"../notebooks/index.html\">the published report</a> for the project itself, or its closing \"AI usage appendix\" for the team's external chat-thread disclosures (Perplexity, Claude.ai) covering project planning and exploration rather than pair-programming.",
-  "footer_note": "Threads sourced from local Claude Code session logs (17 in this checkout, 9 run inside git worktrees) covering this repository; commits from <code>git log --all --grep=\"Co-Authored-By: Claude\"</code>. Each commit is attributed to the thread whose active time window contains it, except two threads (Aug 5, Aug 7) whose commits merged days later via PR — those list their commit manually rather than by timestamp window. Full prompt/response transcripts for all 26 threads are in <a href=\"logs/ytorresv/index.md\"><code>docs/ai/logs/</code></a>. Regenerate after adding threads or commits with <code>uv run python scripts/toolkit.py ai-disclosure ytorresv</code>.",
+  "methodology_note": "The 56 commits are every commit carrying a <code>Co-Authored-By: Claude Sonnet 5</code> trailer. The 29 threads are the actual coding sessions behind them — some run directly on <code>main</code>/a feature branch in this checkout, others in a git worktree under a <code>claude/*</code> branch — matched to each commit by timestamp (a commit is attributed to the thread whose active window contains it). I'm the author and committer of record on every commit: I decided what to build, which fix to take, and when a section was actually done. Quoted lines are the thread's own opening message, lightly trimmed for length; full transcripts are linked, not reconstructed dialogue. See <a href=\"../notebooks/index.html\">the published report</a> for the project itself, or its closing \"AI usage appendix\" for the team's external chat-thread disclosures (Perplexity, Claude.ai) covering project planning and exploration rather than pair-programming.",
+  "footer_note": "Threads sourced from local Claude Code session logs (20 in this checkout, 9 run inside git worktrees) covering this repository; commits from <code>git log --all --grep=\"Co-Authored-By: Claude\"</code>. Each commit is attributed to the thread whose active time window contains it, except two threads (Aug 5, Aug 7) whose commits merged days later via PR — those list their commit manually rather than by timestamp window. Full prompt/response transcripts for all 29 threads are in <a href=\"logs/ytorresv/index.md\"><code>docs/ai/logs/</code></a>. Regenerate after adding threads or commits with <code>uv run python scripts/toolkit.py ai-disclosure ytorresv</code>.",
   "git_author_patterns": [
     "Yaisiel",
     "yaitorr"
@@ -56,6 +56,10 @@
     "phase10": {
       "title": "Closing out Step 5 planning",
       "blurb": "Two follow-up threads that resolved open questions in checkpoint_3.py's task list: folding in Check-In #2 peer feedback, then settling how the McMahon groundwater study factors into Model A/B evaluation."
+    },
+    "phase11": {
+      "title": "Unblocking T7, then reviewing Model B",
+      "blurb": "Re-disclosing two already-merged PRs, moving the retuning story from T7 to T6, building T7's held-out scoring harness ahead of Model B landing, then reviewing and DRYing Model B's training cells once it did."
     }
   },
   "threads": [
@@ -764,6 +768,90 @@
         }
       ],
       "quote": "Let's pair program on Task T7. There are some dependencies that haven't landed yet (model implementation is still TBD). However, it would be nice to do some prep: 1. What do we mean by \"retuning\" for both models? 2. Do any pre-processing necessary for the McMahon data"
+    },
+    {
+      "order": 27,
+      "sid": "af84e856",
+      "phase": "phase11",
+      "title": "Updating the disclosure for PRs #77 and #78",
+      "branch": "main → ai-disclosure-pr77-78",
+      "date": "Aug 11, 22:27",
+      "transcript": "27-updating-disclosure-for-prs-77-78.md",
+      "prompts": 3,
+      "responses": 12,
+      "commits": [
+        {
+          "hash": "cc5f481",
+          "subject": "Add ytorresv AI disclosure threads for PRs #77 and #78 (#81)",
+          "time": "22:59",
+          "summary": "Added the two threads (25, 26) covering PRs #77/#78 to this same manifest, corrected the stale <code>total_commits</code> count, and updated the README pairing-sessions bullet.",
+          "diffstat": "6 files · <span class=\"plus\">+579</span> −12"
+        }
+      ],
+      "quote": "let's update my AI disclosure based on the last two commits"
+    },
+    {
+      "order": 28,
+      "sid": "9b27df80",
+      "phase": "phase11",
+      "title": "T6/T7 retuning guidance, then T7 prep placeholder cells",
+      "branch": "validation-model-a-init → cp3-t6-t7-tuning-guidance → t7-prep-placeholder-cells",
+      "date": "Aug 11, 22:37",
+      "transcript": "28-t6-t7-retuning-and-prep-placeholders.md",
+      "prompts": 24,
+      "responses": 102,
+      "commits": [
+        {
+          "hash": "37cc3be",
+          "subject": "CP-3: Move retuning guidance from T7 to T6 (#80)",
+          "time": "22:54",
+          "summary": "Reframed T7's guiding questions as pure evaluation of two already-tuned models rather than a retuning pass, and added a tuning-parity note to T6 so Model B reuses T5's grouped-CV recipe — mirrored in the task CSV.",
+          "diffstat": "2 files · <span class=\"plus\">+16</span> −13"
+        },
+        {
+          "hash": "ce66a39",
+          "subject": "CP-3: T7 prep placeholder cells (unblocked ahead of T6) (#82)",
+          "time": "08:55",
+          "summary": "Built a held-out scoring harness, per-study error-rate breakdown, a class-weight ad hoc test, and a Model A vs. Model B comparison table/chart as T7 prep work dry-run against Model A alone, ahead of Model B landing — including a real finding: Model A collapses to the majority class on held-out sites.",
+          "diffstat": "1 file · <span class=\"plus\">+398</span> −1"
+        }
+      ],
+      "quote": "the model A training and tuning landed. Can we check what tasks we can start for T7? What's the story so far based on findings and can you setup a list of sub-tasks we can follow up on while model B lands?"
+    },
+    {
+      "order": 29,
+      "sid": "c206c0d3",
+      "phase": "phase11",
+      "title": "Reviewing Model B, then DRYing its training cells",
+      "branch": "Emir_working_main → Fresh_Emir_working",
+      "date": "Aug 12, 07:03",
+      "transcript": "29-reviewing-and-drying-model-b.md",
+      "prompts": 6,
+      "responses": 23,
+      "commits": [
+        {
+          "hash": "1925da5",
+          "subject": "Extract shared CV-results table builder for Model A/B training",
+          "time": "13:51",
+          "summary": "Extracted a shared <code>build_cv_results_table()</code> helper and pointed Model A's training cell at it, removing near-duplicate CV-summary boilerplate ahead of Model B needing the same table.",
+          "diffstat": "1 file · <span class=\"plus\">+51</span> −58"
+        },
+        {
+          "hash": "de5d2de",
+          "subject": "Split Model B's cell into training + display, matching Model A",
+          "time": "13:52",
+          "summary": "Split Model B's training cell into separate training and display cells using the new helper, matching Model A's existing structure.",
+          "diffstat": "1 file · <span class=\"plus\">+19</span> −20"
+        },
+        {
+          "hash": "8b69f44",
+          "subject": "Revert T7 to Pending: guiding questions not yet answered in prose",
+          "time": "13:54",
+          "summary": "Reverted T7's task status back to Pending after finding a teammate's PR had marked it Complete even though its guiding questions weren't yet answered in prose.",
+          "diffstat": "2 files · <span class=\"plus\">+41</span> −10"
+        }
+      ],
+      "quote": "The teammate working on task T6 asked me to take a look at his progress, and give some additional feedback. [...] Could you provide some ToDos he could follow up with?"
     }
   ]
 }
