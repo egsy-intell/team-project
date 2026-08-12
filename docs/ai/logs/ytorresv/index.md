@@ -28,5 +28,8 @@ Full prompt/response history for every Claude Code thread behind [Yai's pairing-
 24. [Checkpoint 3 header skeleton, then aligning it with the spec](24-checkpoint-3-header-skeleton.md)
 25. [Injecting peer-feedback guiding questions](25-injecting-peer-feedback-guiding-questions.md)
 26. [Settling the McMahon scope question](26-settling-the-mcmahon-scope-question.md)
+27. [Updating the disclosure for PRs #77 and #78](27-updating-disclosure-for-prs-77-78.md)
+28. [T6/T7 retuning guidance, then T7 prep placeholder cells](28-t6-t7-retuning-and-prep-placeholders.md)
+29. [Reviewing Model B, then DRYing its training cells](29-reviewing-and-drying-model-b.md)
 
 Other teammates' disclosures live in their own sibling directory under `docs/ai/logs/`.
