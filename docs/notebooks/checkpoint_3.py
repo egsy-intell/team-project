@@ -60,7 +60,22 @@ async def _(checkpoint_2_app):
     checkpoint_2_result = await checkpoint_2_app.embed()
     tapwater_train_df = checkpoint_2_result.defs["tapwater_train_df"]
     tapwater_test_df = checkpoint_2_result.defs["tapwater_test_df"]
-    return tapwater_test_df, tapwater_train_df
+    evaluate_tier_model = checkpoint_2_result.defs["evaluate_tier_model"]
+    check_success_criteria = checkpoint_2_result.defs[
+        "check_success_criteria"
+    ]
+    RECALL_FLOOR = checkpoint_2_result.defs["RECALL_FLOOR"]
+    MACRO_F1_FLOOR = checkpoint_2_result.defs["MACRO_F1_FLOOR"]
+    PRECISION_FLOOR = checkpoint_2_result.defs["PRECISION_FLOOR"]
+    return (
+        MACRO_F1_FLOOR,
+        PRECISION_FLOOR,
+        RECALL_FLOOR,
+        check_success_criteria,
+        evaluate_tier_model,
+        tapwater_test_df,
+        tapwater_train_df,
+    )
 
 
 @app.cell(hide_code=True)
@@ -70,6 +85,7 @@ def _():
     # re-importing numpy/pandas/sklearn locally.
     import warnings
 
+    import matplotlib.pyplot as plt
     import numpy as np
     import pandas as pd
     from sklearn.base import BaseEstimator, TransformerMixin
@@ -95,6 +111,7 @@ def _():
         f1_score,
         np,
         pd,
+        plt,
         precision_score,
         recall_score,
         warnings,
@@ -339,6 +356,263 @@ def _(f1_score, precision_score, recall_score):
         "mcl_precision": _mcl_precision,
     }
     return (tier_model_scoring,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md("""
+    #### Held-out scoring harness
+
+    Five thin wrappers so T7 scores Model A and Model B the same way,
+    without duplicating logic per model. `score_model()` wraps
+    checkpoint_2's `evaluate_tier_model()` and `check_success_criteria()`
+    against the held-out test set, the same way Step 3 already defined
+    success. `error_breakdown_by_study()` takes a `score_model()`
+    result and reports whether errors concentrate in one held-out
+    study or spread evenly, `plot_error_rate_by_study()` renders that
+    same breakdown as a chart, `build_model_comparison()` pulls each
+    model's headline metrics into one row of a shared table - add a
+    model by adding a dict entry, not by restructuring it - and
+    `plot_model_comparison()` renders that table as small multiples,
+    one panel per metric with its Step 3 threshold line. All five
+    live here, next to `tier_model_scoring`, so T9's benchmarking can
+    reuse them too.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(
+    RECALL_FLOOR,
+    check_success_criteria,
+    evaluate_tier_model,
+    model_predictors,
+):
+    def score_model(pipeline, df, model_name):
+        """Score a fitted pipeline against a held-out dataframe.
+
+        Predicts with `pipeline` on `df[model_predictors]`, then hands
+        the true/predicted tiers to `evaluate_tier_model()` and
+        `check_success_criteria()`. `df` must carry a `pfas_risk_tier`
+        column (both `tapwater_test_df` and `tapwater_train_df` do).
+        """
+        X = df[model_predictors]
+        y_true = df["pfas_risk_tier"].astype(str)
+        y_pred = pipeline.predict(X)
+        return {
+            "y_true": y_true,
+            "y_pred": y_pred,
+            "metrics": evaluate_tier_model(
+                y_true, y_pred, model_name, recall_floor=RECALL_FLOOR
+            ),
+            "criteria": check_success_criteria(y_true, y_pred, model_name),
+        }
+
+    return (score_model,)
+
+
+@app.cell(hide_code=True)
+def _(pd):
+    def error_breakdown_by_study(result, df):
+        """Held-out error rate by `study_group`, for a score_model() result.
+
+        Takes a score_model() result dict and the dataframe it was
+        scored against, and reports whether errors concentrate in one
+        held-out study or spread evenly (T7's second guiding
+        question). Model B calls this the same way once T6 lands.
+        """
+        _breakdown = pd.DataFrame(
+            {
+                "study_group": df["study_group"].to_numpy(),
+                "actual": result["y_true"].to_numpy(),
+                "predicted": result["y_pred"],
+            }
+        )
+        _breakdown["correct"] = (
+            _breakdown["actual"] == _breakdown["predicted"]
+        )
+        return (
+            _breakdown.groupby("study_group")
+            .agg(
+                sites=("correct", "size"),
+                errors=("correct", lambda s: int((~s).sum())),
+            )
+            .assign(
+                error_rate=lambda d: (d["errors"] / d["sites"]).round(4)
+            )
+            .reset_index()
+            .sort_values("error_rate", ascending=False)
+        )
+
+    return (error_breakdown_by_study,)
+
+
+@app.cell(hide_code=True)
+def _(mo, plt):
+    def plot_error_rate_by_study(breakdown_df, title):
+        # Sequential, single-hue (same blue family as make_plot_grid's
+        # histograms): this is one measurement varying by study, not
+        # distinct series, so magnitude gets light->dark shading, not
+        # a categorical color per bar.
+        _df = breakdown_df.sort_values("error_rate", ascending=True)
+        _cmap = plt.get_cmap("Blues")
+        _colors = [_cmap(0.35 + 0.55 * r) for r in _df["error_rate"]]
+
+        fig, ax = plt.subplots(figsize=(6, 0.6 * len(_df) + 1))
+        _bars = ax.barh(_df["study_group"], _df["error_rate"], color=_colors)
+        for _bar, (_, _row) in zip(_bars, _df.iterrows()):
+            ax.text(
+                _bar.get_width() + 0.02,
+                _bar.get_y() + _bar.get_height() / 2,
+                f"{_row['error_rate']:.0%} "
+                f"({_row['errors']}/{_row['sites']})",
+                va="center",
+                fontsize=9,
+            )
+        ax.set_xlim(0, 1.15)
+        ax.set_xlabel("Held-out error rate")
+        ax.set_title(title, fontsize=12, pad=10)
+        ax.grid(True, axis="x", linestyle="--", alpha=0.35)
+        ax.set_axisbelow(True)
+        for _spine in ("top", "right", "left"):
+            ax.spines[_spine].set_visible(False)
+        fig.tight_layout()
+        # mo.mpl.interactive adds pan/zoom/hover for anyone running the
+        # notebook live; it degrades to the same static PNG as a plain
+        # figure in the published static HTML, so there's no downside
+        # there.
+        return mo.mpl.interactive(fig)
+
+    return (plot_error_rate_by_study,)
+
+
+@app.cell(hide_code=True)
+def _(pd):
+    def build_model_comparison(results):
+        """Model A vs. Model B comparison table from score_model() results.
+
+        `results` is `{model_name: score_model() result}`; add a
+        model by adding a dict entry, not by restructuring the table.
+        Pulls the three T7/T9 headline metrics (mcl_exceedance
+        recall, macro F1, mcl_exceedance precision) plus the overall
+        Step 3 pass/fail from each model's `check_success_criteria()`
+        output.
+        """
+        _rows = []
+        for _name, _result in results.items():
+            _criteria = _result["criteria"]["criteria"].set_index("Metric")[
+                "Value"
+            ]
+            _rows.append(
+                {
+                    "Model": _name,
+                    "mcl_exceedance recall": _criteria[
+                        "mcl_exceedance recall"
+                    ],
+                    "Macro F1": _criteria["macro F1"],
+                    "mcl_exceedance precision": _criteria[
+                        "mcl_exceedance precision"
+                    ],
+                    "Meets all Step 3 criteria": _result["criteria"][
+                        "all_passed"
+                    ],
+                }
+            )
+        return pd.DataFrame(_rows)
+
+    return (build_model_comparison,)
+
+
+@app.cell(hide_code=True)
+def _():
+    # Fixed categorical order for model identity in comparison charts:
+    # blue/orange is a high-contrast, colorblind-safe pair. Assigned
+    # by position (first model in the table gets slot 0), never by
+    # value or rank, so a filter changing which models are shown
+    # doesn't repaint the survivors.
+    MODEL_COMPARISON_PALETTE = ("#2a6f97", "#e07b39", "#4c9f70", "#a6528c")
+    return (MODEL_COMPARISON_PALETTE,)
+
+
+@app.cell(hide_code=True)
+def _(
+    MACRO_F1_FLOOR,
+    MODEL_COMPARISON_PALETTE,
+    PRECISION_FLOOR,
+    RECALL_FLOOR,
+    mo,
+    plt,
+):
+    def plot_model_comparison(comparison_df, title):
+        """Small multiples: one panel per metric, bars by model.
+
+        Each panel gets its own Step 3 threshold line, since recall,
+        macro F1, and precision each have a different floor - one
+        combined chart would need three crowded reference lines.
+        """
+        _metrics = (
+            ("mcl_exceedance recall", RECALL_FLOOR),
+            ("Macro F1", MACRO_F1_FLOOR),
+            ("mcl_exceedance precision", PRECISION_FLOOR),
+        )
+        _models = comparison_df["Model"].tolist()
+        _colors = dict(zip(_models, MODEL_COMPARISON_PALETTE))
+
+        fig, axes = plt.subplots(
+            1, len(_metrics), figsize=(4 * len(_metrics), 3.2)
+        )
+        for ax, (_metric, _floor) in zip(axes, _metrics):
+            _values = comparison_df[_metric]
+            _bars = ax.bar(
+                _models,
+                _values,
+                color=[_colors[m] for m in _models],
+                width=0.5,
+            )
+            ax.axhline(_floor, color="#444444", linestyle="--", linewidth=1)
+            ax.text(
+                len(_models) - 0.5,
+                _floor,
+                f"≥ {_floor:.2f}",
+                va="bottom",
+                ha="right",
+                fontsize=8,
+                color="#444444",
+            )
+            for _bar, _value in zip(_bars, _values):
+                ax.text(
+                    _bar.get_x() + _bar.get_width() / 2,
+                    _bar.get_height() + 0.02,
+                    f"{_value:.2f}",
+                    ha="center",
+                    va="bottom",
+                    fontsize=9,
+                )
+            ax.set_ylim(0, 1.1)
+            ax.set_title(_metric, fontsize=10, pad=8)
+            ax.grid(True, axis="y", linestyle="--", alpha=0.35)
+            ax.set_axisbelow(True)
+            for _spine in ("top", "right"):
+                ax.spines[_spine].set_visible(False)
+
+        fig.suptitle(title, fontsize=12, y=1.04)
+        if len(_models) > 1:
+            _handles = [
+                plt.Rectangle((0, 0), 1, 1, color=_colors[m])
+                for m in _models
+            ]
+            fig.legend(
+                _handles,
+                _models,
+                loc="upper center",
+                ncol=len(_models),
+                bbox_to_anchor=(0.5, -0.05),
+                frameon=False,
+            )
+        fig.tight_layout()
+        return mo.mpl.interactive(fig)
+
+    return (plot_model_comparison,)
 
 
 @app.cell(hide_code=True)
@@ -912,6 +1186,129 @@ def _(mo, task_callout):
                         "relative to the Step 4 prediction?"
                     ),
                 ],
+            ),
+        ]
+    )
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md("""
+    #### T7 prep work (unblocked ahead of T6)
+
+    T7 itself is still blocked on T6 (Model B), but the pieces
+    below only need Model A and can be dry-run against it now, so
+    finishing T7 once T6 lands is mostly plugging Model B in
+    rather than starting from scratch.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo, model_a_best_estimator, score_model, tapwater_test_df):
+    # T7 prep: dry run of the shared-setup score_model() harness on
+    # Model A alone, ahead of T6. Model B calls score_model() the same
+    # way once it lands, so this becomes the first row of T7's actual
+    # Model A vs. Model B comparison rather than needing a rewrite.
+    model_a_held_out = score_model(
+        model_a_best_estimator, tapwater_test_df, "Model A"
+    )
+
+    mo.vstack(
+        [
+            mo.md("#### Model A: held-out scoring (T7 prep dry run)"),
+            mo.md(f"**{model_a_held_out['criteria']['summary_line']}**"),
+            mo.ui.table(model_a_held_out["criteria"]["criteria"]),
+            mo.md("#### Confusion matrix (held-out)"),
+            mo.ui.table(model_a_held_out["metrics"]["confusion_matrix"]),
+        ]
+    )
+    return (model_a_held_out,)
+
+
+@app.cell(hide_code=True)
+def _(
+    error_breakdown_by_study,
+    mo,
+    model_a_held_out,
+    plot_error_rate_by_study,
+    tapwater_test_df,
+):
+    # T7 prep: dry run of the breakdown above on Model A alone.
+    _model_a_error_breakdown = error_breakdown_by_study(
+        model_a_held_out, tapwater_test_df
+    )
+    mo.vstack(
+        [
+            mo.md("#### Model A: held-out error rate by study"),
+            mo.ui.table(_model_a_error_breakdown),
+            plot_error_rate_by_study(_model_a_error_breakdown, "Model A"),
+        ]
+    )
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.callout(
+        mo.md("""
+        #### T7 prep: class-weight ad hoc test (Model A)
+
+        Model A's held-out collapse (predicts `within_reduced_monitoring`
+        for all 46 sites; 0.0 recall on both `above_trigger` and
+        `mcl_exceedance`) raised the question of whether T5's selected
+        `class_weight="unweighted"` — which won on grouped-CV macro-F1
+        among the training folds, per `model_a_cv_results` above — was
+        the main cause. Tested by hand: same pipeline and `C` grid,
+        `class_weight="balanced"` forced, refit on `tapwater_train_df`,
+        scored on `tapwater_test_df` via `score_model()` (not part of
+        the tracked T5 pipeline; a diagnostic only).
+
+        | Metric | Unweighted (Model A) | Balanced |
+        |---|---|---|
+        | `mcl_exceedance` recall | 0.0000 | 0.0714 (1/14) |
+        | `above_trigger` recall | 0.0000 | 0.1429 (1/7) |
+        | Macro F1 | 0.2347 | 0.3368 |
+        | `mcl_exceedance` precision | 0.0000 | 0.5000 (1/2) |
+        | Non-majority-tier predictions | 0 of 46 | 7 of 46 |
+
+        **Finding:** `"balanced"` measurably moves the model off pure
+        majority-class collapse, but comes nowhere close to the 0.70
+        recall floor (0.07, not 0.70) and only predicts a minority tier
+        for 7 of 46 held-out sites. Class weighting was a real
+        contributing factor, not the dominant one — the bigger story
+        is a train/held-out generalization gap that a training-time
+        hyperparameter alone doesn't fix. Worth keeping both threads
+        in the T9/T10 narrative: confirm `"balanced"` isn't dropped
+        for Model B on a CV-macro-F1 technicality the way it was for
+        Model A, but don't expect it to single-handedly clear the
+        floor either.
+        """),
+        kind="info",
+    )
+    return
+
+
+@app.cell(hide_code=True)
+def _(build_model_comparison, mo, model_a_held_out, plot_model_comparison):
+    # T7 prep: Model A's row is ready now. Add Model B's entry to this
+    # dict once T6 lands - no rewrite needed, just one more line.
+    #
+    # Conversation starter: same columns as T9's benchmarking table,
+    # or does T9 need more (majority-baseline column, per-tier recall
+    # beyond mcl_exceedance)?
+    _comparison_results = {
+        "Model A": model_a_held_out,
+        # "Model B": model_b_held_out,  # add once T6 lands
+    }
+    _comparison_df = build_model_comparison(_comparison_results)
+    mo.vstack(
+        [
+            mo.md("#### Model comparison: Model A vs. Model B"),
+            mo.ui.table(_comparison_df),
+            plot_model_comparison(
+                _comparison_df, "Model comparison vs. Step 3 thresholds"
             ),
         ]
     )
