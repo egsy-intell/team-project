@@ -5,13 +5,13 @@
   "tool_tier": "Claude subscription — not the free or public tier",
   "how": "Pair-programmed notebook implementation, debugging, lint/CI fixes, git housekeeping (merges/conflicts), and editorial passes on reader-facing prose.",
   "why": "To work through unfamiliar parts of the stack step by step as a learning partner rather than a black box, and to move faster through mechanical work so more time went to modeling/analysis calls.",
-  "total_commits": 268,
-  "date_range": "Jul 11–Aug 4",
-  "days": 25,
+  "total_commits": 110,
+  "date_range": "Jul 11–Aug 7",
+  "days": 28,
   "policy_url": "https://purdue.brightspace.com/d2l/le/content/1565125/viewContent/21824036/View",
   "lede": "I'm <strong>Yai Torres</strong>, one of four people on this GRAD 50400 project (Group 14). This page is my individual pair-programming disclosure under the course's <a href=\"https://purdue.brightspace.com/d2l/le/content/1565125/viewContent/21824036/View\">AI Tool Use Policy</a>, which asks for exactly which tools were used and their tier, the history of each exchange, and how and why each tool was used — answered below, then backed by a real timeline instead of a paraphrase.",
-  "methodology_note": "The 48 commits are every commit carrying a <code>Co-Authored-By: Claude Sonnet 5</code> trailer. The 24 threads are the actual coding sessions behind them — some run directly on <code>main</code>/a feature branch in this checkout, others in a git worktree under a <code>claude/*</code> branch — matched to each commit by timestamp (a commit is attributed to the thread whose active window contains it). I'm the author and committer of record on every commit: I decided what to build, which fix to take, and when a section was actually done. Quoted lines are the thread's own opening message, lightly trimmed for length; full transcripts are linked, not reconstructed dialogue. See <a href=\"../notebooks/index.html\">the published report</a> for the project itself, or its closing \"AI usage appendix\" for the team's external chat-thread disclosures (Perplexity, Claude.ai) covering project planning and exploration rather than pair-programming.",
-  "footer_note": "Threads sourced from local Claude Code session logs (15 in this checkout, 9 run inside git worktrees) covering this repository; commits from <code>git log --all --grep=\"Co-Authored-By: Claude\"</code>. Each commit is attributed to the thread whose active time window contains it. Full prompt/response transcripts for all 24 threads are in <a href=\"logs/ytorresv/index.md\"><code>docs/ai/logs/</code></a>. Regenerate after adding threads or commits with <code>uv run python scripts/toolkit.py ai-disclosure ytorresv</code>.",
+  "methodology_note": "The 50 commits are every commit carrying a <code>Co-Authored-By: Claude Sonnet 5</code> trailer. The 26 threads are the actual coding sessions behind them — some run directly on <code>main</code>/a feature branch in this checkout, others in a git worktree under a <code>claude/*</code> branch — matched to each commit by timestamp (a commit is attributed to the thread whose active window contains it). I'm the author and committer of record on every commit: I decided what to build, which fix to take, and when a section was actually done. Quoted lines are the thread's own opening message, lightly trimmed for length; full transcripts are linked, not reconstructed dialogue. See <a href=\"../notebooks/index.html\">the published report</a> for the project itself, or its closing \"AI usage appendix\" for the team's external chat-thread disclosures (Perplexity, Claude.ai) covering project planning and exploration rather than pair-programming.",
+  "footer_note": "Threads sourced from local Claude Code session logs (17 in this checkout, 9 run inside git worktrees) covering this repository; commits from <code>git log --all --grep=\"Co-Authored-By: Claude\"</code>. Each commit is attributed to the thread whose active time window contains it, except two threads (Aug 5, Aug 7) whose commits merged days later via PR — those list their commit manually rather than by timestamp window. Full prompt/response transcripts for all 26 threads are in <a href=\"logs/ytorresv/index.md\"><code>docs/ai/logs/</code></a>. Regenerate after adding threads or commits with <code>uv run python scripts/toolkit.py ai-disclosure ytorresv</code>.",
   "git_author_patterns": [
     "Yaisiel",
     "yaitorr"
@@ -51,7 +51,11 @@
     },
     "phase9": {
       "title": "Final polish",
-      "blurb": "The most recent thread in this log — table hygiene ahead of the next review pass."
+      "blurb": "Table hygiene ahead of the next review pass, then the Checkpoint 3 header skeleton kicking off Step 5."
+    },
+    "phase10": {
+      "title": "Closing out Step 5 planning",
+      "blurb": "Two follow-up threads that resolved open questions in checkpoint_3.py's task list: folding in Check-In #2 peer feedback, then settling how the McMahon groundwater study factors into Model A/B evaluation."
     }
   },
   "threads": [
@@ -720,6 +724,46 @@
         }
       ],
       "quote": "let's initialize checkpoint-3 as we've done in the past"
+    },
+    {
+      "order": 25,
+      "sid": "6e77fbde",
+      "phase": "phase10",
+      "title": "Injecting peer-feedback guiding questions",
+      "branch": "skeleton-peer-review",
+      "date": "Aug 5, 09:14",
+      "transcript": "25-injecting-peer-feedback-guiding-questions.md",
+      "prompts": 3,
+      "responses": 9,
+      "commits": [
+        {
+          "hash": "c117c506",
+          "subject": "CP-3: Inject guiding questions (#77)",
+          "summary": "Folded two Check-In #2 peer-review items — leading with results over detail, and quantifying state-level site sparsity — into T9/T10's guiding questions, then closed out Task T3 (the peer-feedback triage itself) now that the selection was recorded.",
+          "diffstat": "2 files · <span class=\"plus\">+41</span> −37"
+        }
+      ],
+      "quote": "I synthesized this feedback from peer review: 1. Presentation: try to be lighter on the details, and focus on results 2. Report/presentation: Quantify the data sparsity in analysis […]"
+    },
+    {
+      "order": 26,
+      "sid": "d84e5dd5",
+      "phase": "phase10",
+      "title": "Settling the McMahon scope question",
+      "branch": "revise-mcmahon",
+      "date": "Aug 7, 15:13",
+      "transcript": "26-settling-the-mcmahon-scope-question.md",
+      "prompts": 6,
+      "responses": 10,
+      "commits": [
+        {
+          "hash": "bc940ae",
+          "subject": "Refine ToDos for McMahon (#78)",
+          "summary": "Resolved whether McMahon et al. (2022)'s groundwater study could serve as a held-out validation set for Model A/B — it can't, since its target and predictor set aren't comparable to Smalling/Seawolf's. Rewrote T7/T9/T10's guiding questions so McMahon stays out of scoring entirely and shows up only as external narrative context.",
+          "diffstat": "1 file · <span class=\"plus\">+19</span> −6"
+        }
+      ],
+      "quote": "Let's pair program on Task T7. There are some dependencies that haven't landed yet (model implementation is still TBD). However, it would be nice to do some prep: 1. What do we mean by \"retuning\" for both models? 2. Do any pre-processing necessary for the McMahon data"
     }
   ]
 }
