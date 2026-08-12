@@ -61,9 +61,7 @@ async def _(checkpoint_2_app):
     tapwater_train_df = checkpoint_2_result.defs["tapwater_train_df"]
     tapwater_test_df = checkpoint_2_result.defs["tapwater_test_df"]
     evaluate_tier_model = checkpoint_2_result.defs["evaluate_tier_model"]
-    check_success_criteria = checkpoint_2_result.defs[
-        "check_success_criteria"
-    ]
+    check_success_criteria = checkpoint_2_result.defs["check_success_criteria"]
     RECALL_FLOOR = checkpoint_2_result.defs["RECALL_FLOOR"]
     MACRO_F1_FLOOR = checkpoint_2_result.defs["MACRO_F1_FLOOR"]
     PRECISION_FLOOR = checkpoint_2_result.defs["PRECISION_FLOOR"]
@@ -367,6 +365,34 @@ def _(f1_score, precision_score, recall_score):
 
 
 @app.cell(hide_code=True)
+def _(pd):
+    def build_cv_results_table(cv_results, param_columns, best_index):
+        """Per-candidate CV results, selected candidate sorted to top.
+
+        `param_columns` maps a display column name to `(param_key,
+        format_fn)`, so Model A and Model B can each supply their own
+        hyperparameter names/formatting while sharing the selection
+        and sort logic.
+        """
+        _data = {
+            _label: [_format(_v) for _v in cv_results[_param_key]]
+            for _label, (_param_key, _format) in param_columns.items()
+        }
+        _data["CV macro F1"] = cv_results["mean_test_macro_f1"]
+        _data["CV mcl recall"] = cv_results["mean_test_mcl_recall"]
+        _data["CV mcl precision"] = cv_results["mean_test_mcl_precision"]
+
+        _df = pd.DataFrame(_data)
+        _df["Selected"] = False
+        _df.loc[best_index, "Selected"] = True
+        return _df.sort_values(
+            ["Selected", "CV macro F1"], ascending=[False, False]
+        ).reset_index(drop=True)
+
+    return (build_cv_results_table,)
+
+
+@app.cell(hide_code=True)
 def _(mo):
     mo.md("""
     #### Held-out scoring harness
@@ -436,18 +462,14 @@ def _(pd):
                 "predicted": result["y_pred"],
             }
         )
-        _breakdown["correct"] = (
-            _breakdown["actual"] == _breakdown["predicted"]
-        )
+        _breakdown["correct"] = _breakdown["actual"] == _breakdown["predicted"]
         return (
             _breakdown.groupby("study_group")
             .agg(
                 sites=("correct", "size"),
                 errors=("correct", lambda s: int((~s).sum())),
             )
-            .assign(
-                error_rate=lambda d: (d["errors"] / d["sites"]).round(4)
-            )
+            .assign(error_rate=lambda d: (d["errors"] / d["sites"]).round(4))
             .reset_index()
             .sort_values("error_rate", ascending=False)
         )
@@ -472,8 +494,7 @@ def _(mo, plt):
             ax.text(
                 _bar.get_width() + 0.02,
                 _bar.get_y() + _bar.get_height() / 2,
-                f"{_row['error_rate']:.0%} "
-                f"({_row['errors']}/{_row['sites']})",
+                f"{_row['error_rate']:.0%} ({_row['errors']}/{_row['sites']})",
                 va="center",
                 fontsize=9,
             )
@@ -606,8 +627,7 @@ def _(
         fig.suptitle(title, fontsize=12, y=1.04)
         if len(_models) > 1:
             _handles = [
-                plt.Rectangle((0, 0), 1, 1, color=_colors[m])
-                for m in _models
+                plt.Rectangle((0, 0), 1, 1, color=_colors[m]) for m in _models
             ]
             fig.legend(
                 _handles,
@@ -670,6 +690,7 @@ def _(
     SimpleImputer,
     StandardScaler,
     TransformerMixin,
+    build_cv_results_table,
     categorical_predictors,
     grouped_cv,
     model_predictors,
@@ -722,9 +743,7 @@ def _(
 
         def fit(self, X, y=None):
             _frame = X.copy()
-            self.feature_names_in_ = np.asarray(
-                _frame.columns, dtype=object
-            )
+            self.feature_names_in_ = np.asarray(_frame.columns, dtype=object)
             _skew = _frame.skew(numeric_only=True)
             self.skewed_features_ = [
                 c
@@ -826,27 +845,17 @@ def _(
 
     model_a_best_estimator = model_a_grid_search.best_estimator_
 
-    _cv = model_a_grid_search.cv_results_
-    model_a_cv_results = pd.DataFrame(
+    model_a_cv_results = build_cv_results_table(
+        model_a_grid_search.cv_results_,
         {
-            "C": _cv["param_model__C"],
-            "Class weight": [
-                "unweighted" if x is None else str(x)
-                for x in _cv["param_model__class_weight"]
-            ],
-            "CV macro F1": _cv["mean_test_macro_f1"],
-            "CV mcl recall": _cv["mean_test_mcl_recall"],
-            "CV mcl precision": _cv["mean_test_mcl_precision"],
-        }
+            "C": ("param_model__C", lambda x: x),
+            "Class weight": (
+                "param_model__class_weight",
+                lambda x: "unweighted" if x is None else str(x),
+            ),
+        },
+        model_a_grid_search.best_index_,
     )
-    model_a_cv_results["Selected"] = False
-    model_a_cv_results.loc[
-        model_a_grid_search.best_index_, "Selected"
-    ] = True
-    model_a_cv_results = model_a_cv_results.sort_values(
-        ["Selected", "CV macro F1"],
-        ascending=[False, False],
-    ).reset_index(drop=True)
 
     _pre = model_a_best_estimator.named_steps["preprocessor"]
     _model = model_a_best_estimator.named_steps["model"]
@@ -857,9 +866,7 @@ def _(
         .skewed_features_
     )
 
-    _selected = model_a_cv_results[
-        model_a_cv_results["Selected"]
-    ].iloc[0]
+    _selected = model_a_cv_results[model_a_cv_results["Selected"]].iloc[0]
 
     model_a_training_summary = pd.DataFrame(
         [
@@ -868,16 +875,12 @@ def _(
                 "Study groups": study_groups.nunique(),
                 "Raw predictors": len(model_predictors),
                 "Encoded predictors": _encoded_count,
-                "Missing predictor values": int(
-                    _X_train.isna().sum().sum()
-                ),
+                "Missing predictor values": int(_X_train.isna().sum().sum()),
                 "log1p predictors": _skewed_count,
                 "Best C": model_a_grid_search.best_params_["model__C"],
                 "Best class weight": (
                     "unweighted"
-                    if model_a_grid_search.best_params_[
-                        "model__class_weight"
-                    ]
+                    if model_a_grid_search.best_params_["model__class_weight"]
                     is None
                     else model_a_grid_search.best_params_[
                         "model__class_weight"
@@ -885,9 +888,7 @@ def _(
                 ),
                 "CV macro F1": round(_selected["CV macro F1"], 4),
                 "CV mcl recall": round(_selected["CV mcl recall"], 4),
-                "CV mcl precision": round(
-                    _selected["CV mcl precision"], 4
-                ),
+                "CV mcl precision": round(_selected["CV mcl precision"], 4),
                 "Iterations used": int(np.max(_model.n_iter_)),
             }
         ]
@@ -941,19 +942,13 @@ def _(model_a_best_estimator, np, pd):
 
     _rows = []
     for _feature, _expected_direction in _expected.items():
-        _row = _coef_df[
-            _coef_df["Feature"] == f"num__{_feature}"
-        ]
+        _row = _coef_df[_coef_df["Feature"] == f"num__{_feature}"]
         if _row.empty:
             continue
 
         _value = float(_row.iloc[0]["Coefficient"])
         _observed = (
-            "positive"
-            if _value > 0
-            else "negative"
-            if _value < 0
-            else "zero"
+            "positive" if _value > 0 else "negative" if _value < 0 else "zero"
         )
         _rows.append(
             {
@@ -1011,9 +1006,7 @@ def _(
             "final feature matrix."
         )
     else:
-        _counter = model_a_direction_audit[
-            ~model_a_direction_audit["Matches"]
-        ]
+        _counter = model_a_direction_audit[~model_a_direction_audit["Matches"]]
         if _counter.empty:
             _coef_text = (
                 "All predictors with a clear prior expectation have "
