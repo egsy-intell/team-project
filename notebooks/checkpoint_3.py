@@ -232,9 +232,9 @@ def _(mo):
     ### Shared setup for Model A & Model B
 
     Per the Step 4 proposals, Model B (T6) reuses Model A's approved
-    predictor set, grouped cross-validation strategy, and two-stage
-    selection rule verbatim. These are defined once here so both
-    models train against identical folds and criteria.
+    predictor set, grouped cross-validation strategy, and scoring
+    metrics. These are defined once here so both models can train
+    against identical folds and report the same CV diagnostics.
     """)
     return
 
@@ -303,23 +303,17 @@ def _(StratifiedGroupKFold, tapwater_train_df):
 
 
 @app.cell(hide_code=True)
-def _(
-    PRECISION_FLOOR,
-    RECALL_FLOOR,
-    f1_score,
-    np,
-    precision_score,
-    recall_score,
-):
-    # CV scoring and two-stage selection rule shared by Model A and
-    # Model B: first enforce the Step 3 high-risk recall/precision
-    # floors (RECALL_FLOOR/PRECISION_FLOOR, defined in
-    # checkpoint_2.py), then choose the highest macro-F1 among
-    # eligible candidates. If none qualify, keep the highest-recall
-    # candidate for T7 diagnostics.
+def _(f1_score, precision_score, recall_score):
+    # Shared CV metrics. T5 selects Model A by macro-F1 only.
+    # Recall and precision are retained as diagnostics for T7/T9.
     def _macro_f1(estimator, X_valid, y_valid):
         _pred = estimator.predict(X_valid)
-        return f1_score(y_valid, _pred, average="macro", zero_division=0)
+        return f1_score(
+            y_valid,
+            _pred,
+            average="macro",
+            zero_division=0,
+        )
 
     def _mcl_recall(estimator, X_valid, y_valid):
         _pred = estimator.predict(X_valid)
@@ -346,25 +340,7 @@ def _(
         "mcl_recall": _mcl_recall,
         "mcl_precision": _mcl_precision,
     }
-
-    def select_best_tier_model(cv_results):
-        _recall = np.asarray(cv_results["mean_test_mcl_recall"])
-        _precision = np.asarray(cv_results["mean_test_mcl_precision"])
-        _macro = np.asarray(cv_results["mean_test_macro_f1"])
-
-        _eligible = (_recall >= RECALL_FLOOR) & (
-            _precision >= PRECISION_FLOOR
-        )
-
-        if _eligible.any():
-            _idx = np.flatnonzero(_eligible)
-            return int(_idx[np.nanargmax(_macro[_idx])])
-
-        _best_recall = np.nanmax(_recall)
-        _idx = np.flatnonzero(_recall == _best_recall)
-        return int(_idx[np.nanargmax(_macro[_idx])])
-
-    return select_best_tier_model, tier_model_scoring
+    return (tier_model_scoring,)
 
 
 @app.cell(hide_code=True)
@@ -377,9 +353,28 @@ def _(mo):
     cross-validation; the held-out test partition is not used here and
     remains untouched for T7.
 
+    Hyperparameter selection in T5 uses mean grouped-CV macro-F1 only.
+    The CV recall and precision values for `mcl_exceedance` are retained
+    as tuning diagnostics, not as the final Step 3 pass/fail decision.
+    T7 and T9 will make that determination on the held-out studies.
+
     This also uses an explicit predictor allowlist so raw PFAS
     concentrations, ∑TQ fields, identifiers, and study labels cannot
     accidentally enter the model.
+
+    Because cross-validation is grouped by study, an entire
+    `study_group` moves together into either the fitting or validation
+    portion of a fold. A `State` or `Site Type` category concentrated in
+    only one or two studies may therefore be absent from a fold's
+    fitting data but appear in its validation data. T5 audits each fold
+    for these unseen categories and uses full one-hot encoding with
+    `handle_unknown="ignore"` and `drop=None` so they can be handled
+    safely.
+
+    The current allowlisted predictors contain no missing values in the
+    T5 training partition, so both the numeric and categorical imputers
+    are no-ops on the present data. They are retained as defensive
+    preprocessing steps for future data that may contain missing values.
     """)
     return
 
@@ -401,7 +396,6 @@ def _(
     np,
     numeric_predictors,
     pd,
-    select_best_tier_model,
     study_groups,
     tapwater_train_df,
     tier_model_scoring,
@@ -524,11 +518,13 @@ def _(
         "model__class_weight": [None, "balanced"],
     }
 
+    # T5 selects the candidate with the highest mean grouped-CV
+    # macro-F1. High-risk recall/precision remain diagnostics only.
     model_a_grid_search = GridSearchCV(
         estimator=_pipeline,
         param_grid=_param_grid,
         scoring=tier_model_scoring,
-        refit=select_best_tier_model,
+        refit="macro_f1",
         cv=grouped_cv,
         n_jobs=-1,
         error_score="raise",
@@ -592,6 +588,9 @@ def _(
                 "Study groups": study_groups.nunique(),
                 "Raw predictors": len(model_predictors),
                 "Encoded predictors": _encoded_count,
+                "Missing predictor values": int(
+                    _X_train.isna().sum().sum()
+                ),
                 "log1p predictors": _skewed_count,
                 "Best C": model_a_grid_search.best_params_["model__C"],
                 "Best class weight": (
@@ -701,7 +700,15 @@ def _(
 ):
     if model_a_unseen_categories.empty:
         _unseen_text = (
-            "No unseen categorical levels appeared in the grouped folds."
+            "No unseen categorical levels appeared in the current "
+            "grouped cross-validation folds. The audit is still "
+            "important because each study group moves entirely into "
+            "either fitting or validation data, so a State or Site Type "
+            "concentrated in a small number of studies could be absent "
+            "from a fitting fold. If this occurs after a different fold "
+            "assignment or future data update, "
+            "`handle_unknown='ignore'` allows the pipeline to process "
+            "the unseen category safely."
         )
         _unseen_view = mo.md(_unseen_text)
     else:
@@ -762,7 +769,24 @@ def _(
         [
             mo.md("#### Training and tuning summary"),
             mo.ui.table(model_a_training_summary),
-            mo.md("#### Tuning grid results"),
+            mo.md(
+                """
+                #### Tuning grid results
+
+                The values below are mean cross-validation estimates from
+                the grouped grid search. They describe how each
+                hyperparameter setting performed across the training
+                folds; they are not held-out test results for the final
+                refit Model A.
+
+                `Selected=True` identifies the hyperparameter setting
+                with the highest mean grouped-CV macro-F1. The
+                `mcl_exceedance` recall and precision values are retained
+                as tuning diagnostics only and do not determine model
+                selection in T5. Final threshold evaluation is performed
+                in T7/T9 using the held-out studies.
+                """
+            ),
             mo.ui.table(model_a_cv_results.round(4)),
             mo.md("#### Unseen-category audit"),
             _unseen_view,
@@ -778,7 +802,18 @@ def _(
                 f"""
                 #### T5 findings summary
 
+                Model A tuning is based on grouped-CV macro-F1 only.
+                High-risk recall and precision remain visible as
+                training-time diagnostics, while the authoritative
+                threshold assessment is deferred to T7/T9 on the
+                held-out studies.
+
                 {_unseen_text}
+
+                The current T5 training predictors have no missing
+                values, so the numeric and categorical imputers are
+                currently no-ops. They remain in the pipeline as
+                defensive preprocessing for future data.
 
                 The training implementation also showed that the earlier
                 generic feature-selection approach could allow raw PFAS
