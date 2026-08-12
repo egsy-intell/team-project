@@ -1119,9 +1119,9 @@ def _(mo):
 def _(
     RandomForestClassifier,
     RandomizedSearchCV,
+    build_cv_results_table,
     clone,
     grouped_cv,
-    mo,
     model_a_best_estimator,
     model_predictors,
     pd,
@@ -1167,26 +1167,21 @@ def _(
     )
 
     model_b_best_estimator = model_b_grid_search.best_estimator_
-    _cv = model_b_grid_search.cv_results_
-    model_b_cv_results = pd.DataFrame(
+    model_b_cv_results = build_cv_results_table(
+        model_b_grid_search.cv_results_,
         {
-            "Trees": _cv["param_model__n_estimators"],
-            "Maximum depth": [
-                "unlimited" if _value is None else _value
-                for _value in _cv["param_model__max_depth"]
-            ],
-            "Minimum leaf size": _cv["param_model__min_samples_leaf"],
-            "CV macro F1": _cv["mean_test_macro_f1"],
-            "CV mcl recall": _cv["mean_test_mcl_recall"],
-            "CV mcl precision": _cv["mean_test_mcl_precision"],
-        }
+            "Trees": ("param_model__n_estimators", lambda x: x),
+            "Maximum depth": (
+                "param_model__max_depth",
+                lambda x: "unlimited" if x is None else x,
+            ),
+            "Minimum leaf size": (
+                "param_model__min_samples_leaf",
+                lambda x: x,
+            ),
+        },
+        model_b_grid_search.best_index_,
     )
-    model_b_cv_results["Selected"] = False
-    model_b_cv_results.loc[model_b_grid_search.best_index_, "Selected"] = True
-    model_b_cv_results = model_b_cv_results.sort_values(
-        ["Selected", "CV macro F1"],
-        ascending=[False, False],
-    ).reset_index(drop=True)
 
     _selected = model_b_cv_results[model_b_cv_results["Selected"]].iloc[0]
     model_b_training_summary = pd.DataFrame(
@@ -1213,7 +1208,11 @@ def _(
             }
         ]
     )
+    return model_b_best_estimator, model_b_cv_results, model_b_training_summary
 
+
+@app.cell(hide_code=True)
+def _(mo, model_b_cv_results, model_b_training_summary):
     mo.vstack(
         [
             mo.md("#### Model B training and tuning summary"),
@@ -1222,7 +1221,7 @@ def _(
             mo.ui.table(model_b_cv_results.round(4)),
         ]
     )
-    return (model_b_best_estimator,)
+    return
 
 
 @app.cell(hide_code=True)
