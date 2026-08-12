@@ -65,7 +65,11 @@ async def _(checkpoint_2_app):
         "check_success_criteria"
     ]
     RECALL_FLOOR = checkpoint_2_result.defs["RECALL_FLOOR"]
+    MACRO_F1_FLOOR = checkpoint_2_result.defs["MACRO_F1_FLOOR"]
+    PRECISION_FLOOR = checkpoint_2_result.defs["PRECISION_FLOOR"]
     return (
+        MACRO_F1_FLOOR,
+        PRECISION_FLOOR,
         RECALL_FLOOR,
         check_success_criteria,
         evaluate_tier_model,
@@ -359,18 +363,20 @@ def _(mo):
     mo.md("""
     #### Held-out scoring harness
 
-    Four thin wrappers so T7 scores Model A and Model B the same way,
+    Five thin wrappers so T7 scores Model A and Model B the same way,
     without duplicating logic per model. `score_model()` wraps
     checkpoint_2's `evaluate_tier_model()` and `check_success_criteria()`
     against the held-out test set, the same way Step 3 already defined
     success. `error_breakdown_by_study()` takes a `score_model()`
     result and reports whether errors concentrate in one held-out
     study or spread evenly, `plot_error_rate_by_study()` renders that
-    same breakdown as a chart, and `build_model_comparison()` pulls
-    each model's headline metrics into one row of a shared table -
-    add a model by adding a dict entry, not by restructuring it. All
-    four live here, next to `tier_model_scoring`, so T9's
-    benchmarking can reuse them too.
+    same breakdown as a chart, `build_model_comparison()` pulls each
+    model's headline metrics into one row of a shared table - add a
+    model by adding a dict entry, not by restructuring it - and
+    `plot_model_comparison()` renders that table as small multiples,
+    one panel per metric with its Step 3 threshold line. All five
+    live here, next to `tier_model_scoring`, so T9's benchmarking can
+    reuse them too.
     """)
     return
 
@@ -515,6 +521,98 @@ def _(pd):
         return pd.DataFrame(_rows)
 
     return (build_model_comparison,)
+
+
+@app.cell(hide_code=True)
+def _():
+    # Fixed categorical order for model identity in comparison charts:
+    # blue/orange is a high-contrast, colorblind-safe pair. Assigned
+    # by position (first model in the table gets slot 0), never by
+    # value or rank, so a filter changing which models are shown
+    # doesn't repaint the survivors.
+    MODEL_COMPARISON_PALETTE = ("#2a6f97", "#e07b39", "#4c9f70", "#a6528c")
+    return (MODEL_COMPARISON_PALETTE,)
+
+
+@app.cell(hide_code=True)
+def _(
+    MACRO_F1_FLOOR,
+    MODEL_COMPARISON_PALETTE,
+    PRECISION_FLOOR,
+    RECALL_FLOOR,
+    mo,
+    plt,
+):
+    def plot_model_comparison(comparison_df, title):
+        """Small multiples: one panel per metric, bars by model.
+
+        Each panel gets its own Step 3 threshold line, since recall,
+        macro F1, and precision each have a different floor - one
+        combined chart would need three crowded reference lines.
+        """
+        _metrics = (
+            ("mcl_exceedance recall", RECALL_FLOOR),
+            ("Macro F1", MACRO_F1_FLOOR),
+            ("mcl_exceedance precision", PRECISION_FLOOR),
+        )
+        _models = comparison_df["Model"].tolist()
+        _colors = dict(zip(_models, MODEL_COMPARISON_PALETTE))
+
+        fig, axes = plt.subplots(
+            1, len(_metrics), figsize=(4 * len(_metrics), 3.2)
+        )
+        for ax, (_metric, _floor) in zip(axes, _metrics):
+            _values = comparison_df[_metric]
+            _bars = ax.bar(
+                _models,
+                _values,
+                color=[_colors[m] for m in _models],
+                width=0.5,
+            )
+            ax.axhline(_floor, color="#444444", linestyle="--", linewidth=1)
+            ax.text(
+                len(_models) - 0.5,
+                _floor,
+                f"≥ {_floor:.2f}",
+                va="bottom",
+                ha="right",
+                fontsize=8,
+                color="#444444",
+            )
+            for _bar, _value in zip(_bars, _values):
+                ax.text(
+                    _bar.get_x() + _bar.get_width() / 2,
+                    _bar.get_height() + 0.02,
+                    f"{_value:.2f}",
+                    ha="center",
+                    va="bottom",
+                    fontsize=9,
+                )
+            ax.set_ylim(0, 1.1)
+            ax.set_title(_metric, fontsize=10, pad=8)
+            ax.grid(True, axis="y", linestyle="--", alpha=0.35)
+            ax.set_axisbelow(True)
+            for _spine in ("top", "right"):
+                ax.spines[_spine].set_visible(False)
+
+        fig.suptitle(title, fontsize=12, y=1.04)
+        if len(_models) > 1:
+            _handles = [
+                plt.Rectangle((0, 0), 1, 1, color=_colors[m])
+                for m in _models
+            ]
+            fig.legend(
+                _handles,
+                _models,
+                loc="upper center",
+                ncol=len(_models),
+                bbox_to_anchor=(0.5, -0.05),
+                frameon=False,
+            )
+        fig.tight_layout()
+        return mo.mpl.interactive(fig)
+
+    return (plot_model_comparison,)
 
 
 @app.cell(hide_code=True)
@@ -1193,7 +1291,7 @@ def _(mo):
 
 
 @app.cell(hide_code=True)
-def _(build_model_comparison, mo, model_a_held_out):
+def _(build_model_comparison, mo, model_a_held_out, plot_model_comparison):
     # T7 prep: Model A's row is ready now. Add Model B's entry to this
     # dict once T6 lands - no rewrite needed, just one more line.
     #
@@ -1204,10 +1302,14 @@ def _(build_model_comparison, mo, model_a_held_out):
         "Model A": model_a_held_out,
         # "Model B": model_b_held_out,  # add once T6 lands
     }
+    _comparison_df = build_model_comparison(_comparison_results)
     mo.vstack(
         [
             mo.md("#### Model comparison: Model A vs. Model B"),
-            mo.ui.table(build_model_comparison(_comparison_results)),
+            mo.ui.table(_comparison_df),
+            plot_model_comparison(
+                _comparison_df, "Model comparison vs. Step 3 thresholds"
+            ),
         ]
     )
     return
