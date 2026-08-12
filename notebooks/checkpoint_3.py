@@ -1111,6 +1111,47 @@ def _(
     return
 
 
+@app.cell(hide_code=True)
+def _(mo):
+    mo.callout(
+        mo.md("""
+        #### T7 prep: class-weight ad hoc test (Model A)
+
+        Model A's held-out collapse (predicts `within_reduced_monitoring`
+        for all 46 sites; 0.0 recall on both `above_trigger` and
+        `mcl_exceedance`) raised the question of whether T5's selected
+        `class_weight="unweighted"` — which won on grouped-CV macro-F1
+        among the training folds, per `model_a_cv_results` above — was
+        the main cause. Tested by hand: same pipeline and `C` grid,
+        `class_weight="balanced"` forced, refit on `tapwater_train_df`,
+        scored on `tapwater_test_df` via `score_model()` (not part of
+        the tracked T5 pipeline; a diagnostic only).
+
+        | Metric | Unweighted (Model A) | Balanced |
+        |---|---|---|
+        | `mcl_exceedance` recall | 0.0000 | 0.0714 (1/14) |
+        | `above_trigger` recall | 0.0000 | 0.1429 (1/7) |
+        | Macro F1 | 0.2347 | 0.3368 |
+        | `mcl_exceedance` precision | 0.0000 | 0.5000 (1/2) |
+        | Non-majority-tier predictions | 0 of 46 | 7 of 46 |
+
+        **Finding:** `"balanced"` measurably moves the model off pure
+        majority-class collapse, but comes nowhere close to the 0.70
+        recall floor (0.07, not 0.70) and only predicts a minority tier
+        for 7 of 46 held-out sites. Class weighting was a real
+        contributing factor, not the dominant one — the bigger story
+        is a train/held-out generalization gap that a training-time
+        hyperparameter alone doesn't fix. Worth keeping both threads
+        in the T9/T10 narrative: confirm `"balanced"` isn't dropped
+        for Model B on a CV-macro-F1 technicality the way it was for
+        Model A, but don't expect it to single-handedly clear the
+        floor either.
+        """),
+        kind="info",
+    )
+    return
+
+
 @app.cell
 def _():
     # T7 prep: comparison-table skeleton for Model A vs. Model B
