@@ -81,6 +81,7 @@ def _():
     # re-importing numpy/pandas/sklearn locally.
     import warnings
 
+    import matplotlib.pyplot as plt
     import numpy as np
     import pandas as pd
     from sklearn.base import BaseEstimator, TransformerMixin
@@ -106,6 +107,7 @@ def _():
         f1_score,
         np,
         pd,
+        plt,
         precision_score,
         recall_score,
         warnings,
@@ -357,13 +359,14 @@ def _(mo):
     mo.md("""
     #### Held-out scoring harness
 
-    Two thin wrappers so T7 scores Model A and Model B the same way,
-    without duplicating logic per model. `score_model()` wraps
+    Three thin wrappers so T7 scores Model A and Model B the same
+    way, without duplicating logic per model. `score_model()` wraps
     checkpoint_2's `evaluate_tier_model()` and `check_success_criteria()`
     against the held-out test set, the same way Step 3 already defined
     success. `error_breakdown_by_study()` takes a `score_model()`
     result and reports whether errors concentrate in one held-out
-    study or spread evenly. Both live here, next to
+    study or spread evenly, and `plot_error_rate_by_study()` renders
+    that same breakdown as a chart. All three live here, next to
     `tier_model_scoring`, so T9's benchmarking can reuse them too.
     """)
     return
@@ -433,6 +436,45 @@ def _(pd):
         )
 
     return (error_breakdown_by_study,)
+
+
+@app.cell(hide_code=True)
+def _(mo, plt):
+    def plot_error_rate_by_study(breakdown_df, title):
+        # Sequential, single-hue (same blue family as make_plot_grid's
+        # histograms): this is one measurement varying by study, not
+        # distinct series, so magnitude gets light->dark shading, not
+        # a categorical color per bar.
+        _df = breakdown_df.sort_values("error_rate", ascending=True)
+        _cmap = plt.get_cmap("Blues")
+        _colors = [_cmap(0.35 + 0.55 * r) for r in _df["error_rate"]]
+
+        fig, ax = plt.subplots(figsize=(6, 0.6 * len(_df) + 1))
+        _bars = ax.barh(_df["study_group"], _df["error_rate"], color=_colors)
+        for _bar, (_, _row) in zip(_bars, _df.iterrows()):
+            ax.text(
+                _bar.get_width() + 0.02,
+                _bar.get_y() + _bar.get_height() / 2,
+                f"{_row['error_rate']:.0%} "
+                f"({_row['errors']}/{_row['sites']})",
+                va="center",
+                fontsize=9,
+            )
+        ax.set_xlim(0, 1.15)
+        ax.set_xlabel("Held-out error rate")
+        ax.set_title(title, fontsize=12, pad=10)
+        ax.grid(True, axis="x", linestyle="--", alpha=0.35)
+        ax.set_axisbelow(True)
+        for _spine in ("top", "right", "left"):
+            ax.spines[_spine].set_visible(False)
+        fig.tight_layout()
+        # mo.mpl.interactive adds pan/zoom/hover for anyone running the
+        # notebook live; it degrades to the same static PNG as a plain
+        # figure in the published static HTML, so there's no downside
+        # there.
+        return mo.mpl.interactive(fig)
+
+    return (plot_error_rate_by_study,)
 
 
 @app.cell(hide_code=True)
@@ -1048,7 +1090,13 @@ def _(mo, model_a_best_estimator, score_model, tapwater_test_df):
 
 
 @app.cell(hide_code=True)
-def _(error_breakdown_by_study, mo, model_a_held_out, tapwater_test_df):
+def _(
+    error_breakdown_by_study,
+    mo,
+    model_a_held_out,
+    plot_error_rate_by_study,
+    tapwater_test_df,
+):
     # T7 prep: dry run of the breakdown above on Model A alone.
     _model_a_error_breakdown = error_breakdown_by_study(
         model_a_held_out, tapwater_test_df
@@ -1057,6 +1105,7 @@ def _(error_breakdown_by_study, mo, model_a_held_out, tapwater_test_df):
         [
             mo.md("#### Model A: held-out error rate by study"),
             mo.ui.table(_model_a_error_breakdown),
+            plot_error_rate_by_study(_model_a_error_breakdown, "Model A"),
         ]
     )
     return
