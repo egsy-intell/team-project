@@ -359,15 +359,18 @@ def _(mo):
     mo.md("""
     #### Held-out scoring harness
 
-    Three thin wrappers so T7 scores Model A and Model B the same
-    way, without duplicating logic per model. `score_model()` wraps
+    Four thin wrappers so T7 scores Model A and Model B the same way,
+    without duplicating logic per model. `score_model()` wraps
     checkpoint_2's `evaluate_tier_model()` and `check_success_criteria()`
     against the held-out test set, the same way Step 3 already defined
     success. `error_breakdown_by_study()` takes a `score_model()`
     result and reports whether errors concentrate in one held-out
-    study or spread evenly, and `plot_error_rate_by_study()` renders
-    that same breakdown as a chart. All three live here, next to
-    `tier_model_scoring`, so T9's benchmarking can reuse them too.
+    study or spread evenly, `plot_error_rate_by_study()` renders that
+    same breakdown as a chart, and `build_model_comparison()` pulls
+    each model's headline metrics into one row of a shared table -
+    add a model by adding a dict entry, not by restructuring it. All
+    four live here, next to `tier_model_scoring`, so T9's
+    benchmarking can reuse them too.
     """)
     return
 
@@ -475,6 +478,43 @@ def _(mo, plt):
         return mo.mpl.interactive(fig)
 
     return (plot_error_rate_by_study,)
+
+
+@app.cell(hide_code=True)
+def _(pd):
+    def build_model_comparison(results):
+        """Model A vs. Model B comparison table from score_model() results.
+
+        `results` is `{model_name: score_model() result}`; add a
+        model by adding a dict entry, not by restructuring the table.
+        Pulls the three T7/T9 headline metrics (mcl_exceedance
+        recall, macro F1, mcl_exceedance precision) plus the overall
+        Step 3 pass/fail from each model's `check_success_criteria()`
+        output.
+        """
+        _rows = []
+        for _name, _result in results.items():
+            _criteria = _result["criteria"]["criteria"].set_index("Metric")[
+                "Value"
+            ]
+            _rows.append(
+                {
+                    "Model": _name,
+                    "mcl_exceedance recall": _criteria[
+                        "mcl_exceedance recall"
+                    ],
+                    "Macro F1": _criteria["macro F1"],
+                    "mcl_exceedance precision": _criteria[
+                        "mcl_exceedance precision"
+                    ],
+                    "Meets all Step 3 criteria": _result["criteria"][
+                        "all_passed"
+                    ],
+                }
+            )
+        return pd.DataFrame(_rows)
+
+    return (build_model_comparison,)
 
 
 @app.cell(hide_code=True)
@@ -1152,17 +1192,24 @@ def _(mo):
     return
 
 
-@app.cell
-def _():
-    # T7 prep: comparison-table skeleton for Model A vs. Model B
-    # (macro F1, mcl_exceedance recall/precision, per-study error
-    # rate). Model A's row can be filled in now from the cells above;
-    # Model B's row stays blank until T6 lands, so finishing this is a
-    # drop-in, not a rewrite.
+@app.cell(hide_code=True)
+def _(build_model_comparison, mo, model_a_held_out):
+    # T7 prep: Model A's row is ready now. Add Model B's entry to this
+    # dict once T6 lands - no rewrite needed, just one more line.
     #
     # Conversation starter: same columns as T9's benchmarking table,
     # or does T9 need more (majority-baseline column, per-tier recall
     # beyond mcl_exceedance)?
+    _comparison_results = {
+        "Model A": model_a_held_out,
+        # "Model B": model_b_held_out,  # add once T6 lands
+    }
+    mo.vstack(
+        [
+            mo.md("#### Model comparison: Model A vs. Model B"),
+            mo.ui.table(build_model_comparison(_comparison_results)),
+        ]
+    )
     return
 
 
