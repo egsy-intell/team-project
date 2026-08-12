@@ -26,5 +26,7 @@ Full prompt/response history for every Claude Code thread behind [Yai's pairing-
 22. [One more line-length fix](22-one-more-line-length-fix.md)
 23. [Timing the narration](23-timing-the-narration.md)
 24. [Checkpoint 3 header skeleton, then aligning it with the spec](24-checkpoint-3-header-skeleton.md)
+25. [Injecting peer-feedback guiding questions](25-injecting-peer-feedback-guiding-questions.md)
+26. [Settling the McMahon scope question](26-settling-the-mcmahon-scope-question.md)
 
 Other teammates' disclosures live in their own sibling directory under `docs/ai/logs/`.

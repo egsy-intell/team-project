@@ -194,17 +194,17 @@
     <div class="disclosure-item">
       <span class="dl-label">History of the exchange</span>
       <p>Every thread below links its full prompt/response transcript; all
-      24 are also collected in
+      26 are also collected in
       <a href="logs/ytorresv/index.md"><code>docs/ai/logs/ytorresv/</code></a>.</p>
     </div>
   </div>
 
   <div class="stats">
-    <div class="stat"><span class="n">24</span><span class="l">Threads</span></div><div class="stat"><span class="n">48</span><span class="l">Commits with Claude Code</span></div><div class="stat"><span class="n">18%</span><span class="l">Of Yai's 268 commits</span></div><div class="stat"><span class="n">25</span><span class="l">Days, Jul 11–Aug 4</span></div>
+    <div class="stat"><span class="n">26</span><span class="l">Threads</span></div><div class="stat"><span class="n">50</span><span class="l">Commits with Claude Code</span></div><div class="stat"><span class="n">45%</span><span class="l">Of Yai's 110 commits</span></div><div class="stat"><span class="n">28</span><span class="l">Days, Jul 11–Aug 7</span></div>
   </div>
 
   <p class="note">
-    <strong>Methodology.</strong> The 48 commits are every commit carrying a <code>Co-Authored-By: Claude Sonnet 5</code> trailer. The 24 threads are the actual coding sessions behind them — some run directly on <code>main</code>/a feature branch in this checkout, others in a git worktree under a <code>claude/*</code> branch — matched to each commit by timestamp (a commit is attributed to the thread whose active window contains it). I'm the author and committer of record on every commit: I decided what to build, which fix to take, and when a section was actually done. Quoted lines are the thread's own opening message, lightly trimmed for length; full transcripts are linked, not reconstructed dialogue. See <a href="../notebooks/index.html">the published report</a> for the project itself, or its closing "AI usage appendix" for the team's external chat-thread disclosures (Perplexity, Claude.ai) covering project planning and exploration rather than pair-programming.
+    <strong>Methodology.</strong> The 50 commits are every commit carrying a <code>Co-Authored-By: Claude Sonnet 5</code> trailer. The 26 threads are the actual coding sessions behind them — some run directly on <code>main</code>/a feature branch in this checkout, others in a git worktree under a <code>claude/*</code> branch — matched to each commit by timestamp (a commit is attributed to the thread whose active window contains it). I'm the author and committer of record on every commit: I decided what to build, which fix to take, and when a section was actually done. Quoted lines are the thread's own opening message, lightly trimmed for length; full transcripts are linked, not reconstructed dialogue. See <a href="../notebooks/index.html">the published report</a> for the project itself, or its closing "AI usage appendix" for the team's external chat-thread disclosures (Perplexity, Claude.ai) covering project planning and exploration rather than pair-programming.
   </p>
 
   <div class="legend">
@@ -223,6 +223,7 @@
     <li><a href="#p7">7. One flowing report</a></li>
     <li><a href="#p8">8. Check-In #2 deck rewrite</a></li>
     <li><a href="#p9">9. Final polish</a></li>
+    <li><a href="#p10">10. Closing out Step 5 planning</a></li>
   </ul>
 
   <section class="phase">
@@ -960,7 +961,7 @@
       <div class="tl-rail"><span class="dot">09</span></div>
       <div class="tl-content">
         <h2>Final polish</h2>
-        <p class="phase-blurb">The most recent thread in this log — table hygiene ahead of the next review pass.</p>
+        <p class="phase-blurb">Table hygiene ahead of the next review pass, then the Checkpoint 3 header skeleton kicking off Step 5.</p>
       </div>
     </div>
     <div class="tl-row thread">
@@ -1014,9 +1015,60 @@
     </ol>
   </section>
 
+  <section class="phase">
+    <div class="tl-row milestone" id="p10">
+      <div class="tl-time"></div>
+      <div class="tl-rail"><span class="dot">10</span></div>
+      <div class="tl-content">
+        <h2>Closing out Step 5 planning</h2>
+        <p class="phase-blurb">Two follow-up threads that resolved open questions in checkpoint_3.py's task list: folding in Check-In #2 peer feedback, then settling how the McMahon groundwater study factors into Model A/B evaluation.</p>
+      </div>
+    </div>
+    <div class="tl-row thread">
+      <div class="tl-time"><span class="d">Aug 5</span><span class="t">09:14</span></div>
+      <div class="tl-rail"><span class="dot"></span></div>
+      <div class="tl-content">
+        <h3>Injecting peer-feedback guiding questions</h3>
+        <p class="thread-quote">&ldquo;I synthesized this feedback from peer review: 1. Presentation: try to be lighter on the details, and focus on results 2. Report/presentation: Quantify the data sparsity in analysis […]&rdquo;</p>
+        <p class="thread-meta">branch skeleton-peer-review &middot; 3 prompts, 9 responses &middot; <a href="logs/ytorresv/25-injecting-peer-feedback-guiding-questions.md">full transcript &rarr;</a></p>
+      </div>
+    </div>
+    <ol class="entries">
+      <li class="tl-row entry">
+        <div class="tl-time"></div>
+        <div class="tl-rail"><span class="dot"></span></div>
+        <div class="tl-content">
+          <div class="entry-head"><h4>CP-3: Inject guiding questions (#77)</h4><span class="hash">c117c506</span></div>
+          <p class="entry-p">Folded two Check-In #2 peer-review items — leading with results over detail, and quantifying state-level site sparsity — into T9/T10's guiding questions, then closed out Task T3 (the peer-feedback triage itself) now that the selection was recorded.</p>
+          <div class="diffstat">2 files · <span class="plus">+41</span> −37</div>
+        </div>
+      </li>
+    </ol>
+    <div class="tl-row thread">
+      <div class="tl-time"><span class="d">Aug 7</span><span class="t">15:13</span></div>
+      <div class="tl-rail"><span class="dot"></span></div>
+      <div class="tl-content">
+        <h3>Settling the McMahon scope question</h3>
+        <p class="thread-quote">&ldquo;Let's pair program on Task T7. There are some dependencies that haven't landed yet (model implementation is still TBD). However, it would be nice to do some prep: 1. What do we mean by &quot;retuning&quot; for both models? 2. Do any pre-processing necessary for the McMahon data&rdquo;</p>
+        <p class="thread-meta">branch revise-mcmahon &middot; 6 prompts, 10 responses &middot; <a href="logs/ytorresv/26-settling-the-mcmahon-scope-question.md">full transcript &rarr;</a></p>
+      </div>
+    </div>
+    <ol class="entries">
+      <li class="tl-row entry">
+        <div class="tl-time"></div>
+        <div class="tl-rail"><span class="dot"></span></div>
+        <div class="tl-content">
+          <div class="entry-head"><h4>Refine ToDos for McMahon (#78)</h4><span class="hash">bc940ae</span></div>
+          <p class="entry-p">Resolved whether McMahon et al. (2022)'s groundwater study could serve as a held-out validation set for Model A/B — it can't, since its target and predictor set aren't comparable to Smalling/Seawolf's. Rewrote T7/T9/T10's guiding questions so McMahon stays out of scoring entirely and shows up only as external narrative context.</p>
+          <div class="diffstat">1 file · <span class="plus">+19</span> −6</div>
+        </div>
+      </li>
+    </ol>
+  </section>
+
   <footer class="page">
     <p>
-      Threads sourced from local Claude Code session logs (15 in this checkout, 9 run inside git worktrees) covering this repository; commits from <code>git log --all --grep="Co-Authored-By: Claude"</code>. Each commit is attributed to the thread whose active time window contains it. Full prompt/response transcripts for all 24 threads are in <a href="logs/ytorresv/index.md"><code>docs/ai/logs/</code></a>. Regenerate after adding threads or commits with <code>uv run python scripts/toolkit.py ai-disclosure ytorresv</code>.
+      Threads sourced from local Claude Code session logs (17 in this checkout, 9 run inside git worktrees) covering this repository; commits from <code>git log --all --grep="Co-Authored-By: Claude"</code>. Each commit is attributed to the thread whose active time window contains it, except two threads (Aug 5, Aug 7) whose commits merged days later via PR — those list their commit manually rather than by timestamp window. Full prompt/response transcripts for all 26 threads are in <a href="logs/ytorresv/index.md"><code>docs/ai/logs/</code></a>. Regenerate after adding threads or commits with <code>uv run python scripts/toolkit.py ai-disclosure ytorresv</code>.
     </p>
   </footer>
 
