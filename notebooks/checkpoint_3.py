@@ -60,9 +60,7 @@ async def _(checkpoint_2_app):
     checkpoint_2_result = await checkpoint_2_app.embed()
     tapwater_train_df = checkpoint_2_result.defs["tapwater_train_df"]
     tapwater_test_df = checkpoint_2_result.defs["tapwater_test_df"]
-    RECALL_FLOOR = checkpoint_2_result.defs["RECALL_FLOOR"]
-    PRECISION_FLOOR = checkpoint_2_result.defs["PRECISION_FLOOR"]
-    return PRECISION_FLOOR, RECALL_FLOOR, tapwater_test_df, tapwater_train_df
+    return tapwater_test_df, tapwater_train_df
 
 
 @app.cell(hide_code=True)
