@@ -10,7 +10,7 @@
 
 import marimo
 
-__generated_with = "0.23.16"
+__generated_with = "0.23.14"
 app = marimo.App(width="medium")
 
 
@@ -369,7 +369,10 @@ def _(mo):
 
 @app.cell(hide_code=True)
 def _(
-    RECALL_FLOOR, check_success_criteria, evaluate_tier_model, model_predictors
+    RECALL_FLOOR,
+    check_success_criteria,
+    evaluate_tier_model,
+    model_predictors,
 ):
     def score_model(pipeline, df, model_name):
         """Score a fitted pipeline against a held-out dataframe.
@@ -1003,7 +1006,7 @@ def _(mo, model_a_best_estimator, score_model, tapwater_test_df):
             mo.ui.table(model_a_held_out["metrics"]["confusion_matrix"]),
         ]
     )
-    return (model_a_held_out,)
+    return
 
 
 @app.cell
