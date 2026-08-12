@@ -897,9 +897,11 @@ def _(mo, task_callout):
                     ),
                     (
                         "Are the errors concentrated in one held-out study "
-                        "(McMahon-style groundwater generalization risk) or "
-                        "spread evenly, and does that change which model "
-                        "looks preferable?"
+                        "or spread evenly across the test partition, and "
+                        "does that change which model looks preferable? "
+                        "(McMahon stays out of this scoring entirely — "
+                        "its incomparable ∑TQ target keeps it a narrative "
+                        "reference for T9/T10, not a held-out study here.)"
                     ),
                     (
                         "After retuning, does the comparison between Model "
@@ -984,6 +986,15 @@ def _(mo, task_callout):
                         "bottom 15 states), and does that sparsity line "
                         "up with where either model's errors concentrate?"
                     ),
+                    (
+                        "For context only, not as a scored benchmark: how "
+                        "does either model's `mcl_exceedance` recall/"
+                        "precision compare to McMahon et al. (2022)'s own "
+                        "boosted-regression-tree model (SI §S5: 0.96 "
+                        "sensitivity, 0.72 specificity), given its target "
+                        "(binary PFAS detection) and predictor set "
+                        "(geochemistry-inclusive) both differ from ours?"
+                    ),
                 ],
             ),
         ]
@@ -1025,9 +1036,11 @@ def _(mo, task_callout):
                         "this project should know about going in?"
                     ),
                     (
-                        "Does the recommended model's main limitation "
-                        "(interpretability vs. accuracy, or the McMahon "
-                        "generalization gap) change the deployment "
+                        "Does the recommended model's main limitation — "
+                        "interpretability vs. accuracy, or the land-use-"
+                        "only predictor scope excluding the geochemical/"
+                        "age-tracer signal McMahon et al. (2022) found "
+                        "most predictive — change the deployment "
                         "recommendation itself?"
                     ),
                     (
