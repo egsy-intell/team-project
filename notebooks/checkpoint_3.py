@@ -357,12 +357,14 @@ def _(mo):
     mo.md("""
     #### Held-out scoring harness
 
-    A thin wrapper around checkpoint_2's `evaluate_tier_model()` and
-    `check_success_criteria()`, so T7 scores Model A and Model B
-    against the held-out test set the same way Step 3 already defined
-    success — rather than T7 re-deriving a second set of metrics.
-    Lives here, next to `tier_model_scoring`, so T9's benchmarking can
-    reuse it too.
+    Two thin wrappers so T7 scores Model A and Model B the same way,
+    without duplicating logic per model. `score_model()` wraps
+    checkpoint_2's `evaluate_tier_model()` and `check_success_criteria()`
+    against the held-out test set, the same way Step 3 already defined
+    success. `error_breakdown_by_study()` takes a `score_model()`
+    result and reports whether errors concentrate in one held-out
+    study or spread evenly. Both live here, next to
+    `tier_model_scoring`, so T9's benchmarking can reuse them too.
     """)
     return
 
@@ -395,6 +397,42 @@ def _(
         }
 
     return (score_model,)
+
+
+@app.cell(hide_code=True)
+def _(pd):
+    def error_breakdown_by_study(result, df):
+        """Held-out error rate by `study_group`, for a score_model() result.
+
+        Takes a score_model() result dict and the dataframe it was
+        scored against, and reports whether errors concentrate in one
+        held-out study or spread evenly (T7's second guiding
+        question). Model B calls this the same way once T6 lands.
+        """
+        _breakdown = pd.DataFrame(
+            {
+                "study_group": df["study_group"].to_numpy(),
+                "actual": result["y_true"].to_numpy(),
+                "predicted": result["y_pred"],
+            }
+        )
+        _breakdown["correct"] = (
+            _breakdown["actual"] == _breakdown["predicted"]
+        )
+        return (
+            _breakdown.groupby("study_group")
+            .agg(
+                sites=("correct", "size"),
+                errors=("correct", lambda s: int((~s).sum())),
+            )
+            .assign(
+                error_rate=lambda d: (d["errors"] / d["sites"]).round(4)
+            )
+            .reset_index()
+            .sort_values("error_rate", ascending=False)
+        )
+
+    return (error_breakdown_by_study,)
 
 
 @app.cell(hide_code=True)
@@ -1006,33 +1044,21 @@ def _(mo, model_a_best_estimator, score_model, tapwater_test_df):
             mo.ui.table(model_a_held_out["metrics"]["confusion_matrix"]),
         ]
     )
-    return
+    return (model_a_held_out,)
 
 
-@app.cell
-def _():
-    # T7 prep: apply Step 3's 0.70 recall floor on `mcl_exceedance` to
-    # Model A's held-out predictions, once the scoring harness above
-    # exists. Model A alone can't answer T7's guiding question ("does
-    # *either* model clear it"), but it tells us where Model A stands
-    # ahead of Model B landing.
-    #
-    # Conversation starter: if Model A misses the floor on its own, is
-    # that worth flagging to Emir before T6 wraps, in case it changes
-    # what Model B's tuning should prioritize?
-    return
-
-
-@app.cell
-def _():
-    # T7 prep: break down Model A's held-out errors by `study_group`
-    # to see whether they concentrate in one held-out study or spread
-    # evenly (T7's second guiding question). Reuses the same
-    # `study_group` values T5's grouped CV already keys on.
-    #
-    # Conversation starter: is a table enough given how few held-out
-    # studies there are, or does this warrant a small bar plot of
-    # error rate by study?
+@app.cell(hide_code=True)
+def _(error_breakdown_by_study, mo, model_a_held_out, tapwater_test_df):
+    # T7 prep: dry run of the breakdown above on Model A alone.
+    _model_a_error_breakdown = error_breakdown_by_study(
+        model_a_held_out, tapwater_test_df
+    )
+    mo.vstack(
+        [
+            mo.md("#### Model A: held-out error rate by study"),
+            mo.ui.table(_model_a_error_breakdown),
+        ]
+    )
     return
 
 
