@@ -88,12 +88,17 @@ def _():
     import matplotlib.pyplot as plt
     import numpy as np
     import pandas as pd
-    from sklearn.base import BaseEstimator, TransformerMixin
+    from sklearn.base import BaseEstimator, TransformerMixin, clone
     from sklearn.compose import ColumnTransformer
+    from sklearn.ensemble import RandomForestClassifier
     from sklearn.impute import SimpleImputer
     from sklearn.linear_model import LogisticRegression
     from sklearn.metrics import f1_score, precision_score, recall_score
-    from sklearn.model_selection import GridSearchCV, StratifiedGroupKFold
+    from sklearn.model_selection import (
+        GridSearchCV,
+        RandomizedSearchCV,
+        StratifiedGroupKFold,
+    )
     from sklearn.pipeline import Pipeline
     from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
@@ -104,10 +109,13 @@ def _():
         LogisticRegression,
         OneHotEncoder,
         Pipeline,
+        RandomForestClassifier,
+        RandomizedSearchCV,
         SimpleImputer,
         StandardScaler,
         StratifiedGroupKFold,
         TransformerMixin,
+        clone,
         f1_score,
         np,
         pd,
@@ -246,7 +254,7 @@ def _(mo):
     mo.md("""
     ### Shared setup for Model A & Model B
 
-    Per the Step 4 proposals, Model B (T6) reuses Model A's approved
+    Per the Step 4 proposals, Model B reuses Model A's approved
     predictor set, grouped cross-validation strategy, and scoring
     metrics. These are defined once here so both models can train
     against identical folds and report the same CV diagnostics.
@@ -363,7 +371,7 @@ def _(mo):
     mo.md("""
     #### Held-out scoring harness
 
-    Five thin wrappers so T7 scores Model A and Model B the same way,
+    Five thin wrappers score Model A and Model B the same way,
     without duplicating logic per model. `score_model()` wraps
     checkpoint_2's `evaluate_tier_model()` and `check_success_criteria()`
     against the held-out test set, the same way Step 3 already defined
@@ -623,12 +631,12 @@ def _(mo):
     Model A is the multinomial logistic-regression baseline proposed in
     Step 4. It is trained only on `tapwater_train_df` using study-grouped
     cross-validation; the held-out test partition is not used here and
-    remains untouched for T7.
+    remains untouched for held-out evaluation.
 
     Hyperparameter selection in T5 uses mean grouped-CV macro-F1 only.
     The CV recall and precision values for `mcl_exceedance` are retained
     as tuning diagnostics, not as the final Step 3 pass/fail decision.
-    T7 and T9 will make that determination on the held-out studies.
+    The held-out evaluation and benchmarking make that determination.
 
     This also uses an explicit predictor allowlist so raw PFAS
     concentrations, ∑TQ fields, identifiers, and study labels cannot
@@ -1056,7 +1064,7 @@ def _(
                 `mcl_exceedance` recall and precision values are retained
                 as tuning diagnostics only and do not determine model
                 selection in T5. Final threshold evaluation is performed
-                in T7/T9 using the held-out studies.
+                in the evaluation using the held-out studies.
                 """
             ),
             mo.ui.table(model_a_cv_results.round(4)),
@@ -1077,7 +1085,7 @@ def _(
                 Model A tuning is based on grouped-CV macro-F1 only.
                 High-risk recall and precision remain visible as
                 training-time diagnostics, while the authoritative
-                threshold assessment is deferred to T7/T9 on the
+                threshold assessment is performed later on the
                 held-out studies.
 
                 {_unseen_text}
@@ -1102,40 +1110,131 @@ def _(
 
 
 @app.cell(hide_code=True)
-def _(mo, task_callout):
-    mo.vstack(
+def _(mo):
+    mo.md("""
+    ### Model B: random forest
+
+    We train the competing ensemble on the same predictor set, training
+    partition, fold-specific preprocessing, and grouped cross-validation
+    splits as Model A. This keeps the comparison focused on the classifier
+    rather than differences in data preparation.
+    """)
+    return
+
+
+@app.cell
+def _(
+    RandomForestClassifier,
+    RandomizedSearchCV,
+    clone,
+    grouped_cv,
+    mo,
+    model_a_best_estimator,
+    model_predictors,
+    pd,
+    study_groups,
+    tapwater_train_df,
+    tier_model_scoring,
+):
+    """Train Model B with Emir's randomized Random Forest search."""
+    _X_train = tapwater_train_df[model_predictors].copy()
+    _y_train = tapwater_train_df["pfas_risk_tier"].astype(str)
+
+    # Clone Model A's complete pipeline so both models receive the same
+    # fold-fitted preprocessing. Replacing only the estimator prevents
+    # preprocessing leakage and leaves a pipeline that score_model() can
+    # call directly on the raw held-out predictor columns.
+    _pipeline = clone(model_a_best_estimator).set_params(
+        model=RandomForestClassifier(random_state=42, n_jobs=-1)
+    )
+
+    # Emir's original conservative six-candidate randomized search.
+    _param_distributions = {
+        "model__n_estimators": [100, 200, 300],
+        "model__max_depth": [None, 10, 20],
+        "model__min_samples_leaf": [1, 2, 4],
+    }
+
+    model_b_grid_search = RandomizedSearchCV(
+        estimator=_pipeline,
+        param_distributions=_param_distributions,
+        n_iter=6,
+        scoring=tier_model_scoring,
+        refit="macro_f1",
+        cv=grouped_cv,
+        return_train_score=True,
+        n_jobs=-1,
+        random_state=42,
+        error_score="raise",
+    )
+    model_b_grid_search.fit(
+        _X_train,
+        _y_train,
+        groups=study_groups,
+    )
+
+    model_b_best_estimator = model_b_grid_search.best_estimator_
+    _cv = model_b_grid_search.cv_results_
+    model_b_cv_results = pd.DataFrame(
+        {
+            "Trees": _cv["param_model__n_estimators"],
+            "Maximum depth": [
+                "unlimited" if _value is None else _value
+                for _value in _cv["param_model__max_depth"]
+            ],
+            "Minimum leaf size": _cv["param_model__min_samples_leaf"],
+            "CV macro F1": _cv["mean_test_macro_f1"],
+            "CV mcl recall": _cv["mean_test_mcl_recall"],
+            "CV mcl precision": _cv["mean_test_mcl_precision"],
+        }
+    )
+    model_b_cv_results["Selected"] = False
+    model_b_cv_results.loc[model_b_grid_search.best_index_, "Selected"] = True
+    model_b_cv_results = model_b_cv_results.sort_values(
+        ["Selected", "CV macro F1"],
+        ascending=[False, False],
+    ).reset_index(drop=True)
+
+    _selected = model_b_cv_results[model_b_cv_results["Selected"]].iloc[0]
+    model_b_training_summary = pd.DataFrame(
         [
-            mo.md("### Build competing model"),
-            task_callout(
-                "T6",
-                category="Step 5 - Model Training",
-                lead="Emir",
-                depends_on="T1",
-                summary=(
-                    "Implement and train the competing ensemble "
-                    "classifier (Model B) proposed in Step 4, using the "
-                    "same training partition, grouped cross-validation, "
-                    "and grid-search tuning approach as Model A (T5) so "
-                    "Model B enters T7 already tuned rather than "
-                    "deferring tuning to the evaluation step."
-                ),
-                guiding_questions=[
-                    (
-                        "Does the tuned forest actually pick up the "
-                        "nonlinear/interaction effects Step 4 predicted, or "
-                        "do feature importances look close to Model A's "
-                        "coefficient ranking?"
-                    ),
-                    (
-                        "Is the tuning grid still computationally cheap "
-                        "enough at the full 716-sample dataset size, or "
-                        "does it need trimming?"
-                    ),
+            {
+                "Training rows": len(_X_train),
+                "Study groups": study_groups.nunique(),
+                "Raw predictors": len(model_predictors),
+                "Best trees": model_b_grid_search.best_params_[
+                    "model__n_estimators"
                 ],
-            ),
+                "Best maximum depth": (
+                    "unlimited"
+                    if model_b_grid_search.best_params_["model__max_depth"]
+                    is None
+                    else model_b_grid_search.best_params_["model__max_depth"]
+                ),
+                "Best minimum leaf size": model_b_grid_search.best_params_[
+                    "model__min_samples_leaf"
+                ],
+                "CV macro F1": round(_selected["CV macro F1"], 4),
+                "CV mcl recall": round(_selected["CV mcl recall"], 4),
+                "CV mcl precision": round(_selected["CV mcl precision"], 4),
+            }
         ]
     )
-    return
+
+    mo.vstack(
+        [
+            mo.md("#### Model B training and tuning summary"),
+            mo.ui.table(model_b_training_summary),
+            mo.md("#### Randomized-search results"),
+            mo.ui.table(model_b_cv_results.round(4)),
+        ]
+    )
+    return (
+        model_b_best_estimator,
+        model_b_cv_results,
+        model_b_grid_search,
+        model_b_training_summary,
+    )
 
 
 @app.cell(hide_code=True)
@@ -1150,74 +1249,37 @@ def _(mo):
 
 
 @app.cell(hide_code=True)
-def _(mo, task_callout):
-    mo.vstack(
-        [
-            mo.md("### Run predictions & evaluate"),
-            task_callout(
-                "T7",
-                category="Step 5 - Evaluation",
-                lead="Yai, Somyaranjan",
-                depends_on="T5, T6",
-                summary=(
-                    "Score both already-tuned models on the held-out "
-                    "test set and evaluate against Step 3's success "
-                    "criteria. Run as a joint execution, pairing "
-                    "directly through the step."
-                ),
-                guiding_questions=[
-                    (
-                        "Does either model clear the 0.70 recall floor on "
-                        "`mcl_exceedance` from Step 3, and if neither does, "
-                        "what does that imply for the T9 benchmarking "
-                        "narrative and T10's deployment recommendation?"
-                    ),
-                    (
-                        "Are the errors concentrated in one held-out study "
-                        "or spread evenly across the test partition, and "
-                        "does that change which model looks preferable? "
-                        "(McMahon stays out of this scoring entirely — "
-                        "its incomparable ∑TQ target keeps it a narrative "
-                        "reference for T9/T10, not a held-out study here.)"
-                    ),
-                    (
-                        "Does the held-out comparison between Model A and "
-                        "Model B change which one the team recommends, "
-                        "relative to the Step 4 prediction?"
-                    ),
-                ],
-            ),
-        ]
-    )
+def _(mo):
+    mo.md("""
+    ### Held-out prediction and evaluation
+
+    We score both tuned models on the same held-out studies and apply the
+    success criteria fixed in Step 3. McMahon remains outside this scored
+    comparison because its ∑TQ target is not directly comparable.
+    """)
     return
 
 
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    #### T7 prep work (unblocked ahead of T6)
+    #### Shared held-out evaluation
 
-    T7 itself is still blocked on T6 (Model B), but the pieces
-    below only need Model A and can be dry-run against it now, so
-    finishing T7 once T6 lands is mostly plugging Model B in
-    rather than starting from scratch.
+    The following results use the same scoring harness, test partition,
+    class metrics, and success thresholds for both models.
     """)
     return
 
 
 @app.cell(hide_code=True)
 def _(mo, model_a_best_estimator, score_model, tapwater_test_df):
-    # T7 prep: dry run of the shared-setup score_model() harness on
-    # Model A alone, ahead of T6. Model B calls score_model() the same
-    # way once it lands, so this becomes the first row of T7's actual
-    # Model A vs. Model B comparison rather than needing a rewrite.
     model_a_held_out = score_model(
         model_a_best_estimator, tapwater_test_df, "Model A"
     )
 
     mo.vstack(
         [
-            mo.md("#### Model A: held-out scoring (T7 prep dry run)"),
+            mo.md("#### Model A: held-out scoring"),
             mo.md(f"**{model_a_held_out['criteria']['summary_line']}**"),
             mo.ui.table(model_a_held_out["criteria"]["criteria"]),
             mo.md("#### Confusion matrix (held-out)"),
@@ -1235,7 +1297,6 @@ def _(
     plot_error_rate_by_study,
     tapwater_test_df,
 ):
-    # T7 prep: dry run of the breakdown above on Model A alone.
     _model_a_error_breakdown = error_breakdown_by_study(
         model_a_held_out, tapwater_test_df
     )
@@ -1250,20 +1311,59 @@ def _(
 
 
 @app.cell(hide_code=True)
+def _(mo, model_b_best_estimator, score_model, tapwater_test_df):
+    model_b_held_out = score_model(
+        model_b_best_estimator, tapwater_test_df, "Model B"
+    )
+
+    mo.vstack(
+        [
+            mo.md("#### Model B: held-out scoring"),
+            mo.md(f"**{model_b_held_out['criteria']['summary_line']}**"),
+            mo.ui.table(model_b_held_out["criteria"]["criteria"]),
+            mo.md("#### Confusion matrix (held-out)"),
+            mo.ui.table(model_b_held_out["metrics"]["confusion_matrix"]),
+        ]
+    )
+    return (model_b_held_out,)
+
+
+@app.cell(hide_code=True)
+def _(
+    error_breakdown_by_study,
+    mo,
+    model_b_held_out,
+    plot_error_rate_by_study,
+    tapwater_test_df,
+):
+    _model_b_error_breakdown = error_breakdown_by_study(
+        model_b_held_out, tapwater_test_df
+    )
+    mo.vstack(
+        [
+            mo.md("#### Model B: held-out error rate by study"),
+            mo.ui.table(_model_b_error_breakdown),
+            plot_error_rate_by_study(_model_b_error_breakdown, "Model B"),
+        ]
+    )
+    return
+
+
+@app.cell(hide_code=True)
 def _(mo):
     mo.callout(
         mo.md("""
-        #### T7 prep: class-weight ad hoc test (Model A)
+        #### Model A class-weight diagnostic
 
         Model A's held-out collapse (predicts `within_reduced_monitoring`
         for all 46 sites; 0.0 recall on both `above_trigger` and
-        `mcl_exceedance`) raised the question of whether T5's selected
+        `mcl_exceedance`) raised the question of whether the selected
         `class_weight="unweighted"` — which won on grouped-CV macro-F1
         among the training folds, per `model_a_cv_results` above — was
         the main cause. Tested by hand: same pipeline and `C` grid,
         `class_weight="balanced"` forced, refit on `tapwater_train_df`,
         scored on `tapwater_test_df` via `score_model()` (not part of
-        the tracked T5 pipeline; a diagnostic only).
+        the tracked Model A pipeline; a diagnostic only).
 
         | Metric | Unweighted (Model A) | Balanced |
         |---|---|---|
@@ -1280,7 +1380,8 @@ def _(mo):
         contributing factor, not the dominant one — the bigger story
         is a train/held-out generalization gap that a training-time
         hyperparameter alone doesn't fix. Worth keeping both threads
-        in the T9/T10 narrative: confirm `"balanced"` isn't dropped
+        in the benchmarking and deployment discussion: confirm
+        `"balanced"` isn't dropped
         for Model B on a CV-macro-F1 technicality the way it was for
         Model A, but don't expect it to single-handedly clear the
         floor either.
@@ -1291,16 +1392,16 @@ def _(mo):
 
 
 @app.cell(hide_code=True)
-def _(build_model_comparison, mo, model_a_held_out, plot_model_comparison):
-    # T7 prep: Model A's row is ready now. Add Model B's entry to this
-    # dict once T6 lands - no rewrite needed, just one more line.
-    #
-    # Conversation starter: same columns as T9's benchmarking table,
-    # or does T9 need more (majority-baseline column, per-tier recall
-    # beyond mcl_exceedance)?
+def _(
+    build_model_comparison,
+    mo,
+    model_a_held_out,
+    model_b_held_out,
+    plot_model_comparison,
+):
     _comparison_results = {
         "Model A": model_a_held_out,
-        # "Model B": model_b_held_out,  # add once T6 lands
+        "Model B": model_b_held_out,
     }
     _comparison_df = build_model_comparison(_comparison_results)
     mo.vstack(
