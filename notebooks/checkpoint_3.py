@@ -1229,12 +1229,7 @@ def _(
             mo.ui.table(model_b_cv_results.round(4)),
         ]
     )
-    return (
-        model_b_best_estimator,
-        model_b_cv_results,
-        model_b_grid_search,
-        model_b_training_summary,
-    )
+    return (model_b_best_estimator,)
 
 
 @app.cell(hide_code=True)
