@@ -10,7 +10,7 @@
 
 import marimo
 
-__generated_with = "0.23.14"
+__generated_with = "0.23.16"
 app = marimo.App(width="medium")
 
 
@@ -915,6 +915,74 @@ def _(mo, task_callout):
             ),
         ]
     )
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md("""
+    #### T7 prep work (unblocked ahead of T6)
+
+    T7 itself is still blocked on T6 (Model B), but the pieces
+    below only need Model A and can be dry-run against it now, so
+    finishing T7 once T6 lands is mostly plugging Model B in
+    rather than starting from scratch.
+    """)
+    return
+
+
+@app.cell
+def _():
+    # T7 prep: a score_model(pipeline, df) helper that scores a fitted
+    # pipeline against tapwater_test_df, reusing the same
+    # tier_model_scoring functions T5 already defined for CV (macro
+    # F1, mcl_exceedance recall/precision). Model A can exercise this
+    # today; Model B just calls the same helper once T6 lands.
+    #
+    # Conversation starter: should this live next to `tier_model_scoring`
+    # in the shared-setup section instead, so T9 can reuse it too
+    # rather than duplicating a second scoring helper there?
+    return
+
+
+@app.cell
+def _():
+    # T7 prep: apply Step 3's 0.70 recall floor on `mcl_exceedance` to
+    # Model A's held-out predictions, once the scoring harness above
+    # exists. Model A alone can't answer T7's guiding question ("does
+    # *either* model clear it"), but it tells us where Model A stands
+    # ahead of Model B landing.
+    #
+    # Conversation starter: if Model A misses the floor on its own, is
+    # that worth flagging to Emir before T6 wraps, in case it changes
+    # what Model B's tuning should prioritize?
+    return
+
+
+@app.cell
+def _():
+    # T7 prep: break down Model A's held-out errors by `study_group`
+    # to see whether they concentrate in one held-out study or spread
+    # evenly (T7's second guiding question). Reuses the same
+    # `study_group` values T5's grouped CV already keys on.
+    #
+    # Conversation starter: is a table enough given how few held-out
+    # studies there are, or does this warrant a small bar plot of
+    # error rate by study?
+    return
+
+
+@app.cell
+def _():
+    # T7 prep: comparison-table skeleton for Model A vs. Model B
+    # (macro F1, mcl_exceedance recall/precision, per-study error
+    # rate). Model A's row can be filled in now from the cells above;
+    # Model B's row stays blank until T6 lands, so finishing this is a
+    # drop-in, not a rewrite.
+    #
+    # Conversation starter: same columns as T9's benchmarking table,
+    # or does T9 need more (majority-baseline column, per-tier recall
+    # beyond mcl_exceedance)?
     return
 
 
