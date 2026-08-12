@@ -60,7 +60,18 @@ async def _(checkpoint_2_app):
     checkpoint_2_result = await checkpoint_2_app.embed()
     tapwater_train_df = checkpoint_2_result.defs["tapwater_train_df"]
     tapwater_test_df = checkpoint_2_result.defs["tapwater_test_df"]
-    return tapwater_test_df, tapwater_train_df
+    evaluate_tier_model = checkpoint_2_result.defs["evaluate_tier_model"]
+    check_success_criteria = checkpoint_2_result.defs[
+        "check_success_criteria"
+    ]
+    RECALL_FLOOR = checkpoint_2_result.defs["RECALL_FLOOR"]
+    return (
+        RECALL_FLOOR,
+        check_success_criteria,
+        evaluate_tier_model,
+        tapwater_test_df,
+        tapwater_train_df,
+    )
 
 
 @app.cell(hide_code=True)
@@ -339,6 +350,48 @@ def _(f1_score, precision_score, recall_score):
         "mcl_precision": _mcl_precision,
     }
     return (tier_model_scoring,)
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md("""
+    #### Held-out scoring harness
+
+    A thin wrapper around checkpoint_2's `evaluate_tier_model()` and
+    `check_success_criteria()`, so T7 scores Model A and Model B
+    against the held-out test set the same way Step 3 already defined
+    success — rather than T7 re-deriving a second set of metrics.
+    Lives here, next to `tier_model_scoring`, so T9's benchmarking can
+    reuse it too.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(
+    RECALL_FLOOR, check_success_criteria, evaluate_tier_model, model_predictors
+):
+    def score_model(pipeline, df, model_name):
+        """Score a fitted pipeline against a held-out dataframe.
+
+        Predicts with `pipeline` on `df[model_predictors]`, then hands
+        the true/predicted tiers to `evaluate_tier_model()` and
+        `check_success_criteria()`. `df` must carry a `pfas_risk_tier`
+        column (both `tapwater_test_df` and `tapwater_train_df` do).
+        """
+        X = df[model_predictors]
+        y_true = df["pfas_risk_tier"].astype(str)
+        y_pred = pipeline.predict(X)
+        return {
+            "y_true": y_true,
+            "y_pred": y_pred,
+            "metrics": evaluate_tier_model(
+                y_true, y_pred, model_name, recall_floor=RECALL_FLOOR
+            ),
+            "criteria": check_success_criteria(y_true, y_pred, model_name),
+        }
+
+    return (score_model,)
 
 
 @app.cell(hide_code=True)
@@ -931,18 +984,26 @@ def _(mo):
     return
 
 
-@app.cell
-def _():
-    # T7 prep: a score_model(pipeline, df) helper that scores a fitted
-    # pipeline against tapwater_test_df, reusing the same
-    # tier_model_scoring functions T5 already defined for CV (macro
-    # F1, mcl_exceedance recall/precision). Model A can exercise this
-    # today; Model B just calls the same helper once T6 lands.
-    #
-    # Conversation starter: should this live next to `tier_model_scoring`
-    # in the shared-setup section instead, so T9 can reuse it too
-    # rather than duplicating a second scoring helper there?
-    return
+@app.cell(hide_code=True)
+def _(mo, model_a_best_estimator, score_model, tapwater_test_df):
+    # T7 prep: dry run of the shared-setup score_model() harness on
+    # Model A alone, ahead of T6. Model B calls score_model() the same
+    # way once it lands, so this becomes the first row of T7's actual
+    # Model A vs. Model B comparison rather than needing a rewrite.
+    model_a_held_out = score_model(
+        model_a_best_estimator, tapwater_test_df, "Model A"
+    )
+
+    mo.vstack(
+        [
+            mo.md("#### Model A: held-out scoring (T7 prep dry run)"),
+            mo.md(f"**{model_a_held_out['criteria']['summary_line']}**"),
+            mo.ui.table(model_a_held_out["criteria"]["criteria"]),
+            mo.md("#### Confusion matrix (held-out)"),
+            mo.ui.table(model_a_held_out["metrics"]["confusion_matrix"]),
+        ]
+    )
+    return (model_a_held_out,)
 
 
 @app.cell
