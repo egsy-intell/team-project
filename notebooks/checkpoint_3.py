@@ -840,8 +840,10 @@ def _(mo, task_callout):
                 summary=(
                     "Implement and train the competing ensemble "
                     "classifier (Model B) proposed in Step 4, using the "
-                    "same training partition and grouped "
-                    "cross-validation as Model A."
+                    "same training partition, grouped cross-validation, "
+                    "and grid-search tuning approach as Model A (T5) so "
+                    "Model B enters T7 already tuned rather than "
+                    "deferring tuning to the evaluation step."
                 ),
                 guiding_questions=[
                     (
@@ -877,23 +879,24 @@ def _(mo):
 def _(mo, task_callout):
     mo.vstack(
         [
-            mo.md("### Run predictions & retune"),
+            mo.md("### Run predictions & evaluate"),
             task_callout(
                 "T7",
                 category="Step 5 - Evaluation",
                 lead="Yai, Somyaranjan",
                 depends_on="T5, T6",
                 summary=(
-                    "Score both trained models on the held-out test "
-                    "set; evaluate and retune to improve accuracy. Run "
-                    "as a joint execution, pairing directly through the "
-                    "step."
+                    "Score both already-tuned models on the held-out "
+                    "test set and evaluate against Step 3's success "
+                    "criteria. Run as a joint execution, pairing "
+                    "directly through the step."
                 ),
                 guiding_questions=[
                     (
                         "Does either model clear the 0.70 recall floor on "
                         "`mcl_exceedance` from Step 3, and if neither does, "
-                        "what does the retuning pass prioritize first?"
+                        "what does that imply for the T9 benchmarking "
+                        "narrative and T10's deployment recommendation?"
                     ),
                     (
                         "Are the errors concentrated in one held-out study "
@@ -904,9 +907,9 @@ def _(mo, task_callout):
                         "reference for T9/T10, not a held-out study here.)"
                     ),
                     (
-                        "After retuning, does the comparison between Model "
-                        "A and Model B change which one the team "
-                        "recommends, relative to the Step 4 prediction?"
+                        "Does the held-out comparison between Model A and "
+                        "Model B change which one the team recommends, "
+                        "relative to the Step 4 prediction?"
                     ),
                 ],
             ),
