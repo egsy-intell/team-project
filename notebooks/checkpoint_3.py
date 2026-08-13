@@ -1237,45 +1237,10 @@ def _(mo):
 
 
 @app.cell(hide_code=True)
-def _(mo, task_callout):
-    mo.vstack(
-        [
-            mo.md("#### Run predictions & evaluate"),
-            task_callout(
-                "T7",
-                category="Step 5 - Evaluation",
-                lead="Yai, Somyaranjan",
-                depends_on="T5, T6",
-                summary=(
-                    "Score both already-tuned models on the held-out "
-                    "test set and evaluate against Step 3's success "
-                    "criteria. Run as a joint execution, pairing "
-                    "directly through the step."
-                ),
-                guiding_questions=[
-                    (
-                        "Does either model clear the 0.70 recall floor on "
-                        "`mcl_exceedance` from Step 3, and if neither does, "
-                        "what does that imply for the T9 benchmarking "
-                        "narrative and T10's deployment recommendation?"
-                    ),
-                    (
-                        "Are the errors concentrated in one held-out study "
-                        "or spread evenly across the test partition, and "
-                        "does that change which model looks preferable? "
-                        "(McMahon stays out of this scoring entirely — "
-                        "its incomparable ∑TQ target keeps it a narrative "
-                        "reference for T9/T10, not a held-out study here.)"
-                    ),
-                    (
-                        "Does the held-out comparison between Model A and "
-                        "Model B change which one the team recommends, "
-                        "relative to the Step 4 prediction?"
-                    ),
-                ],
-            ),
-        ]
-    )
+def _(mo):
+    mo.md("""
+    #### Run predictions & evaluate
+    """)
     return
 
 
