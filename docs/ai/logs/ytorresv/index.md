@@ -31,5 +31,6 @@ Full prompt/response history for every Claude Code thread behind [Yai's pairing-
 27. [Updating the disclosure for PRs #77 and #78](27-updating-disclosure-for-prs-77-78.md)
 28. [T6/T7 retuning guidance, then T7 prep placeholder cells](28-t6-t7-retuning-and-prep-placeholders.md)
 29. [Reviewing Model B, then DRYing its training cells](29-reviewing-and-drying-model-b.md)
+30. [Fixing heading hierarchy, then drafting and closing out T7](30-heading-hierarchy-and-closing-out-t7.md)
 
 Other teammates' disclosures live in their own sibling directory under `docs/ai/logs/`.
