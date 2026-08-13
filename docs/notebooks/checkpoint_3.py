@@ -204,39 +204,6 @@ def _(mo):
 
 
 @app.cell(hide_code=True)
-def _(mo, task_callout):
-    mo.vstack(
-        [
-            mo.md("#### Implement feedback change"),
-            task_callout(
-                "T4",
-                category="Feedback integration",
-                lead="Yai, Somyaranjan",
-                depends_on="T3",
-                summary=(
-                    "Make the scoped change identified in T3, in "
-                    "whichever part of the pipeline or notebook it "
-                    "touches."
-                ),
-                guiding_questions=[
-                    (
-                        "Does this change touch anything upstream of model "
-                        "training (T5/T6) closely enough that it should "
-                        "land before those tasks start rather than after?"
-                    ),
-                    (
-                        "How will the change be called out in the writeup "
-                        "so a reader can see it was a direct response to "
-                        "peer feedback, not an unrelated revision?"
-                    ),
-                ],
-            ),
-        ]
-    )
-    return
-
-
-@app.cell(hide_code=True)
 def _(mo):
     mo.md("""
     ### Step 5: Model Training & Execution
@@ -1466,42 +1433,6 @@ def _(RECALL_FLOOR, comparison_df, mo, model_a_cv_results, model_b_cv_results):
 def _(mo, task_callout):
     mo.vstack(
         [
-            mo.md("#### Scalability / deployment metric"),
-            task_callout(
-                "T8",
-                category="Step 5 - Evaluation",
-                lead="Emir",
-                depends_on="T6",
-                summary=(
-                    "Optional scalability and deployment-metric "
-                    "analysis on the competing model, carrying Step "
-                    "3's third evaluation proposal into execution."
-                ),
-                guiding_questions=[
-                    (
-                        "At what number of sites, if any, does batch-scoring "
-                        "throughput become a practical concern for an "
-                        "operator screening a full monitoring network?"
-                    ),
-                    (
-                        "T7 found neither model clears Step 3's recall "
-                        "floor on the held-out set — given the team's "
-                        "remaining time, is a scalability profile worth "
-                        "running now, or does it stay optional/deferred "
-                        "until a model actually meets the bar it would be "
-                        "deployed against?"
-                    ),
-                ],
-            ),
-        ]
-    )
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo, task_callout):
-    mo.vstack(
-        [
             mo.md("#### Model validation & benchmarking"),
             task_callout(
                 "T9",
@@ -1511,7 +1442,11 @@ def _(mo, task_callout):
                 summary=(
                     "Apply the per-class metrics framework and "
                     "risk-tier thresholds to both models; benchmark "
-                    "against the Step 3 evaluation plan."
+                    "against the Step 3 evaluation plan. Absorbs T4's "
+                    "scope: computing the actual site-sparsity-by-state "
+                    "figures for the Check-In #2 feedback integration, "
+                    "rather than leaving the ~5 sites/state figure as a "
+                    "placeholder estimate."
                 ),
                 guiding_questions=[
                     (
@@ -1584,10 +1519,13 @@ def _(mo, task_callout):
                 "T10",
                 category="Step 5 - Deployment",
                 lead="Emir, Yai",
-                depends_on="T8, T9",
+                depends_on="T9",
                 summary=(
                     "Draft the discussion of deployment feasibility, "
-                    "pitfalls, and lessons learned required by Step 5."
+                    "pitfalls, and lessons learned required by Step 5. "
+                    "Shares T4's absorbed scope with T9: explicitly "
+                    "acknowledging the site-sparsity limitation in the "
+                    "conclusion, per Check-In #2 feedback."
                 ),
                 guiding_questions=[
                     (
@@ -1656,12 +1594,11 @@ def _(mo, task_callout):
                 "T11",
                 category="Step 5 - Submission",
                 lead="Yai, Raj",
-                depends_on="T4, T5, T6",
+                depends_on="T5, T6",
                 summary=(
                     "Push Step 5 code to the public repo and confirm "
                     "it's publicly accessible for the writeup/deck link, "
-                    "once the feedback change and both models have "
-                    "landed."
+                    "once both models have landed."
                 ),
                 guiding_questions=[
                     (
