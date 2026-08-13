@@ -1519,9 +1519,12 @@ def _(mo, task_callout):
                         "operator screening a full monitoring network?"
                     ),
                     (
-                        "Is this worth including in the final writeup given "
-                        "the team's remaining time, or does it stay "
-                        "optional?"
+                        "T7 found neither model clears Step 3's recall "
+                        "floor on the held-out set — given the team's "
+                        "remaining time, is a scalability profile worth "
+                        "running now, or does it stay optional/deferred "
+                        "until a model actually meets the bar it would be "
+                        "deployed against?"
                     ),
                 ],
             ),
@@ -1549,7 +1552,15 @@ def _(mo, task_callout):
                     (
                         "How do the tuned models compare to the majority "
                         "baseline and to each other on macro-F1 and "
-                        "per-tier recall, not just on `mcl_exceedance`?"
+                        "per-tier recall, not just on `mcl_exceedance`? "
+                        "Note: Step 3's `majority_baseline` is computed "
+                        "over the full 236-site `ss_scored_df`, not the "
+                        "46-site held-out partition T7 actually scored "
+                        "against — a same-partition majority baseline is "
+                        "the fairer comparison, and on that partition "
+                        "Model A's held-out macro F1 (0.2347) already "
+                        "matches it exactly, since Model A predicts the "
+                        "majority tier for all 46 held-out sites."
                     ),
                     (
                         "Does the benchmarking result change which model "
@@ -1566,7 +1577,14 @@ def _(mo, task_callout):
                         "sparse the underlying site data is by state "
                         "(e.g. ~5 sites/state on average across the "
                         "bottom 15 states), and does that sparsity line "
-                        "up with where either model's errors concentrate?"
+                        "up with where either model's errors concentrate? "
+                        "T7 found errors track each held-out study's true "
+                        "tier composition rather than geography per se "
+                        "(Cape Cod's 92%/85% error rates reflect it being "
+                        "overwhelmingly high-risk, not where it is) — does "
+                        "state-level sparsity explain why neither model "
+                        "ever learns enough signal to override the "
+                        "majority-tier default in the first place?"
                     ),
                     (
                         "For context only, not as a scored benchmark: how "
@@ -1615,15 +1633,27 @@ def _(mo, task_callout):
                     (
                         "What's the single biggest pitfall the team ran "
                         "into across Steps 1-5 that a future team repeating "
-                        "this project should know about going in?"
+                        "this project should know about going in? T7 found "
+                        "a stark CV-to-held-out generalization gap "
+                        "(grouped-CV `mcl_exceedance` recall of 0.41-0.52 "
+                        "during tuning collapsed to 0.00-0.07 on 3 unseen "
+                        "held-out studies) with only 190 training rows "
+                        "across 7 study groups — is this the leading "
+                        "candidate, or did something else cost the team "
+                        "more?"
                     ),
                     (
-                        "Does the recommended model's main limitation — "
+                        "T7 found neither model clears Step 3's recall "
+                        "floor on the held-out set — does that change how "
+                        "'the recommended model's main limitation' should "
+                        "even be framed here? Rather than choosing between "
                         "interpretability vs. accuracy, or the land-use-"
                         "only predictor scope excluding the geochemical/"
                         "age-tracer signal McMahon et al. (2022) found "
-                        "most predictive — change the deployment "
-                        "recommendation itself?"
+                        "most predictive, does the deployment "
+                        "recommendation need to lead with 'neither model "
+                        "is deployment-ready' before any single-model "
+                        "limitation is discussed?"
                     ),
                     (
                         "Per Check-In #2 peer feedback, does the "
