@@ -5,13 +5,13 @@
   "tool_tier": "Claude subscription — not the free or public tier",
   "how": "Pair-programmed notebook implementation, debugging, lint/CI fixes, git housekeeping (merges/conflicts), and editorial passes on reader-facing prose.",
   "why": "To work through unfamiliar parts of the stack step by step as a learning partner rather than a black box, and to move faster through mechanical work so more time went to modeling/analysis calls.",
-  "total_commits": 131,
+  "total_commits": 142,
   "date_range": "Jul 11–Aug 12",
   "days": 33,
   "policy_url": "https://purdue.brightspace.com/d2l/le/content/1565125/viewContent/21824036/View",
   "lede": "I'm <strong>Yai Torres</strong>, one of four people on this GRAD 50400 project (Group 14). This page is my individual pair-programming disclosure under the course's <a href=\"https://purdue.brightspace.com/d2l/le/content/1565125/viewContent/21824036/View\">AI Tool Use Policy</a>, which asks for exactly which tools were used and their tier, the history of each exchange, and how and why each tool was used — answered below, then backed by a real timeline instead of a paraphrase.",
-  "methodology_note": "The 56 commits are every commit carrying a <code>Co-Authored-By: Claude Sonnet 5</code> trailer. The 29 threads are the actual coding sessions behind them — some run directly on <code>main</code>/a feature branch in this checkout, others in a git worktree under a <code>claude/*</code> branch — matched to each commit by timestamp (a commit is attributed to the thread whose active window contains it). I'm the author and committer of record on every commit: I decided what to build, which fix to take, and when a section was actually done. Quoted lines are the thread's own opening message, lightly trimmed for length; full transcripts are linked, not reconstructed dialogue. See <a href=\"../notebooks/index.html\">the published report</a> for the project itself, or its closing \"AI usage appendix\" for the team's external chat-thread disclosures (Perplexity, Claude.ai) covering project planning and exploration rather than pair-programming.",
-  "footer_note": "Threads sourced from local Claude Code session logs (20 in this checkout, 9 run inside git worktrees) covering this repository; commits from <code>git log --all --grep=\"Co-Authored-By: Claude\"</code>. Each commit is attributed to the thread whose active time window contains it, except two threads (Aug 5, Aug 7) whose commits merged days later via PR — those list their commit manually rather than by timestamp window. Full prompt/response transcripts for all 29 threads are in <a href=\"logs/ytorresv/index.md\"><code>docs/ai/logs/</code></a>. Regenerate after adding threads or commits with <code>uv run python scripts/toolkit.py ai-disclosure ytorresv</code>.",
+  "methodology_note": "The commits shown are every commit carrying a <code>Co-Authored-By: Claude Sonnet 5</code> trailer. The 30 threads are the actual coding sessions behind them — some run directly on <code>main</code>/a feature branch in this checkout, others in a git worktree under a <code>claude/*</code> branch — matched to each commit by timestamp (a commit is attributed to the thread whose active window contains it). I'm the author and committer of record on every commit: I decided what to build, which fix to take, and when a section was actually done. Quoted lines are the thread's own opening message, lightly trimmed for length; full transcripts are linked, not reconstructed dialogue. See <a href=\"../notebooks/index.html\">the published report</a> for the project itself, or its closing \"AI usage appendix\" for the team's external chat-thread disclosures (Perplexity, Claude.ai) covering project planning and exploration rather than pair-programming.",
+  "footer_note": "Threads sourced from local Claude Code session logs (21 in this checkout, 9 run inside git worktrees) covering this repository; commits from <code>git log --all --grep=\"Co-Authored-By: Claude\"</code>. Each commit is attributed to the thread whose active time window contains it, except two threads (Aug 5, Aug 7) whose commits merged days later via PR — those list their commit manually rather than by timestamp window. Full prompt/response transcripts for all 30 threads are in <a href=\"logs/ytorresv/index.md\"><code>docs/ai/logs/</code></a>. Regenerate after adding threads or commits with <code>uv run python scripts/toolkit.py ai-disclosure ytorresv</code>.",
   "git_author_patterns": [
     "Yaisiel",
     "yaitorr"
@@ -60,6 +60,10 @@
     "phase11": {
       "title": "Unblocking T7, then reviewing Model B",
       "blurb": "Re-disclosing two already-merged PRs, moving the retuning story from T7 to T6, building T7's held-out scoring harness ahead of Model B landing, then reviewing and DRYing Model B's training cells once it did."
+    },
+    "phase12": {
+      "title": "Writing up and closing out T7",
+      "blurb": "Same evening as Model B's review: a report-wide heading-hierarchy bug caught while pulling real held-out numbers, T7's findings drafted against those numbers, that context carried into T8-T10's guiding questions, then T7 closed out."
     }
   },
   "threads": [
@@ -852,6 +856,55 @@
         }
       ],
       "quote": "The teammate working on task T6 asked me to take a look at his progress, and give some additional feedback. [...] Could you provide some ToDos he could follow up with?"
+    },
+    {
+      "order": 30,
+      "sid": "6305be49",
+      "phase": "phase12",
+      "title": "Fixing heading hierarchy, then drafting and closing out T7",
+      "branch": "validation-all-models",
+      "date": "Aug 12, 21:52",
+      "transcript": "30-heading-hierarchy-and-closing-out-t7.md",
+      "prompts": 9,
+      "responses": 76,
+      "commits": [
+        {
+          "hash": "43e90fb",
+          "subject": "CP-3: fix checkpoint_3.py heading hierarchy and dependency header",
+          "time": "22:17",
+          "summary": "Caught while pulling real held-out numbers for T7: checkpoint_3.py's PEP 723 header was missing <code>matplotlib</code>, and its own title was H1 instead of H2, which would've produced three H1s once <code>index.py</code> stacks every checkpoint. Fixed the dependency, bumped the title and cascaded every subsection down one level, disambiguated duplicate \"Confusion matrix (held-out)\" headings, and cleaned up stale T5-referencing prose left over from an earlier task closeout.",
+          "diffstat": "1 file &middot; <span class=\"plus\">+52</span> −51"
+        },
+        {
+          "hash": "36b7c5f",
+          "subject": "CP-3: fix checkpoint_2.py and footer.py heading hierarchy",
+          "time": "22:20",
+          "summary": "Same H1&rarr;H2 title bug in checkpoint_2.py, plus footer.py's Conclusion heading skipping straight from H1 to H3 with no H2 in between — both fixed, restoring exactly one H1 for the whole stacked report.",
+          "diffstat": "2 files &middot; <span class=\"plus\">+45</span> −45"
+        },
+        {
+          "hash": "49a5116",
+          "subject": "CP-3: draft T7 findings and consolidate class-weight diagnostic",
+          "time": "22:28",
+          "summary": "Drafted T7's findings cell answering all three guiding questions against real held-out numbers (both models miss the 0.70 recall floor; errors track each study's tier composition, not geography; Step 4's recommendation stands since Model B doesn't meaningfully outperform). Also consolidated the Model-A-only class-weight callout into one table covering both models, closing a dangling forward-reference, and refactored the new cell to consume the existing <code>comparison_df</code> instead of re-deriving the same numbers.",
+          "diffstat": "1 file &middot; <span class=\"plus\">+103</span> −35"
+        },
+        {
+          "hash": "85a2fca",
+          "subject": "CP-3: carry T7 findings into T8-T10 guiding questions",
+          "time": "22:43",
+          "summary": "Updated T8, T9, and T10's <code>task_callout()</code> guiding questions with context from T7's findings — the same-partition majority-baseline comparison, the composition-vs-geography framing, and the CV-to-held-out generalization gap — so whoever picks up those sections next isn't starting cold.",
+          "diffstat": "1 file &middot; <span class=\"plus\">+39</span> −9"
+        },
+        {
+          "hash": "24ae8a7",
+          "subject": "CP-3: close out T7",
+          "time": "22:45",
+          "summary": "Stripped T7's <code>task_callout()</code> to a plain heading and flipped its status to Complete in <code>checkpoint3_task_plan.csv</code>, per the repo's task-tracking-is-scaffolding convention.",
+          "diffstat": "2 files &middot; <span class=\"plus\">+5</span> −40"
+        }
+      ],
+      "quote": "All modeling tasks are done, and now I need to make sense of the results in prose and answer the guiding questions for T7."
     }
   ]
 }
