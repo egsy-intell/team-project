@@ -1511,6 +1511,108 @@ def _(mo):
 
 
 @app.cell(hide_code=True)
+def _(mo):
+    mo.md("""
+    #### Deployment feasibility
+
+    Neither model is ready for operational deployment. On the held-out
+    studies, both models failed our prespecified recall threshold for the
+    `mcl_exceedance` tier and predominantly predicted the majority risk
+    tier. In practice, this failure could cause water-resource operators
+    to deprioritize sites that actually require confirmatory sampling—the
+    outcome our recall threshold was specifically designed to prevent.
+
+    We would retain Model A as the more suitable prototype for further
+    development, but we do not recommend deploying it in its current form.
+    Model B correctly classified only one additional site among the 46
+    held-out observations, which is not enough improvement to justify its
+    additional complexity and reduced interpretability. Model A's relative
+    simplicity would make its behavior easier to inspect as we improve the
+    data and modeling pipeline. This is a development preference, not
+    evidence that Model A is presently safe for operational screening.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md("""
+    #### Requirements for future operational use
+
+    An operator would need more than a trained model to use this approach
+    responsibly. Deployment would require a stable process for collecting
+    the same land-use and potential PFAS-source predictors used during
+    training, periodically refreshing those inputs, and retraining the
+    model as new PFAS measurements become available. A water-quality
+    specialist would also need to review predictions and determine which
+    sites receive confirmatory testing.
+
+    Until the model demonstrates reliable high-risk recall on unseen
+    regions, its predictions should not be used to exclude sites from
+    sampling. A future system could instead use predictions as one source
+    of exploratory information alongside regulatory measurements, local
+    knowledge, known PFAS sources, and existing monitoring priorities.
+    Operators—not the model—would retain responsibility for final sampling
+    decisions.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md("""
+    #### Pitfalls and lessons learned
+
+    The main lesson from this project is that validation performance within
+    the available studies did not translate reliably to unseen studies.
+    During grouped cross-validation, the best `mcl_exceedance` recall ranged
+    from 0.41 to 0.52, but it fell to 0.00–0.07 across the held-out studies.
+    The training data contained only 190 sites across seven study groups,
+    so even grouped cross-validation provided limited evidence about how
+    the models would generalize to new populations.
+
+    Sparse and uneven geographic coverage compounds that limitation. The
+    held-out errors appeared to follow differences in each study's risk-tier
+    composition rather than geography alone, but the available data are not
+    dense enough to separate geographic effects from study design and class
+    composition confidently.
+
+    A second limitation is predictor scope. Our models use land-use and
+    potential PFAS-source variables, whereas McMahon et al. (2022) found
+    important predictive value in geochemical and groundwater-age variables
+    for a different PFAS-detection target. Because the targets and predictor
+    sets differ, their reported performance is not a directly comparable
+    benchmark. Nevertheless, their findings suggest that landscape
+    variables alone may omit information needed for robust prediction.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md("""
+    #### Recommendation
+
+    We recommend treating the current model as an exploratory research
+    prototype rather than a screening-ready tool. The next development
+    cycle should prioritize collecting more geographically diverse and
+    class-balanced observations, incorporating additional scientifically
+    supported predictors, and evaluating the revised model on entirely
+    unseen regions or utilities. We should reconsider deployment only after
+    the model consistently meets the high-risk recall threshold under that
+    external validation.
+
+    We would not yet recommend restricting deployment to a data-dense
+    subregion: the present analysis has not demonstrated that geographic
+    narrowing resolves the generalization problem. A regional pilot could
+    be a useful next experiment, but it would require its own representative
+    training data, held-out evaluation, human-review procedure, and
+    performance-monitoring plan.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
 def _(mo, task_callout):
     mo.vstack(
         [
