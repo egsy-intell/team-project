@@ -1396,7 +1396,7 @@ def _(mo):
         recall floor, and for Model B it trades away the
         `mcl_exceedance` precision floor it currently (fragile, on a
         single correct prediction) passes. Class weighting is a real
-        contributing factor, not the dominant one — the bigger story,
+        contributing factor, not the dominant one. The bigger story,
         covered below, is a train/held-out generalization gap that a
         training-time hyperparameter alone doesn't fix.
         """),
@@ -1431,13 +1431,7 @@ def _(
 
 
 @app.cell(hide_code=True)
-def _(
-    RECALL_FLOOR,
-    comparison_df,
-    mo,
-    model_a_cv_results,
-    model_b_cv_results,
-):
+def _(RECALL_FLOOR, comparison_df, mo, model_a_cv_results, model_b_cv_results):
     _by_model = comparison_df.set_index("Model")
     _a_recall = _by_model.loc["Model A", "mcl_exceedance recall"]
     _b_recall = _by_model.loc["Model B", "mcl_exceedance recall"]
@@ -1455,7 +1449,7 @@ def _(
     set as the binding constraint on model selection, not a soft
     target. Model B's {_b_precision:.4f} `mcl_exceedance` precision
     looks perfect in the table above, but it reflects a single correct
-    positive prediction out of 46 held-out sites — one flipped
+    positive prediction out of 46 held-out sites. One flipped
     prediction would erase it, so it should not be read as a reliable
     pattern.
 
@@ -1497,7 +1491,7 @@ def _(
     Model B's gain over Model A amounts to one additional correctly
     classified site out of 46, which does not meet that bar. Neither
     model meets Step 3's success criteria, so this is not a
-    "which model wins" result — both fail the same floor, which the
+    "which model wins" result. Both fail the same floor, which the
     benchmarking below addresses directly.
     """)
     return
