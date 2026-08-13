@@ -1372,38 +1372,33 @@ def _(
 def _(mo):
     mo.callout(
         mo.md("""
-        **Model A class-weight diagnostic**
+        **Class-weight diagnostic (both models)**
 
-        Model A's held-out collapse (predicts `within_reduced_monitoring`
-        for all 46 sites; 0.0 recall on both `above_trigger` and
-        `mcl_exceedance`) raised the question of whether the selected
-        `class_weight="unweighted"` — which won on grouped-CV macro-F1
-        among the training folds, per `model_a_cv_results` above — was
-        the main cause. Tested by hand: same pipeline and `C` grid,
-        `class_weight="balanced"` forced, refit on `tapwater_train_df`,
-        scored on `tapwater_test_df` via `score_model()` (not part of
-        the tracked Model A pipeline; a diagnostic only).
+        Both models' selected hyperparameters trained unweighted: Model A
+        won grouped-CV macro-F1 with `class_weight="unweighted"`
+        (`model_a_cv_results` above), and Model B's randomized search
+        never included `class_weight` as a tuning axis, so it trained
+        unweighted by default. We tested whether forcing
+        `class_weight="balanced"` on each model's exact selected
+        hyperparameters, refit on `tapwater_train_df` and scored on
+        `tapwater_test_df` via `score_model()`, would meaningfully change
+        the held-out result (diagnostic only, not part of either tracked
+        pipeline).
 
-        | Metric | Unweighted (Model A) | Balanced |
-        |---|---|---|
-        | `mcl_exceedance` recall | 0.0000 | 0.0714 (1/14) |
-        | `above_trigger` recall | 0.0000 | 0.1429 (1/7) |
-        | Macro F1 | 0.2347 | 0.3368 |
-        | `mcl_exceedance` precision | 0.0000 | 0.5000 (1/2) |
-        | Non-majority-tier predictions | 0 of 46 | 7 of 46 |
+        | Metric | A unweighted | A balanced | B unweighted | B balanced |
+        |---|---|---|---|---|
+        | `mcl_exceedance` recall | 0.0000 | 0.0714 | 0.0714 | 0.1429 |
+        | `mcl_exceedance` precision | 0.0000 | 0.5000 | 1.0000 | 0.2857 |
+        | Macro F1 | 0.2347 | 0.3368 | 0.2825 | 0.2718 |
 
-        **Finding:** `"balanced"` measurably moves the model off pure
-        majority-class collapse, but comes nowhere close to the 0.70
-        recall floor (0.07, not 0.70) and only predicts a minority tier
-        for 7 of 46 held-out sites. Class weighting was a real
-        contributing factor, not the dominant one — the bigger story
-        is a train/held-out generalization gap that a training-time
-        hyperparameter alone doesn't fix. Worth keeping both threads
-        in the benchmarking and deployment discussion: confirm
-        `"balanced"` isn't dropped
-        for Model B on a CV-macro-F1 technicality the way it was for
-        Model A, but don't expect it to single-handedly clear the
-        floor either.
+        **Finding:** `"balanced"` measurably moves both models off pure
+        majority-class collapse, but neither comes close to the 0.70
+        recall floor, and for Model B it trades away the
+        `mcl_exceedance` precision floor it currently (fragile, on a
+        single correct prediction) passes. Class weighting is a real
+        contributing factor, not the dominant one — the bigger story,
+        covered below, is a train/held-out generalization gap that a
+        training-time hyperparameter alone doesn't fix.
         """),
         kind="info",
     )
@@ -1422,16 +1417,89 @@ def _(
         "Model A": model_a_held_out,
         "Model B": model_b_held_out,
     }
-    _comparison_df = build_model_comparison(_comparison_results)
+    comparison_df = build_model_comparison(_comparison_results)
     mo.vstack(
         [
             mo.md("##### Model comparison: Model A vs. Model B"),
-            mo.ui.table(_comparison_df),
+            mo.ui.table(comparison_df),
             plot_model_comparison(
-                _comparison_df, "Model comparison vs. Step 3 thresholds"
+                comparison_df, "Model comparison vs. Step 3 thresholds"
             ),
         ]
     )
+    return (comparison_df,)
+
+
+@app.cell(hide_code=True)
+def _(
+    RECALL_FLOOR,
+    comparison_df,
+    mo,
+    model_a_cv_results,
+    model_b_cv_results,
+):
+    _by_model = comparison_df.set_index("Model")
+    _a_recall = _by_model.loc["Model A", "mcl_exceedance recall"]
+    _b_recall = _by_model.loc["Model B", "mcl_exceedance recall"]
+    _b_precision = _by_model.loc["Model B", "mcl_exceedance precision"]
+    _a_cv_recall_max = model_a_cv_results["CV mcl recall"].max()
+    _b_cv_recall_max = model_b_cv_results["CV mcl recall"].max()
+    _best_cv_recall = max(_a_cv_recall_max, _b_cv_recall_max)
+
+    mo.md(f"""
+    ##### Does either model clear the bar?
+
+    No. Model A's held-out `mcl_exceedance` recall is {_a_recall:.4f}
+    (0 of 14 high-risk sites caught); Model B's is {_b_recall:.4f} (1
+    of 14). Both fall far short of the {RECALL_FLOOR:.2f} floor Step 3
+    set as the binding constraint on model selection, not a soft
+    target. Model B's {_b_precision:.4f} `mcl_exceedance` precision
+    looks perfect in the table above, but it reflects a single correct
+    positive prediction out of 46 held-out sites — one flipped
+    prediction would erase it, so it should not be read as a reliable
+    pattern.
+
+    This is not a surprise the held-out set alone produced: both
+    models' cross-validated `mcl_exceedance` recall during tuning
+    topped out at {_a_cv_recall_max:.4f} (Model A's grid) and
+    {_b_cv_recall_max:.4f} (Model B's grid), already well below the
+    floor before either model saw a held-out study. Two disclosures,
+    neither of which changes this conclusion: hyperparameters were
+    selected by macro-F1 alone rather than the two-stage
+    recall-floor-then-macro-F1 rule Step 3 and Step 4 describe (the
+    best CV recall across both grids, {_best_cv_recall:.4f}, still
+    misses the floor, so the outcome would not change); and the
+    class-weight gap between plan and implementation covered in the
+    diagnostic above also does not close it.
+
+    ##### Where the errors concentrate
+
+    Held-out errors are not spread evenly across the three test
+    studies, and they track each study's actual risk composition more
+    than the study identity itself. Cape Cod's test sites are
+    overwhelmingly high-risk (9 of 13 `mcl_exceedance`, 3
+    `above_trigger`), and both models miss almost all of them: a
+    0.9231 error rate for Model A, 0.8462 for Model B. Minnesota, with
+    a mixed composition, sits at 0.3333 for both. Northeast Iowa shows
+    0.0000 error for both models, but trivially — every one of its 6
+    held-out sites is already `within_reduced_monitoring`, so a model
+    that always predicts the majority tier gets Iowa right without
+    distinguishing any risk at all. The pattern reads as "both models
+    default to the majority tier, and error rate by study is just how
+    far each study's true composition diverges from that default,"
+    not as a geography-specific failure.
+
+    ##### Does this change the Step 4 recommendation?
+
+    No — if anything it confirms Step 4's own tie-breaker. Step 4
+    proposed keeping Model A unless Model B "meaningfully" outperformed
+    it, since the ensemble costs direct coefficient interpretability.
+    Model B's gain over Model A amounts to one additional correctly
+    classified site out of 46, which does not meet that bar. Neither
+    model meets Step 3's success criteria, so this is not a
+    "which model wins" result — both fail the same floor, which the
+    benchmarking below addresses directly.
+    """)
     return
 
 
