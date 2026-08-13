@@ -194,17 +194,17 @@
     <div class="disclosure-item">
       <span class="dl-label">History of the exchange</span>
       <p>Every thread below links its full prompt/response transcript; all
-      29 are also collected in
+      30 are also collected in
       <a href="logs/ytorresv/index.md"><code>docs/ai/logs/ytorresv/</code></a>.</p>
     </div>
   </div>
 
   <div class="stats">
-    <div class="stat"><span class="n">29</span><span class="l">Threads</span></div><div class="stat"><span class="n">56</span><span class="l">Commits with Claude Code</span></div><div class="stat"><span class="n">43%</span><span class="l">Of Yai's 131 commits</span></div><div class="stat"><span class="n">33</span><span class="l">Days, Jul 11–Aug 12</span></div>
+    <div class="stat"><span class="n">30</span><span class="l">Threads</span></div><div class="stat"><span class="n">61</span><span class="l">Commits with Claude Code</span></div><div class="stat"><span class="n">43%</span><span class="l">Of Yai's 142 commits</span></div><div class="stat"><span class="n">33</span><span class="l">Days, Jul 11–Aug 12</span></div>
   </div>
 
   <p class="note">
-    <strong>Methodology.</strong> The 56 commits are every commit carrying a <code>Co-Authored-By: Claude Sonnet 5</code> trailer. The 29 threads are the actual coding sessions behind them — some run directly on <code>main</code>/a feature branch in this checkout, others in a git worktree under a <code>claude/*</code> branch — matched to each commit by timestamp (a commit is attributed to the thread whose active window contains it). I'm the author and committer of record on every commit: I decided what to build, which fix to take, and when a section was actually done. Quoted lines are the thread's own opening message, lightly trimmed for length; full transcripts are linked, not reconstructed dialogue. See <a href="../notebooks/index.html">the published report</a> for the project itself, or its closing "AI usage appendix" for the team's external chat-thread disclosures (Perplexity, Claude.ai) covering project planning and exploration rather than pair-programming.
+    <strong>Methodology.</strong> The commits shown are every commit carrying a <code>Co-Authored-By: Claude Sonnet 5</code> trailer. The 30 threads are the actual coding sessions behind them — some run directly on <code>main</code>/a feature branch in this checkout, others in a git worktree under a <code>claude/*</code> branch — matched to each commit by timestamp (a commit is attributed to the thread whose active window contains it). I'm the author and committer of record on every commit: I decided what to build, which fix to take, and when a section was actually done. Quoted lines are the thread's own opening message, lightly trimmed for length; full transcripts are linked, not reconstructed dialogue. See <a href="../notebooks/index.html">the published report</a> for the project itself, or its closing "AI usage appendix" for the team's external chat-thread disclosures (Perplexity, Claude.ai) covering project planning and exploration rather than pair-programming.
   </p>
 
   <div class="legend">
@@ -225,6 +225,7 @@
     <li><a href="#p9">9. Final polish</a></li>
     <li><a href="#p10">10. Closing out Step 5 planning</a></li>
     <li><a href="#p11">11. Unblocking T7, then reviewing Model B</a></li>
+    <li><a href="#p12">12. Writing up and closing out T7</a></li>
   </ul>
 
   <section class="phase">
@@ -1165,9 +1166,76 @@
     </ol>
   </section>
 
+  <section class="phase">
+    <div class="tl-row milestone" id="p12">
+      <div class="tl-time"></div>
+      <div class="tl-rail"><span class="dot">12</span></div>
+      <div class="tl-content">
+        <h2>Writing up and closing out T7</h2>
+        <p class="phase-blurb">Same evening as Model B's review: a report-wide heading-hierarchy bug caught while pulling real held-out numbers, T7's findings drafted against those numbers, that context carried into T8-T10's guiding questions, then T7 closed out.</p>
+      </div>
+    </div>
+    <div class="tl-row thread">
+      <div class="tl-time"><span class="d">Aug 12</span><span class="t">21:52</span></div>
+      <div class="tl-rail"><span class="dot"></span></div>
+      <div class="tl-content">
+        <h3>Fixing heading hierarchy, then drafting and closing out T7</h3>
+        <p class="thread-quote">&ldquo;All modeling tasks are done, and now I need to make sense of the results in prose and answer the guiding questions for T7.&rdquo;</p>
+        <p class="thread-meta">branch validation-all-models &middot; 9 prompts, 76 responses &middot; <a href="logs/ytorresv/30-heading-hierarchy-and-closing-out-t7.md">full transcript &rarr;</a></p>
+      </div>
+    </div>
+    <ol class="entries">
+      <li class="tl-row entry">
+        <div class="tl-time"><span class="d">Aug 12</span><span class="t">22:17</span></div>
+        <div class="tl-rail"><span class="dot"></span></div>
+        <div class="tl-content">
+          <div class="entry-head"><h4>CP-3: fix checkpoint_3.py heading hierarchy and dependency header</h4><span class="hash">43e90fb</span></div>
+          <p class="entry-p">Caught while pulling real held-out numbers for T7: checkpoint_3.py's PEP 723 header was missing &lt;code&gt;matplotlib&lt;/code&gt;, and its own title was H1 instead of H2, which would've produced three H1s once &lt;code&gt;index.py&lt;/code&gt; stacks every checkpoint. Fixed the dependency, bumped the title and cascaded every subsection down one level, disambiguated duplicate &quot;Confusion matrix (held-out)&quot; headings, and cleaned up stale T5-referencing prose left over from an earlier task closeout.</p>
+          <div class="diffstat">1 file &middot; <span class="plus">+52</span> −51</div>
+        </div>
+      </li>
+      <li class="tl-row entry">
+        <div class="tl-time"><span class="d">Aug 12</span><span class="t">22:20</span></div>
+        <div class="tl-rail"><span class="dot"></span></div>
+        <div class="tl-content">
+          <div class="entry-head"><h4>CP-3: fix checkpoint_2.py and footer.py heading hierarchy</h4><span class="hash">36b7c5f</span></div>
+          <p class="entry-p">Same H1&amp;rarr;H2 title bug in checkpoint_2.py, plus footer.py's Conclusion heading skipping straight from H1 to H3 with no H2 in between — both fixed, restoring exactly one H1 for the whole stacked report.</p>
+          <div class="diffstat">2 files &middot; <span class="plus">+45</span> −45</div>
+        </div>
+      </li>
+      <li class="tl-row entry">
+        <div class="tl-time"><span class="d">Aug 12</span><span class="t">22:28</span></div>
+        <div class="tl-rail"><span class="dot"></span></div>
+        <div class="tl-content">
+          <div class="entry-head"><h4>CP-3: draft T7 findings and consolidate class-weight diagnostic</h4><span class="hash">49a5116</span></div>
+          <p class="entry-p">Drafted T7's findings cell answering all three guiding questions against real held-out numbers (both models miss the 0.70 recall floor; errors track each study's tier composition, not geography; Step 4's recommendation stands since Model B doesn't meaningfully outperform). Also consolidated the Model-A-only class-weight callout into one table covering both models, closing a dangling forward-reference, and refactored the new cell to consume the existing &lt;code&gt;comparison_df&lt;/code&gt; instead of re-deriving the same numbers.</p>
+          <div class="diffstat">1 file &middot; <span class="plus">+103</span> −35</div>
+        </div>
+      </li>
+      <li class="tl-row entry">
+        <div class="tl-time"><span class="d">Aug 12</span><span class="t">22:43</span></div>
+        <div class="tl-rail"><span class="dot"></span></div>
+        <div class="tl-content">
+          <div class="entry-head"><h4>CP-3: carry T7 findings into T8-T10 guiding questions</h4><span class="hash">85a2fca</span></div>
+          <p class="entry-p">Updated T8, T9, and T10's &lt;code&gt;task_callout()&lt;/code&gt; guiding questions with context from T7's findings — the same-partition majority-baseline comparison, the composition-vs-geography framing, and the CV-to-held-out generalization gap — so whoever picks up those sections next isn't starting cold.</p>
+          <div class="diffstat">1 file &middot; <span class="plus">+39</span> −9</div>
+        </div>
+      </li>
+      <li class="tl-row entry">
+        <div class="tl-time"><span class="d">Aug 12</span><span class="t">22:45</span></div>
+        <div class="tl-rail"><span class="dot"></span></div>
+        <div class="tl-content">
+          <div class="entry-head"><h4>CP-3: close out T7</h4><span class="hash">24ae8a7</span></div>
+          <p class="entry-p">Stripped T7's &lt;code&gt;task_callout()&lt;/code&gt; to a plain heading and flipped its status to Complete in &lt;code&gt;checkpoint3_task_plan.csv&lt;/code&gt;, per the repo's task-tracking-is-scaffolding convention.</p>
+          <div class="diffstat">2 files &middot; <span class="plus">+5</span> −40</div>
+        </div>
+      </li>
+    </ol>
+  </section>
+
   <footer class="page">
     <p>
-      Threads sourced from local Claude Code session logs (20 in this checkout, 9 run inside git worktrees) covering this repository; commits from <code>git log --all --grep="Co-Authored-By: Claude"</code>. Each commit is attributed to the thread whose active time window contains it, except two threads (Aug 5, Aug 7) whose commits merged days later via PR — those list their commit manually rather than by timestamp window. Full prompt/response transcripts for all 29 threads are in <a href="logs/ytorresv/index.md"><code>docs/ai/logs/</code></a>. Regenerate after adding threads or commits with <code>uv run python scripts/toolkit.py ai-disclosure ytorresv</code>.
+      Threads sourced from local Claude Code session logs (21 in this checkout, 9 run inside git worktrees) covering this repository; commits from <code>git log --all --grep="Co-Authored-By: Claude"</code>. Each commit is attributed to the thread whose active time window contains it, except two threads (Aug 5, Aug 7) whose commits merged days later via PR — those list their commit manually rather than by timestamp window. Full prompt/response transcripts for all 30 threads are in <a href="logs/ytorresv/index.md"><code>docs/ai/logs/</code></a>. Regenerate after adding threads or commits with <code>uv run python scripts/toolkit.py ai-disclosure ytorresv</code>.
     </p>
   </footer>
 

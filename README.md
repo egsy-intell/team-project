@@ -169,7 +169,7 @@ Direct links are included below:
 - **Yaisiel (Yai) Torres** — Claude Code (Anthropic's agentic CLI/IDE
   tool; subscription-based), throughout the project. History of exchange:
   local session logs, timelined at
-  [`docs/ai/ytorresv.html`](https://egsy-intell.github.io/team-project/ai/ytorresv.html) (29 threads, 56
+  [`docs/ai/ytorresv.html`](https://egsy-intell.github.io/team-project/ai/ytorresv.html) (30 threads, 61
   commits), with the full prompt/response transcript for every thread in
   [`docs/ai/logs/ytorresv/`](docs/ai/logs/ytorresv/index.md). How: pair-programmed notebook implementation, debugging,
   lint/CI fixes, git housekeeping (merges/conflict resolution), and
