@@ -5,12 +5,13 @@
 #     "numpy",
 #     "pandas>=3.0.3",
 #     "scikit-learn",
+#     "matplotlib>=3.9",
 # ]
 # ///
 
 import marimo
 
-__generated_with = "0.23.14"
+__generated_with = "0.23.16"
 app = marimo.App(width="medium")
 
 
@@ -127,7 +128,7 @@ def _():
 @app.cell(hide_code=True)
 def _(mo, tapwater_test_df, tapwater_train_df):
     mo.md(f"""
-    # Step 5: Model Execution, Evaluation & Deployment
+    ## Step 5: Model Execution, Evaluation & Deployment
 
     This notebook is the final report's deliverable: training and
     tuning the two models proposed in Step 4, evaluating them against
@@ -152,12 +153,12 @@ def _(mo, tapwater_test_df, tapwater_train_df):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    ## Foundations carried into Step 5
+    ### Foundations carried into Step 5
 
     Two closeout items from earlier steps feed directly into Step 5's
     model training and are settled before it begins.
 
-    ### Finalized classification pipeline
+    #### Finalized classification pipeline
 
     The ∑TQ classification pipeline now resolves the two compounds with
     no benchmark in either source, PFPeS and PFPrS, and runs against the
@@ -165,7 +166,7 @@ def _(mo):
     so the training and test partitions above reflect the full available
     sample.
 
-    ### Verified source citations
+    #### Verified source citations
 
     The state-agency primary sources behind Table S5's state-only
     benchmarks, and the CDM Smith EPA Final PFAS Regulations fact sheet
@@ -178,7 +179,7 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    ## Check-In #2 feedback integration
+    ### Check-In #2 feedback integration
 
     Per the spec, the final submission must integrate at least one item
     from the peer feedback the team received on Check-In #2.
@@ -189,7 +190,7 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    ### Feedback selected for integration
+    #### Feedback selected for integration
 
     Peer review on Check-In #2 surfaced two items the team is
     integrating into this submission: keeping the results sections
@@ -206,7 +207,7 @@ def _(mo):
 def _(mo, task_callout):
     mo.vstack(
         [
-            mo.md("### Implement feedback change"),
+            mo.md("#### Implement feedback change"),
             task_callout(
                 "T4",
                 category="Feedback integration",
@@ -238,7 +239,7 @@ def _(mo, task_callout):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    ## Step 5: Model Training & Execution
+    ### Step 5: Model Training & Execution
 
     Carries Step 4's two proposed models, the interpretable baseline
     (Model A) and the competing ensemble (Model B), from proposal into
@@ -250,7 +251,7 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    ### Shared setup for Model A & Model B
+    #### Shared setup for Model A & Model B
 
     Per the Step 4 proposals, Model B reuses Model A's approved
     predictor set, grouped cross-validation strategy, and scoring
@@ -395,7 +396,7 @@ def _(pd):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    #### Held-out scoring harness
+    ##### Held-out scoring harness
 
     Five thin wrappers score Model A and Model B the same way,
     without duplicating logic per model. `score_model()` wraps
@@ -452,8 +453,8 @@ def _(pd):
 
         Takes a score_model() result dict and the dataframe it was
         scored against, and reports whether errors concentrate in one
-        held-out study or spread evenly (T7's second guiding
-        question). Model B calls this the same way once T6 lands.
+        held-out study or spread evenly. Model A and Model B both call
+        this the same way.
         """
         _breakdown = pd.DataFrame(
             {
@@ -646,17 +647,17 @@ def _(
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    ### Baseline model A Implementation
+    #### Baseline model A Implementation
 
     Model A is the multinomial logistic-regression baseline proposed in
     Step 4. It is trained only on `tapwater_train_df` using study-grouped
     cross-validation; the held-out test partition is not used here and
     remains untouched for held-out evaluation.
 
-    Hyperparameter selection in T5 uses mean grouped-CV macro-F1 only.
-    The CV recall and precision values for `mcl_exceedance` are retained
-    as tuning diagnostics, not as the final Step 3 pass/fail decision.
-    The held-out evaluation and benchmarking make that determination.
+    Hyperparameter selection uses mean grouped-CV macro-F1 only. The CV
+    recall and precision values for `mcl_exceedance` are retained as
+    tuning diagnostics, not as the final Step 3 pass/fail decision. The
+    held-out evaluation and benchmarking make that determination.
 
     This also uses an explicit predictor allowlist so raw PFAS
     concentrations, ∑TQ fields, identifiers, and study labels cannot
@@ -666,13 +667,13 @@ def _(mo):
     `study_group` moves together into either the fitting or validation
     portion of a fold. A `State` or `Site Type` category concentrated in
     only one or two studies may therefore be absent from a fold's
-    fitting data but appear in its validation data. T5 audits each fold
-    for these unseen categories and uses full one-hot encoding with
+    fitting data but appear in its validation data. We audit each fold
+    for these unseen categories and use full one-hot encoding with
     `handle_unknown="ignore"` and `drop=None` so they can be handled
     safely.
 
     The current allowlisted predictors contain no missing values in the
-    T5 training partition, so both the numeric and categorical imputers
+    training partition, so both the numeric and categorical imputers
     are no-ops on the present data. They are retained as defensive
     preprocessing steps for future data that may contain missing values.
     """)
@@ -995,8 +996,8 @@ def _(
             f"in {_features} that were not present in one or more fitting "
             "folds. `handle_unknown='ignore'` prevents a failure, but "
             "Step 4's `drop='first'` would make an unseen category look "
-            "the same as the dropped reference category. T5 therefore "
-            "uses full one-hot encoding (`drop=None`)."
+            "the same as the dropped reference category. We therefore "
+            "use full one-hot encoding (`drop=None`)."
         )
         _unseen_view = mo.ui.table(model_a_unseen_categories)
 
@@ -1040,11 +1041,11 @@ def _(
 
     mo.vstack(
         [
-            mo.md("#### Training and tuning summary"),
+            mo.md("##### Training and tuning summary"),
             mo.ui.table(model_a_training_summary),
             mo.md(
                 """
-                #### Tuning grid results
+                ##### Tuning grid results
 
                 The values below are mean cross-validation estimates from
                 the grouped grid search. They describe how each
@@ -1056,24 +1057,24 @@ def _(
                 with the highest mean grouped-CV macro-F1. The
                 `mcl_exceedance` recall and precision values are retained
                 as tuning diagnostics only and do not determine model
-                selection in T5. Final threshold evaluation is performed
+                selection. Final threshold evaluation is performed
                 in the evaluation using the held-out studies.
                 """
             ),
             mo.ui.table(model_a_cv_results.round(4)),
-            mo.md("#### Unseen-category audit"),
+            mo.md("##### Unseen-category audit"),
             _unseen_view,
-            mo.md("#### Largest coefficients for `mcl_exceedance`"),
+            mo.md("##### Largest coefficients for `mcl_exceedance`"),
             mo.ui.table(
                 model_a_top_coefficients[
                     ["Feature", "Coefficient", "Direction"]
                 ].round(4)
             ),
-            mo.md("#### Expected-direction check"),
+            mo.md("##### Expected-direction check"),
             mo.ui.table(model_a_direction_audit),
             mo.md(
                 f"""
-                #### T5 findings summary
+                ##### Findings summary
 
                 Model A tuning is based on grouped-CV macro-F1 only.
                 High-risk recall and precision remain visible as
@@ -1083,7 +1084,7 @@ def _(
 
                 {_unseen_text}
 
-                The current T5 training predictors have no missing
+                The current training predictors have no missing
                 values, so the numeric and categorical imputers are
                 currently no-ops. They remain in the pipeline as
                 defensive preprocessing for future data.
@@ -1091,7 +1092,7 @@ def _(
                 The training implementation also showed that the earlier
                 generic feature-selection approach could allow raw PFAS
                 concentration or outcome-related fields into the model.
-                T5 avoids this leakage by using an explicit allowlist of
+                We avoid this leakage by using an explicit allowlist of
                 landscape, land-use, State, and Site Type predictors.
 
                 {_coef_text}
@@ -1105,7 +1106,7 @@ def _(
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    ### Model B: random forest
+    #### Model B: random forest
 
     We train the competing ensemble on the same predictor set, training
     partition, fold-specific preprocessing, and grouped cross-validation
@@ -1215,9 +1216,9 @@ def _(
 def _(mo, model_b_cv_results, model_b_training_summary):
     mo.vstack(
         [
-            mo.md("#### Model B training and tuning summary"),
+            mo.md("##### Model B training and tuning summary"),
             mo.ui.table(model_b_training_summary),
-            mo.md("#### Randomized-search results"),
+            mo.md("##### Randomized-search results"),
             mo.ui.table(model_b_cv_results.round(4)),
         ]
     )
@@ -1227,7 +1228,7 @@ def _(mo, model_b_cv_results, model_b_training_summary):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    ## Step 5: Prediction, Evaluation & Benchmarking
+    ### Step 5: Prediction, Evaluation & Benchmarking
 
     Scores both trained models against the held-out studies and Step
     3's success criteria.
@@ -1236,52 +1237,17 @@ def _(mo):
 
 
 @app.cell(hide_code=True)
-def _(mo, task_callout):
-    mo.vstack(
-        [
-            mo.md("### Run predictions & evaluate"),
-            task_callout(
-                "T7",
-                category="Step 5 - Evaluation",
-                lead="Yai, Somyaranjan",
-                depends_on="T5, T6",
-                summary=(
-                    "Score both already-tuned models on the held-out "
-                    "test set and evaluate against Step 3's success "
-                    "criteria. Run as a joint execution, pairing "
-                    "directly through the step."
-                ),
-                guiding_questions=[
-                    (
-                        "Does either model clear the 0.70 recall floor on "
-                        "`mcl_exceedance` from Step 3, and if neither does, "
-                        "what does that imply for the T9 benchmarking "
-                        "narrative and T10's deployment recommendation?"
-                    ),
-                    (
-                        "Are the errors concentrated in one held-out study "
-                        "or spread evenly across the test partition, and "
-                        "does that change which model looks preferable? "
-                        "(McMahon stays out of this scoring entirely — "
-                        "its incomparable ∑TQ target keeps it a narrative "
-                        "reference for T9/T10, not a held-out study here.)"
-                    ),
-                    (
-                        "Does the held-out comparison between Model A and "
-                        "Model B change which one the team recommends, "
-                        "relative to the Step 4 prediction?"
-                    ),
-                ],
-            ),
-        ]
-    )
+def _(mo):
+    mo.md("""
+    #### Run predictions & evaluate
+    """)
     return
 
 
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    #### Shared held-out evaluation
+    ##### Shared held-out evaluation
 
     The following results use the same scoring harness, test partition,
     class metrics, and success thresholds for both models.
@@ -1297,10 +1263,10 @@ def _(mo, model_a_best_estimator, score_model, tapwater_test_df):
 
     mo.vstack(
         [
-            mo.md("#### Model A: held-out scoring"),
+            mo.md("##### Model A: held-out scoring"),
             mo.md(f"**{model_a_held_out['criteria']['summary_line']}**"),
             mo.ui.table(model_a_held_out["criteria"]["criteria"]),
-            mo.md("#### Confusion matrix (held-out)"),
+            mo.md("##### Model A: confusion matrix (held-out)"),
             mo.ui.table(model_a_held_out["metrics"]["confusion_matrix"]),
         ]
     )
@@ -1320,7 +1286,7 @@ def _(
     )
     mo.vstack(
         [
-            mo.md("#### Model A: held-out error rate by study"),
+            mo.md("##### Model A: held-out error rate by study"),
             mo.ui.table(_model_a_error_breakdown),
             plot_error_rate_by_study(_model_a_error_breakdown, "Model A"),
         ]
@@ -1336,10 +1302,10 @@ def _(mo, model_b_best_estimator, score_model, tapwater_test_df):
 
     mo.vstack(
         [
-            mo.md("#### Model B: held-out scoring"),
+            mo.md("##### Model B: held-out scoring"),
             mo.md(f"**{model_b_held_out['criteria']['summary_line']}**"),
             mo.ui.table(model_b_held_out["criteria"]["criteria"]),
-            mo.md("#### Confusion matrix (held-out)"),
+            mo.md("##### Model B: confusion matrix (held-out)"),
             mo.ui.table(model_b_held_out["metrics"]["confusion_matrix"]),
         ]
     )
@@ -1359,7 +1325,7 @@ def _(
     )
     mo.vstack(
         [
-            mo.md("#### Model B: held-out error rate by study"),
+            mo.md("##### Model B: held-out error rate by study"),
             mo.ui.table(_model_b_error_breakdown),
             plot_error_rate_by_study(_model_b_error_breakdown, "Model B"),
         ]
@@ -1371,38 +1337,33 @@ def _(
 def _(mo):
     mo.callout(
         mo.md("""
-        #### Model A class-weight diagnostic
+        **Class-weight diagnostic (both models)**
 
-        Model A's held-out collapse (predicts `within_reduced_monitoring`
-        for all 46 sites; 0.0 recall on both `above_trigger` and
-        `mcl_exceedance`) raised the question of whether the selected
-        `class_weight="unweighted"` — which won on grouped-CV macro-F1
-        among the training folds, per `model_a_cv_results` above — was
-        the main cause. Tested by hand: same pipeline and `C` grid,
-        `class_weight="balanced"` forced, refit on `tapwater_train_df`,
-        scored on `tapwater_test_df` via `score_model()` (not part of
-        the tracked Model A pipeline; a diagnostic only).
+        Both models' selected hyperparameters trained unweighted: Model A
+        won grouped-CV macro-F1 with `class_weight="unweighted"`
+        (`model_a_cv_results` above), and Model B's randomized search
+        never included `class_weight` as a tuning axis, so it trained
+        unweighted by default. We tested whether forcing
+        `class_weight="balanced"` on each model's exact selected
+        hyperparameters, refit on `tapwater_train_df` and scored on
+        `tapwater_test_df` via `score_model()`, would meaningfully change
+        the held-out result (diagnostic only, not part of either tracked
+        pipeline).
 
-        | Metric | Unweighted (Model A) | Balanced |
-        |---|---|---|
-        | `mcl_exceedance` recall | 0.0000 | 0.0714 (1/14) |
-        | `above_trigger` recall | 0.0000 | 0.1429 (1/7) |
-        | Macro F1 | 0.2347 | 0.3368 |
-        | `mcl_exceedance` precision | 0.0000 | 0.5000 (1/2) |
-        | Non-majority-tier predictions | 0 of 46 | 7 of 46 |
+        | Metric | A unweighted | A balanced | B unweighted | B balanced |
+        |---|---|---|---|---|
+        | `mcl_exceedance` recall | 0.0000 | 0.0714 | 0.0714 | 0.1429 |
+        | `mcl_exceedance` precision | 0.0000 | 0.5000 | 1.0000 | 0.2857 |
+        | Macro F1 | 0.2347 | 0.3368 | 0.2825 | 0.2718 |
 
-        **Finding:** `"balanced"` measurably moves the model off pure
-        majority-class collapse, but comes nowhere close to the 0.70
-        recall floor (0.07, not 0.70) and only predicts a minority tier
-        for 7 of 46 held-out sites. Class weighting was a real
-        contributing factor, not the dominant one — the bigger story
-        is a train/held-out generalization gap that a training-time
-        hyperparameter alone doesn't fix. Worth keeping both threads
-        in the benchmarking and deployment discussion: confirm
-        `"balanced"` isn't dropped
-        for Model B on a CV-macro-F1 technicality the way it was for
-        Model A, but don't expect it to single-handedly clear the
-        floor either.
+        **Finding:** `"balanced"` measurably moves both models off pure
+        majority-class collapse, but neither comes close to the 0.70
+        recall floor, and for Model B it trades away the
+        `mcl_exceedance` precision floor it currently (fragile, on a
+        single correct prediction) passes. Class weighting is a real
+        contributing factor, not the dominant one. The bigger story,
+        covered below, is a train/held-out generalization gap that a
+        training-time hyperparameter alone doesn't fix.
         """),
         kind="info",
     )
@@ -1421,16 +1382,83 @@ def _(
         "Model A": model_a_held_out,
         "Model B": model_b_held_out,
     }
-    _comparison_df = build_model_comparison(_comparison_results)
+    comparison_df = build_model_comparison(_comparison_results)
     mo.vstack(
         [
-            mo.md("#### Model comparison: Model A vs. Model B"),
-            mo.ui.table(_comparison_df),
+            mo.md("##### Model comparison: Model A vs. Model B"),
+            mo.ui.table(comparison_df),
             plot_model_comparison(
-                _comparison_df, "Model comparison vs. Step 3 thresholds"
+                comparison_df, "Model comparison vs. Step 3 thresholds"
             ),
         ]
     )
+    return (comparison_df,)
+
+
+@app.cell(hide_code=True)
+def _(RECALL_FLOOR, comparison_df, mo, model_a_cv_results, model_b_cv_results):
+    _by_model = comparison_df.set_index("Model")
+    _a_recall = _by_model.loc["Model A", "mcl_exceedance recall"]
+    _b_recall = _by_model.loc["Model B", "mcl_exceedance recall"]
+    _b_precision = _by_model.loc["Model B", "mcl_exceedance precision"]
+    _a_cv_recall_max = model_a_cv_results["CV mcl recall"].max()
+    _b_cv_recall_max = model_b_cv_results["CV mcl recall"].max()
+    _best_cv_recall = max(_a_cv_recall_max, _b_cv_recall_max)
+
+    mo.md(f"""
+    ##### Does either model clear the bar?
+
+    No. Model A's held-out `mcl_exceedance` recall is {_a_recall:.4f}
+    (0 of 14 high-risk sites caught); Model B's is {_b_recall:.4f} (1
+    of 14). Both fall far short of the {RECALL_FLOOR:.2f} floor Step 3
+    set as the binding constraint on model selection, not a soft
+    target. Model B's {_b_precision:.4f} `mcl_exceedance` precision
+    looks perfect in the table above, but it reflects a single correct
+    positive prediction out of 46 held-out sites. One flipped
+    prediction would erase it, so it should not be read as a reliable
+    pattern.
+
+    This is not a surprise the held-out set alone produced: both
+    models' cross-validated `mcl_exceedance` recall during tuning
+    topped out at {_a_cv_recall_max:.4f} (Model A's grid) and
+    {_b_cv_recall_max:.4f} (Model B's grid), already well below the
+    floor before either model saw a held-out study. Two disclosures,
+    neither of which changes this conclusion: hyperparameters were
+    selected by macro-F1 alone rather than the two-stage
+    recall-floor-then-macro-F1 rule Step 3 and Step 4 describe (the
+    best CV recall across both grids, {_best_cv_recall:.4f}, still
+    misses the floor, so the outcome would not change); and the
+    class-weight gap between plan and implementation covered in the
+    diagnostic above also does not close it.
+
+    ##### Where the errors concentrate
+
+    Held-out errors are not spread evenly across the three test
+    studies, and they track each study's actual risk composition more
+    than the study identity itself. Cape Cod's test sites are
+    overwhelmingly high-risk (9 of 13 `mcl_exceedance`, 3
+    `above_trigger`), and both models miss almost all of them: a
+    0.9231 error rate for Model A, 0.8462 for Model B. Minnesota, with
+    a mixed composition, sits at 0.3333 for both. Northeast Iowa shows
+    0.0000 error for both models, but trivially — every one of its 6
+    held-out sites is already `within_reduced_monitoring`, so a model
+    that always predicts the majority tier gets Iowa right without
+    distinguishing any risk at all. The pattern reads as "both models
+    default to the majority tier, and error rate by study is just how
+    far each study's true composition diverges from that default,"
+    not as a geography-specific failure.
+
+    ##### Does this change the Step 4 recommendation?
+
+    No — if anything it confirms Step 4's own tie-breaker. Step 4
+    proposed keeping Model A unless Model B "meaningfully" outperformed
+    it, since the ensemble costs direct coefficient interpretability.
+    Model B's gain over Model A amounts to one additional correctly
+    classified site out of 46, which does not meet that bar. Neither
+    model meets Step 3's success criteria, so this is not a
+    "which model wins" result. Both fail the same floor, which the
+    benchmarking below addresses directly.
+    """)
     return
 
 
@@ -1438,7 +1466,7 @@ def _(
 def _(mo, task_callout):
     mo.vstack(
         [
-            mo.md("### Scalability / deployment metric"),
+            mo.md("#### Scalability / deployment metric"),
             task_callout(
                 "T8",
                 category="Step 5 - Evaluation",
@@ -1456,9 +1484,12 @@ def _(mo, task_callout):
                         "operator screening a full monitoring network?"
                     ),
                     (
-                        "Is this worth including in the final writeup given "
-                        "the team's remaining time, or does it stay "
-                        "optional?"
+                        "T7 found neither model clears Step 3's recall "
+                        "floor on the held-out set — given the team's "
+                        "remaining time, is a scalability profile worth "
+                        "running now, or does it stay optional/deferred "
+                        "until a model actually meets the bar it would be "
+                        "deployed against?"
                     ),
                 ],
             ),
@@ -1471,7 +1502,7 @@ def _(mo, task_callout):
 def _(mo, task_callout):
     mo.vstack(
         [
-            mo.md("### Model validation & benchmarking"),
+            mo.md("#### Model validation & benchmarking"),
             task_callout(
                 "T9",
                 category="Step 5 - Evaluation",
@@ -1486,7 +1517,15 @@ def _(mo, task_callout):
                     (
                         "How do the tuned models compare to the majority "
                         "baseline and to each other on macro-F1 and "
-                        "per-tier recall, not just on `mcl_exceedance`?"
+                        "per-tier recall, not just on `mcl_exceedance`? "
+                        "Note: Step 3's `majority_baseline` is computed "
+                        "over the full 236-site `ss_scored_df`, not the "
+                        "46-site held-out partition T7 actually scored "
+                        "against — a same-partition majority baseline is "
+                        "the fairer comparison, and on that partition "
+                        "Model A's held-out macro F1 (0.2347) already "
+                        "matches it exactly, since Model A predicts the "
+                        "majority tier for all 46 held-out sites."
                     ),
                     (
                         "Does the benchmarking result change which model "
@@ -1503,7 +1542,14 @@ def _(mo, task_callout):
                         "sparse the underlying site data is by state "
                         "(e.g. ~5 sites/state on average across the "
                         "bottom 15 states), and does that sparsity line "
-                        "up with where either model's errors concentrate?"
+                        "up with where either model's errors concentrate? "
+                        "T7 found errors track each held-out study's true "
+                        "tier composition rather than geography per se "
+                        "(Cape Cod's 92%/85% error rates reflect it being "
+                        "overwhelmingly high-risk, not where it is) — does "
+                        "state-level sparsity explain why neither model "
+                        "ever learns enough signal to override the "
+                        "majority-tier default in the first place?"
                     ),
                     (
                         "For context only, not as a scored benchmark: how "
@@ -1524,7 +1570,7 @@ def _(mo, task_callout):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    ## Step 5: Deployment Discussion
+    ### Step 5: Deployment Discussion
     """)
     return
 
@@ -1533,7 +1579,7 @@ def _(mo):
 def _(mo, task_callout):
     mo.vstack(
         [
-            mo.md("### Deployment & lessons-learned narrative"),
+            mo.md("#### Deployment & lessons-learned narrative"),
             task_callout(
                 "T10",
                 category="Step 5 - Deployment",
@@ -1552,15 +1598,27 @@ def _(mo, task_callout):
                     (
                         "What's the single biggest pitfall the team ran "
                         "into across Steps 1-5 that a future team repeating "
-                        "this project should know about going in?"
+                        "this project should know about going in? T7 found "
+                        "a stark CV-to-held-out generalization gap "
+                        "(grouped-CV `mcl_exceedance` recall of 0.41-0.52 "
+                        "during tuning collapsed to 0.00-0.07 on 3 unseen "
+                        "held-out studies) with only 190 training rows "
+                        "across 7 study groups — is this the leading "
+                        "candidate, or did something else cost the team "
+                        "more?"
                     ),
                     (
-                        "Does the recommended model's main limitation — "
+                        "T7 found neither model clears Step 3's recall "
+                        "floor on the held-out set — does that change how "
+                        "'the recommended model's main limitation' should "
+                        "even be framed here? Rather than choosing between "
                         "interpretability vs. accuracy, or the land-use-"
                         "only predictor scope excluding the geochemical/"
                         "age-tracer signal McMahon et al. (2022) found "
-                        "most predictive — change the deployment "
-                        "recommendation itself?"
+                        "most predictive, does the deployment "
+                        "recommendation need to lead with 'neither model "
+                        "is deployment-ready' before any single-model "
+                        "limitation is discussed?"
                     ),
                     (
                         "Per Check-In #2 peer feedback, does the "
@@ -1587,7 +1645,7 @@ def _(mo, task_callout):
 def _(mo, task_callout):
     mo.vstack(
         [
-            mo.md("## Public codebase"),
+            mo.md("### Public codebase"),
             mo.md("""
     Per the spec, the report and presentation must both link the
     public codebase. This project's codebase is public at
