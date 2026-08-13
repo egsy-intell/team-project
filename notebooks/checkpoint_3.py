@@ -11,7 +11,7 @@
 
 import marimo
 
-__generated_with = "0.23.16"
+__generated_with = "0.23.14"
 app = marimo.App(width="medium")
 
 
@@ -1499,6 +1499,150 @@ def _(mo, task_callout):
             ),
         ]
     )
+    return
+
+
+@app.cell
+def _():
+    return
+
+
+@app.cell
+def _():
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""
+    ### Model validation & benchmarking
+
+    **Task T9** · Step 5 - Evaluation · Lead: Yai, Somyaranjan · Depends
+    on: T7. Absorbs T4's scope: this section computes the actual
+    site-sparsity-by-state figure for the Check-In #2 feedback
+    integration, replacing the ~5 sites/state placeholder estimate with
+    a real number.
+
+    T7 scored both models against Step 3's thresholds and found neither
+    passes. This section checks that result against a fair baseline,
+    looks at all three risk tiers rather than just the highest-risk one,
+    and asks whether data sparsity explains the gap.
+
+    **What this section does:**
+
+    1. Runs both tuned models on the 46 held-out test sites and computes
+       precision, recall, and F1 for all three risk tiers - the
+       per-class metrics framework from Task 3.1.
+    2. Checks those numbers against Step 3's thresholds (recall ≥0.70,
+       macro F1 ≥0.60, precision ≥0.45 on `mcl_exceedance`) and states
+       whether each model passes.
+    3. Recomputes the majority-class baseline on the same 46-site test
+       partition T7 scored against, rather than reusing Step 3's
+       236-site figure - the fairer, apples-to-apples comparison. On
+       this partition, Model A's macro F1 matches the baseline exactly,
+       since it predicts the majority tier for every test site.
+    4. Reports the real site-sparsity-by-state figure (average sites
+       across the 15 sparsest states), replacing the earlier placeholder
+       estimate, and checks it against where each model's errors
+       concentrate by held-out study - to see whether thin, scattered
+       training data is why neither model moves off the majority-tier
+       default in the first place, given T7 already found the errors
+       track each study's true risk mix rather than its geography.
+
+    McMahon et al. (2022)'s own model performance (SI §S5: 0.96
+    sensitivity, 0.72 specificity) is noted separately below as
+    unscored context only - its binary target and geochemistry-inclusive
+    predictors aren't a fair comparison to either model here.
+
+    Per Check-In #2 feedback, the table and figures below carry the
+    section - the paragraph after them states the finding rather than
+    walking through every metric computed.
+    """)
+    return
+
+
+@app.cell
+def _(
+    error_breakdown_by_study,
+    mo,
+    model_a_best_estimator,
+    model_b_best_estimator,
+    pd,
+    score_model,
+    tapwater_test_df,
+    tapwater_train_df,
+):
+    # Apply the per-class metrics framework to both models: run each
+    # trained pipeline on the 46 held-out test sites and compute
+    # precision/recall/F1 for all three risk tiers.
+    model_a_result = score_model(model_a_best_estimator, tapwater_test_df, "Model A")
+    model_b_result = score_model(model_b_best_estimator, tapwater_test_df, "Model B")
+
+    # Apply the Step 3 risk-tier thresholds and benchmark each model
+    # against them. score_model() already ran check_success_criteria()
+    # internally - pull the pass/fail result out for both models.
+    model_a_criteria = model_a_result["criteria"]
+    model_b_criteria = model_b_result["criteria"]
+
+    # Majority baseline, computed correctly: on the SAME 46-site test
+    # partition T7 scored against, not Step 3's 236-site ss_scored_df.
+    _majority_share = (
+        tapwater_test_df["pfas_risk_tier"] == "within_reduced_monitoring"
+    ).mean()
+    majority_baseline_macro_f1 = round(
+        2 * _majority_share / (3 * (1 + _majority_share)), 4
+    )
+
+    # Compare both models to the corrected baseline and to each other,
+    # using recall on ALL THREE tiers plus macro-F1, not just mcl_exceedance.
+    def _recall_row(name, result):
+        _pc = result["metrics"]["per_class"]
+        _macro_f1 = result["metrics"]["summary"]["macro_f1"]
+        return {
+            "model": name,
+            "recall_low_risk": round(_pc.loc["within_reduced_monitoring", "recall"], 2),
+            "recall_medium_risk": round(_pc.loc["above_trigger", "recall"], 2),
+            "recall_high_risk": round(_pc.loc["mcl_exceedance", "recall"], 2),
+            "macro_f1": round(_macro_f1, 4),
+        }
+
+    t9_full_comparison = pd.DataFrame([
+        {
+            "model": "Majority baseline (always guesses low risk)",
+            "recall_low_risk": 1.0,
+            "recall_medium_risk": 0.0,
+            "recall_high_risk": 0.0,
+            "macro_f1": majority_baseline_macro_f1,
+        },
+        _recall_row("Model A", model_a_result),
+        _recall_row("Model B", model_b_result),
+    ])
+
+    # Absorb T4's scope: compute the real site-sparsity-by-state figure,
+    # replacing the Check-In #2 placeholder estimate with an actual number.
+    _sites_per_state = pd.concat(
+        [tapwater_train_df["State"], tapwater_test_df["State"]]
+    ).value_counts().sort_values()
+    bottom_15_avg_sites = round(_sites_per_state.head(15).mean(), 1)
+    sparsest_states = _sites_per_state.head(15)
+
+    # Check the sparsity figure against where each model's errors
+    # concentrate, by held-out study - to see whether thin training data
+    # explains the lack of signal, not geography directly.
+    model_a_errors_by_study = error_breakdown_by_study(model_a_result, tapwater_test_df)
+    model_b_errors_by_study = error_breakdown_by_study(model_b_result, tapwater_test_df)
+
+    # Keep the section light: one table, one sparsity figure, one error
+    # breakdown - no extra metrics dumped beyond what's needed.
+    mo.vstack([
+        mo.md("#### Model comparison, all three risk tiers"),
+        mo.ui.table(t9_full_comparison),
+        mo.md(f"15 sparsest states average **{bottom_15_avg_sites} sites each**."),
+        mo.ui.table(sparsest_states.reset_index().rename(columns={"index": "state", "State": "sites"})),
+        mo.md("#### Where errors concentrate, by held-out study"),
+        mo.ui.table(model_a_errors_by_study),
+        mo.ui.table(model_b_errors_by_study),
+    ])
     return
 
 
