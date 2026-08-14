@@ -178,8 +178,8 @@ date: Final — August 14, 2026
 
 Special thanks to our Check-In #2 peer reviewers: **Sky Alexander, Sereyroath So, Gavin Thompson, and Radman Zarbock** — your review was fair and thorough, and shaped this presentation directly.
 
-**Next up:** we're going back to that same group for another read on this final version.
+Thanks again for reviewing our work — we truly appreciate your time and interest.
 
 ::: notes
-[Speaker: Yai] That's Step 5: two models built and tuned, an honest held-out result that neither cleared our bar, a data-sparsity limitation we quantified rather than guessed at, and a recommendation to fix the data before we chase the models further. Before we take questions, real thanks to Sky Alexander, Sereyroath So, Gavin Thompson, and Radman Zarbock for reviewing us at Check-In #2 — the feedback was fair, specific, and genuinely shaped what you saw today. It was good enough that we're not stopping at "thank you": our own next step is to bring this final version back to that same group for another round before we call it done. Thanks for listening.
+[Speaker: Yai] That's Step 5: two models built and tuned, an honest held-out result that neither cleared our bar, a data-sparsity limitation we quantified rather than guessed at, and a recommendation to fix the data before we chase the models further. Before we take questions, real thanks to Sky Alexander, Sereyroath So, Gavin Thompson, and Radman Zarbock for reviewing us at Check-In #2 — the feedback was fair, specific, and genuinely shaped what you saw today. Thanks again for reviewing our work — we truly appreciate your time and interest. Thanks for listening.
 :::
