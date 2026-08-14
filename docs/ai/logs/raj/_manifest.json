@@ -1,0 +1,31 @@
+{
+  "person": "raj/ShettyG",
+  "display_name": "Gulshan Raj Shetty",
+  "tool": "GitHub Copilot Free + ChatGPT Free",
+  "tool_tier": "Free/publicly available tiers (no paid subscription)",
+  "how": "GitHub Copilot Free was used for inline code completion and to help troubleshoot syntax and lint errors. ChatGPT Free was used as a coding assistant to reason through the Model A implementation, review peer feedback, and finalize the T5 code and report wording.",
+  "why": "These tools were used to speed up repetitive coding work, identify syntax or implementation issues, and provide a second check on the model-training logic and report wording while the final technical decisions remained with me.",
+  "git_author_patterns": [
+    "Gulshan Raj Shetty",
+    "gulshanrajshetty"
+  ],
+  "footer_note": "<strong>Supporting non-AI tool:</strong> Marimo Web Notebook was used to enter and format reader-facing text, including callouts and Markdown content. It was used as the notebook authoring environment, not as an AI-generation tool.",
+  "threads": [
+    {
+      "title": "Model A implementation and T5 peer-review revisions",
+      "branch": "Task-T5-Model-A",
+      "date": "Aug 2026",
+      "transcript": "01-chatgpt-t5-model-a.md",
+      "prompts": 10,
+      "responses": 10
+    },
+    {
+      "title": "Code completion and syntax troubleshooting",
+      "branch": "Task-T5-Model-A",
+      "date": "Aug 2026",
+      "transcript": "02-github-copilot-reconstructed.md",
+      "prompts": 5,
+      "responses": 5
+    }
+  ]
+}
