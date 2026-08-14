@@ -130,7 +130,7 @@ def _(checkpoint_1_result, mo):
 def _(mo):
     mo.md(r"""
     With the ∑TQ target constructed above, the report turns next to
-    Steps 3–4: how a classifier trained on that target would be
+    Steps 3-4: how a classifier trained on that target would be
     evaluated, and what modeling techniques are proposed to build it.
     """)
     return

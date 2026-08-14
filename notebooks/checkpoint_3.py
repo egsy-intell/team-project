@@ -125,15 +125,6 @@ def _(mo, tapwater_test_df, tapwater_train_df):
     `tapwater_train_df` ({tapwater_train_df.shape[0]} rows) and
     `tapwater_test_df` ({tapwater_test_df.shape[0]} rows) — and its
     per-class metrics, risk-tier thresholds, and preprocessing pipeline.
-
-    This is a **header skeleton** — section structure and open questions
-    only, per `planning/checkpoint-3/checkpoint3_task_plan.csv`. Pending
-    sections carry a callout naming their task ID, lead, and
-    dependencies from that plan; use the task ID to cross-reference the
-    task board. Tasks tracking project logistics the spec doesn't ask
-    the report itself to cover (the writeup/deck/video, submission, and
-    individual peer review) aren't reflected here — only the public
-    codebase link the spec does require the report to mention.
     """)
     return
 
@@ -198,7 +189,7 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    ### Step 5: Model Training & Execution
+    ### Model Training & Execution
 
     Carries Step 4's two proposed models, the interpretable baseline
     (Model A) and the competing ensemble (Model B), from proposal into
@@ -283,7 +274,7 @@ def _(StratifiedGroupKFold, tapwater_train_df):
     return grouped_cv, study_groups
 
 
-@app.cell(hide_code=True)
+@app.cell
 def _(f1_score, precision_score, recall_score):
     # Shared CV metrics. Model A is selected by macro-F1 only; recall
     # and precision are retained as diagnostics for later evaluation.
@@ -324,7 +315,7 @@ def _(f1_score, precision_score, recall_score):
     return (tier_model_scoring,)
 
 
-@app.cell(hide_code=True)
+@app.cell
 def _(pd):
     def build_cv_results_table(cv_results, param_columns, best_index):
         """Per-candidate CV results, selected candidate sorted to top.
@@ -375,7 +366,7 @@ def _(mo):
     return
 
 
-@app.cell(hide_code=True)
+@app.cell
 def _(
     RECALL_FLOOR,
     check_success_criteria,
@@ -405,7 +396,7 @@ def _(
     return (score_model,)
 
 
-@app.cell(hide_code=True)
+@app.cell
 def _(pd):
     def error_breakdown_by_study(result, df):
         """Held-out error rate by `study_group`, for a score_model() result.
@@ -437,8 +428,8 @@ def _(pd):
     return (error_breakdown_by_study,)
 
 
-@app.cell(hide_code=True)
-def _(mo, plt):
+@app.cell
+def _(plt):
     def plot_error_rate_by_study(breakdown_df, title):
         # Sequential, single-hue (same blue family as make_plot_grid's
         # histograms): this is one measurement varying by study, not
@@ -466,16 +457,12 @@ def _(mo, plt):
         for _spine in ("top", "right", "left"):
             ax.spines[_spine].set_visible(False)
         fig.tight_layout()
-        # mo.mpl.interactive adds pan/zoom/hover for anyone running the
-        # notebook live; it degrades to the same static PNG as a plain
-        # figure in the published static HTML, so there's no downside
-        # there.
-        return mo.mpl.interactive(fig)
+        return fig
 
     return (plot_error_rate_by_study,)
 
 
-@app.cell(hide_code=True)
+@app.cell
 def _(pd):
     def build_model_comparison(results):
         """Model A vs. Model B comparison table from score_model() results.
@@ -529,13 +516,12 @@ def _():
     return (MODEL_COMPARISON_PALETTE,)
 
 
-@app.cell(hide_code=True)
+@app.cell
 def _(
     MACRO_F1_FLOOR,
     MODEL_COMPARISON_PALETTE,
     PRECISION_FLOOR,
     RECALL_FLOOR,
-    mo,
     plt,
 ):
     def plot_model_comparison(comparison_df, title):
@@ -604,7 +590,7 @@ def _(
                 frameon=False,
             )
         fig.tight_layout()
-        return mo.mpl.interactive(fig)
+        return fig
 
     return (plot_model_comparison,)
 
@@ -1228,7 +1214,7 @@ def _(
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    ### Step 5: Prediction, Evaluation & Benchmarking
+    ### Prediction, Evaluation & Benchmarking
 
     Scores both trained models against the held-out studies and Step
     3's success criteria.
@@ -1255,7 +1241,7 @@ def _(mo):
     return
 
 
-@app.cell(hide_code=True)
+@app.cell
 def _(mo, model_a_best_estimator, score_model, tapwater_test_df):
     model_a_held_out = score_model(
         model_a_best_estimator, tapwater_test_df, "Model A"
@@ -1273,7 +1259,7 @@ def _(mo, model_a_best_estimator, score_model, tapwater_test_df):
     return (model_a_held_out,)
 
 
-@app.cell(hide_code=True)
+@app.cell
 def _(
     error_breakdown_by_study,
     mo,
@@ -1294,7 +1280,7 @@ def _(
     return
 
 
-@app.cell(hide_code=True)
+@app.cell
 def _(mo, model_b_best_estimator, score_model, tapwater_test_df):
     model_b_held_out = score_model(
         model_b_best_estimator, tapwater_test_df, "Model B"
@@ -1312,7 +1298,7 @@ def _(mo, model_b_best_estimator, score_model, tapwater_test_df):
     return (model_b_held_out,)
 
 
-@app.cell(hide_code=True)
+@app.cell
 def _(
     error_breakdown_by_study,
     mo,
@@ -1370,7 +1356,7 @@ def _(mo):
     return
 
 
-@app.cell(hide_code=True)
+@app.cell
 def _(
     build_model_comparison,
     mo,
@@ -1475,7 +1461,7 @@ def _(RECALL_FLOOR, comparison_df, mo, model_a_cv_results, model_b_cv_results):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
     #### Model validation & benchmarking
@@ -1599,7 +1585,7 @@ def _(comparison_df, mo, pd, tapwater_test_df, tapwater_train_df):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    ### Step 5: Deployment Discussion
+    ### Deployment Discussion
     """)
     return
 
