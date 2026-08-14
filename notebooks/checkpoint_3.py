@@ -843,7 +843,10 @@ def _(
 
     _selected = model_a_cv_results[model_a_cv_results["Selected"]].iloc[0]
 
-    model_a_training_summary = pd.DataFrame(
+    # Split into two narrower tables rather than one 12-column row -
+    # data counts on one side, selected hyperparameters/CV scores on
+    # the other, so neither table risks cropping when printed.
+    model_a_training_data_summary = pd.DataFrame(
         [
             {
                 "Training rows": len(_X_train),
@@ -852,6 +855,12 @@ def _(
                 "Encoded predictors": _encoded_count,
                 "Missing predictor values": int(_X_train.isna().sum().sum()),
                 "log1p predictors": _skewed_count,
+            }
+        ]
+    )
+    model_a_tuning_summary = pd.DataFrame(
+        [
+            {
                 "Best C": model_a_grid_search.best_params_["model__C"],
                 "Best class weight": (
                     "unweighted"
@@ -871,7 +880,8 @@ def _(
     return (
         model_a_best_estimator,
         model_a_cv_results,
-        model_a_training_summary,
+        model_a_training_data_summary,
+        model_a_tuning_summary,
         model_a_unseen_categories,
     )
 
@@ -945,7 +955,8 @@ def _(
     model_a_cv_results,
     model_a_direction_audit,
     model_a_top_coefficients,
-    model_a_training_summary,
+    model_a_training_data_summary,
+    model_a_tuning_summary,
     model_a_unseen_categories,
 ):
     if model_a_unseen_categories.empty:
@@ -1015,8 +1026,10 @@ def _(
 
     mo.vstack(
         [
-            mo.md("##### Training and tuning summary"),
-            mo.ui.table(model_a_training_summary),
+            mo.md("##### Training data summary"),
+            mo.ui.table(model_a_training_data_summary),
+            mo.md("##### Selected hyperparameters & CV scores"),
+            mo.ui.table(model_a_tuning_summary),
             mo.md(
                 """
                 ##### Tuning grid results
@@ -1159,12 +1172,22 @@ def _(
     )
 
     _selected = model_b_cv_results[model_b_cv_results["Selected"]].iloc[0]
-    model_b_training_summary = pd.DataFrame(
+
+    # Split into two narrower tables rather than one 9-column row -
+    # data counts on one side, selected hyperparameters/CV scores on
+    # the other, so neither table risks cropping when printed.
+    model_b_training_data_summary = pd.DataFrame(
         [
             {
                 "Training rows": len(_X_train),
                 "Study groups": study_groups.nunique(),
                 "Raw predictors": len(model_predictors),
+            }
+        ]
+    )
+    model_b_tuning_summary = pd.DataFrame(
+        [
+            {
                 "Best trees": model_b_grid_search.best_params_[
                     "model__n_estimators"
                 ],
@@ -1183,15 +1206,27 @@ def _(
             }
         ]
     )
-    return model_b_best_estimator, model_b_cv_results, model_b_training_summary
+    return (
+        model_b_best_estimator,
+        model_b_cv_results,
+        model_b_training_data_summary,
+        model_b_tuning_summary,
+    )
 
 
 @app.cell(hide_code=True)
-def _(mo, model_b_cv_results, model_b_training_summary):
+def _(
+    mo,
+    model_b_cv_results,
+    model_b_training_data_summary,
+    model_b_tuning_summary,
+):
     mo.vstack(
         [
-            mo.md("##### Model B training and tuning summary"),
-            mo.ui.table(model_b_training_summary),
+            mo.md("##### Model B training data summary"),
+            mo.ui.table(model_b_training_data_summary),
+            mo.md("##### Model B selected hyperparameters & CV scores"),
+            mo.ui.table(model_b_tuning_summary),
             mo.md("##### Randomized-search results"),
             mo.ui.table(model_b_cv_results.round(4)),
         ]

@@ -102,9 +102,10 @@ the same way you'd check for the other conventions here.
 
 ## Printing / PDF output
 
-We do not generate PDFs from this repo. An earlier version of this
-pipeline used marimo's native `export pdf` (nbconvert's WebPDF exporter
-via Playwright/Chromium) to publish a PDF alongside the HTML, but that
+We do not generate PDFs from this repo's build pipeline — there is no
+`marimo export pdf` step. An earlier version of this pipeline used
+marimo's native `export pdf` (nbconvert's WebPDF exporter via
+Playwright/Chromium) to publish a PDF alongside the HTML, but that
 path hit several real, unfixable-from-our-side bugs in marimo
 0.23.14/0.23.15's PDF rasterization (wide tables silently cropped
 instead of scaled, a "not connected to a kernel" toast bleeding into
@@ -112,13 +113,24 @@ table/figure screenshots, and blank pages from a screenshot-stitching
 bug) — see git history around the removal of `_check_table_widths()`,
 `_drop_blank_pages()`, and the `marimo export pdf` step in
 `scripts/export_notebooks.py` if you want the full investigation.
-**Don't re-add a PDF export step to this repo without checking whether
-those upstream bugs are fixed first.**
+**Don't re-add a `marimo export pdf` step to this repo without
+checking whether those upstream bugs are fixed first.**
 
-For print-quality output, the team currently uploads the notebook to
-[molab](https://molab.marimo.io/) instead, which the team found prints
-notably better. Point people there until a better in-repo alternative
-is found.
+For the actual submitted writeup PDF, the team exports each
+notebook's HTML with this repo's own tooling
+(`scripts/export_notebooks.py` → `docs/notebooks/`) and then prints
+that static HTML to PDF via Chrome's browser print function — not
+molab, and not marimo's native exporter. This is a different
+mechanism than the one above, so it isn't hit by the same bugs, but
+it **can hit the same underlying failure mode**: `mo.ui.table()`
+renders as a horizontal-scroll `div` in the browser, and a wide table
+can still get cropped at the page edge when Chrome paginates the
+static HTML for print, the same way marimo's own exporter used to
+silently crop instead of scale. Keep every table's column count
+deliberate — each column should earn its place — rather than adding
+columns to an existing table as a matter of convenience; check a
+wide table (5+ columns, or columns with long names) actually prints
+cleanly before treating it as final.
 
 ## Repo layout
 
