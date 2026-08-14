@@ -19,14 +19,12 @@ app = marimo.App(width="medium")
 def _():
     import marimo as mo
 
-    # When this notebook is opened from a local checkout, checkpoint_1.py
-    # and checkpoint_2.py sit right next to it. When marimo downloads it
-    # standalone from a URL (e.g. `uvx marimo edit --sandbox
-    # <gh-pages-url>`), those sibling files aren't there, so fetch them
-    # from the same repo location it was published from and import them
-    # from a temp dir instead.
+    # When this notebook is opened from a local checkout, checkpoint_2.py
+    # sits right next to it. When marimo downloads it standalone from a
+    # URL (e.g. `uvx marimo edit --sandbox <gh-pages-url>`), that sibling
+    # file isn't there, so fetch it from the same repo location it was
+    # published from and import it from a temp dir instead.
     try:
-        from checkpoint_1 import app as checkpoint_1_app
         from checkpoint_2 import app as checkpoint_2_app
     except ModuleNotFoundError:
         import sys as _sys
@@ -38,22 +36,12 @@ def _():
             "team-project/main/notebooks"
         )
         _tmp_dir = _tempfile.mkdtemp(prefix="egsy-pfas-")
-        for _name in ("checkpoint_1.py", "checkpoint_2.py"):
-            _urllib_request.urlretrieve(
-                f"{_RAW_BASE}/{_name}", f"{_tmp_dir}/{_name}"
-            )
+        _dest = f"{_tmp_dir}/checkpoint_2.py"
+        _urllib_request.urlretrieve(f"{_RAW_BASE}/checkpoint_2.py", _dest)
         _sys.path.insert(0, _tmp_dir)
 
-        from checkpoint_1 import app as checkpoint_1_app
         from checkpoint_2 import app as checkpoint_2_app
-    return checkpoint_1_app, checkpoint_2_app, mo
-
-
-@app.cell(hide_code=True)
-async def _(checkpoint_1_app):
-    checkpoint_1_result = await checkpoint_1_app.embed()
-    task_callout = checkpoint_1_result.defs["task_callout"]
-    return (task_callout,)
+    return checkpoint_2_app, mo
 
 
 @app.cell(hide_code=True)
@@ -1758,117 +1746,6 @@ def _(mo, represented_state_count, singleton_state_count, total_site_count):
     those requirements, it only makes them easier to satisfy with the
     data we can realistically collect.
     """)
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo, task_callout):
-    mo.vstack(
-        [
-            mo.md("#### Deployment & lessons-learned narrative"),
-            task_callout(
-                "T10",
-                category="Step 5 - Deployment",
-                lead="Emir, Yai",
-                depends_on="T9",
-                summary=(
-                    "Draft the discussion of deployment feasibility, "
-                    "pitfalls, and lessons learned required by Step 5. "
-                    "Shares the site-sparsity scope absorbed into the "
-                    "benchmarking above: explicitly acknowledging that "
-                    "limitation in the conclusion, per Check-In #2 "
-                    "feedback."
-                ),
-                guiding_questions=[
-                    (
-                        "What would an operator need beyond the model "
-                        "itself to actually use it (input data availability, "
-                        "refresh cadence, who interprets a flagged site)?"
-                    ),
-                    (
-                        "What's the single biggest pitfall the team ran "
-                        "into across Steps 1-5 that a future team repeating "
-                        "this project should know about going in? The "
-                        "held-out evaluation found a stark CV-to-held-out "
-                        "generalization gap "
-                        "(grouped-CV `mcl_exceedance` recall of 0.41-0.52 "
-                        "during tuning collapsed to 0.00-0.07 on 3 unseen "
-                        "held-out studies) with only 190 training rows "
-                        "across 7 study groups — is this the leading "
-                        "candidate, or did something else cost the team "
-                        "more?"
-                    ),
-                    (
-                        "Neither model clears Step 3's recall floor on "
-                        "the held-out set — does that change how "
-                        "'the recommended model's main limitation' should "
-                        "even be framed here? Rather than choosing between "
-                        "interpretability vs. accuracy, or the land-use-"
-                        "only predictor scope excluding the geochemical/"
-                        "age-tracer signal McMahon et al. (2022) found "
-                        "most predictive, does the deployment "
-                        "recommendation need to lead with 'neither model "
-                        "is deployment-ready' before any single-model "
-                        "limitation is discussed?"
-                    ),
-                    (
-                        "Per Check-In #2 peer feedback, does the "
-                        "conclusion explicitly acknowledge that "
-                        "state-level data sparsity limits how well the "
-                        "benchmarking generalizes across geography, "
-                        "rather than leaving that gap implicit?"
-                    ),
-                    (
-                        "Given that gap, does the narrative recommend "
-                        "narrowing the model's scope to a data-denser "
-                        "subregion, or framing it as exploratory rather "
-                        "than screening-ready — and which one does it "
-                        "land on?"
-                    ),
-                ],
-            ),
-        ]
-    )
-    return
-
-
-@app.cell(hide_code=True)
-def _(mo, task_callout):
-    mo.vstack(
-        [
-            mo.md("### Public codebase"),
-            mo.md("""
-    Per the spec, the report and presentation must both link the
-    public codebase. This project's codebase is public at
-    <https://github.com/egsy-intell/team-project>, the same repository
-    this report itself is published from.
-    """),
-            task_callout(
-                "T11",
-                category="Step 5 - Submission",
-                lead="Yai, Raj",
-                depends_on="T5, T6",
-                summary=(
-                    "Push Step 5 code to the public repo and confirm "
-                    "it's publicly accessible for the writeup/deck link, "
-                    "once both models have landed."
-                ),
-                guiding_questions=[
-                    (
-                        "Right before submission, does a signed-out "
-                        "browser (not just a logged-in team member) "
-                        "actually load the repo without a permission "
-                        "prompt?"
-                    ),
-                    (
-                        "Does the linked repo state match what the "
-                        "writeup describes, or is there unmerged work "
-                        "the writeup depends on?"
-                    ),
-                ],
-            ),
-        ]
-    )
     return
 
 
