@@ -104,8 +104,9 @@ def cmd_presentation(args: argparse.Namespace) -> int:
         )
         return 1
 
-    if not SOURCE_MD.exists():
-        print(f"Missing deck source: {SOURCE_MD.relative_to(REPO_ROOT)}", file=sys.stderr)
+    source_md = args.source.resolve()
+    if not source_md.exists():
+        print(f"Missing deck source: {source_md}", file=sys.stderr)
         return 1
     if not args.template.exists():
         print(
@@ -117,18 +118,25 @@ def cmd_presentation(args: argparse.Namespace) -> int:
 
     output_dir = args.output_dir
     output_dir.mkdir(parents=True, exist_ok=True)
-    output_stem = SOURCE_MD.stem
+    output_stem = source_md.stem
     if args.template != TEMPLATE_PPTX:
         output_stem += f"-{args.template.stem}"
     output_path = output_dir / f"{output_stem}.pptx"
 
-    print(f"Building {SOURCE_MD.relative_to(REPO_ROOT)} -> {output_path}")
+    print(f"Building {source_md.relative_to(REPO_ROOT)} -> {output_path}")
     try:
         pypandoc.convert_file(
-            str(SOURCE_MD),
+            str(source_md),
             to="pptx",
             outputfile=str(output_path),
-            extra_args=["--reference-doc", str(args.template), "--slide-level", str(SLIDE_LEVEL)],
+            extra_args=[
+                "--reference-doc",
+                str(args.template),
+                "--slide-level",
+                str(SLIDE_LEVEL),
+                "--resource-path",
+                str(source_md.parent),
+            ],
         )
     except RuntimeError as exc:
         print(f"pandoc conversion failed: {exc}", file=sys.stderr)
@@ -147,8 +155,14 @@ def cmd_presentation(args: argparse.Namespace) -> int:
 def _add_presentation_parser(subparsers: argparse._SubParsersAction) -> None:
     parser = subparsers.add_parser(
         "presentation",
-        help="Build the checkpoint slide deck (.pptx) from preso/checkpoint2_deck.md",
+        help="Build a checkpoint slide deck (.pptx) from a preso/*_deck.md source",
         description=cmd_presentation.__doc__ or "",
+    )
+    parser.add_argument(
+        "--source",
+        type=Path,
+        default=SOURCE_MD,
+        help="Deck markdown source to build (default: preso/checkpoint2_deck.md)",
     )
     parser.add_argument(
         "--output-dir",

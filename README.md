@@ -71,7 +71,7 @@ Install the [marimo extension](https://marketplace.visualstudio.com/items?itemNa
 
 ### Build the checkpoint slide deck
 
-Presentation source lives under `preso/`: `checkpoint2_deck.md` is the deck content (pandoc slide-show markdown — `#`/`##` headings are slide breaks, `::: notes ... :::` blocks are per-slide speaker notes), and `template.pptx` is a reference-doc template (fonts, layouts, and the team logo — pandoc can only style master layouts from an existing `.pptx`, so this file is a styled copy of pandoc's stock reference doc, committed as-is; see `scripts/_bootstrap_template.py` if it ever needs regenerating).
+Presentation source lives under `preso/`: each checkpoint has its own deck markdown file (`checkpoint2_deck.md`, `checkpoint3_deck.md`, ... — pandoc slide-show markdown, `#`/`##` headings are slide breaks, `::: notes ... :::` blocks are per-slide speaker notes, `![...](assets/...)` embeds an image). `template.pptx` is the team's reference-doc template (fonts, layouts, and the team logo — pandoc can only style master layouts from an existing `.pptx`, so this file is a styled copy of pandoc's stock reference doc, committed as-is; see `scripts/_bootstrap_template.py` if it ever needs regenerating), and `purdue-reference.pptx` is Purdue's official gold/steel-gray reference doc (no logo baked in).
 
 Install the presentation-build dependencies (kept out of the default environment since they're only needed by whoever's building slides):
 
@@ -79,13 +79,14 @@ Install the presentation-build dependencies (kept out of the default environment
 uv sync --group preso
 ```
 
-Then regenerate the `.pptx` from the latest markdown source:
+Then regenerate a `.pptx` from its markdown source (defaults to `checkpoint2_deck.md` with the team template):
 
 ```bash
 uv run python scripts/toolkit.py presentation
+uv run python scripts/toolkit.py presentation --source preso/checkpoint3_deck.md --template preso/purdue-reference.pptx
 ```
 
-This writes `preso/dist/checkpoint2_deck.pptx` (gitignored — a build artifact, not committed) using `pypandoc`/`pypandoc_binary`, so no system `pandoc` install is required. Pass `--output-dir` to change where it's written, or `--open` to open it automatically in PowerPoint afterward (best-effort; macOS/Windows only, no-ops elsewhere). Upload the generated file to OneDrive manually — there's no automated publish step for slides, unlike the notebook HTML exports below.
+This writes `preso/dist/<source-stem>[-<template-stem>].pptx` (gitignored — a build artifact, not committed) using `pypandoc`/`pypandoc_binary`, so no system `pandoc` install is required. Pass `--output-dir` to change where it's written, or `--open` to open it automatically in PowerPoint afterward (best-effort; macOS/Windows only, no-ops elsewhere). Upload the generated file to OneDrive manually — there's no automated publish step for slides, unlike the notebook HTML exports below.
 
 ### Print-friendly notebook export
 
