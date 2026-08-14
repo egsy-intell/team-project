@@ -140,6 +140,13 @@ def _(mo):
     * U.S. Environmental Protection Agency. (n.d.). Our current understanding
       of the human health and environmental risks of PFAS.
       https://www.epa.gov/pfas/our-current-understanding-human-health-and-environmental-risks-pfas
+
+    ### Public codebase
+
+    Per the spec, the report and presentation must both link the
+    public codebase. This project's codebase is public at
+    <https://github.com/egsy-intell/team-project>, the same repository
+    this report itself is published from.
     """)
     return
 

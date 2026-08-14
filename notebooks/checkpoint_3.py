@@ -19,14 +19,12 @@ app = marimo.App(width="medium")
 def _():
     import marimo as mo
 
-    # When this notebook is opened from a local checkout, checkpoint_1.py
-    # and checkpoint_2.py sit right next to it. When marimo downloads it
-    # standalone from a URL (e.g. `uvx marimo edit --sandbox
-    # <gh-pages-url>`), those sibling files aren't there, so fetch them
-    # from the same repo location it was published from and import them
-    # from a temp dir instead.
+    # When this notebook is opened from a local checkout, checkpoint_2.py
+    # sits right next to it. When marimo downloads it standalone from a
+    # URL (e.g. `uvx marimo edit --sandbox <gh-pages-url>`), that sibling
+    # file isn't there, so fetch it from the same repo location it was
+    # published from and import it from a temp dir instead.
     try:
-        from checkpoint_1 import app as checkpoint_1_app
         from checkpoint_2 import app as checkpoint_2_app
     except ModuleNotFoundError:
         import sys as _sys
@@ -38,22 +36,12 @@ def _():
             "team-project/main/notebooks"
         )
         _tmp_dir = _tempfile.mkdtemp(prefix="egsy-pfas-")
-        for _name in ("checkpoint_1.py", "checkpoint_2.py"):
-            _urllib_request.urlretrieve(
-                f"{_RAW_BASE}/{_name}", f"{_tmp_dir}/{_name}"
-            )
+        _dest = f"{_tmp_dir}/checkpoint_2.py"
+        _urllib_request.urlretrieve(f"{_RAW_BASE}/checkpoint_2.py", _dest)
         _sys.path.insert(0, _tmp_dir)
 
-        from checkpoint_1 import app as checkpoint_1_app
         from checkpoint_2 import app as checkpoint_2_app
-    return checkpoint_1_app, checkpoint_2_app, mo
-
-
-@app.cell(hide_code=True)
-async def _(checkpoint_1_app):
-    checkpoint_1_result = await checkpoint_1_app.embed()
-    task_callout = checkpoint_1_result.defs["task_callout"]
-    return (task_callout,)
+    return checkpoint_2_app, mo
 
 
 @app.cell(hide_code=True)
@@ -192,14 +180,17 @@ def _(mo):
     mo.md("""
     #### Feedback selected for integration
 
-    Peer review on Check-In #2 surfaced two items the team is
+    Peer review on Check-In #2 surfaced three items the team is
     integrating into this submission: keeping the results sections
-    lighter on detail and leading with results, and quantifying the
+    lighter on detail and leading with results; quantifying the
     underlying site-count sparsity (e.g. ~5 sites/state on average
     across the bottom 15 states) to acknowledge the geographic
-    generalizability limit it creates. Both are threaded into the
-    benchmarking below and the deployment discussion's guiding
-    questions.
+    generalizability limit it creates; and a reviewer's doubt that a
+    national-scope model is well matched to the available data,
+    suggesting a single-state or regional analysis would control for
+    landform and geography more precisely. All three are threaded
+    into the benchmarking below and the deployment discussion's
+    guiding questions and recommendation.
     """)
     return
 
@@ -1552,6 +1543,15 @@ def _(comparison_df, mo, pd, tapwater_test_df, tapwater_train_df):
     bottom_15_avg_sites = round(_sites_per_state.head(15).mean(), 1)
     sparsest_states = _sites_per_state.head(15)
 
+    # Broader coverage figures for the deployment discussion's
+    # data-scaling argument, off the same combined State column.
+    total_site_count = int(_sites_per_state.sum())
+    represented_state_count = int(_sites_per_state.shape[0])
+    singleton_state_count = int((_sites_per_state == 1).sum())
+    top3_state_share = round(
+        _sites_per_state.tail(3).sum() / total_site_count, 4
+    )
+
     mo.vstack([
         mo.md("##### Model comparison, all three risk tiers"),
         mo.ui.table(all_tier_recall_comparison_df),
@@ -1575,8 +1575,25 @@ def _(comparison_df, mo, pd, tapwater_test_df, tapwater_train_df):
             "above, it lines up instead with each held-out study's "
             "true risk-tier mix."
         ),
+        mo.md(
+            f"Zooming out from the 15 sparsest states: our "
+            f"{total_site_count} combined training and held-out sites "
+            f"are spread across only {represented_state_count} states "
+            f"and territories, {singleton_state_count} of them "
+            f"represented by a single site, while the three "
+            f"best-covered states alone (Illinois, Minnesota, "
+            f"California) account for {top3_state_share:.1%} of every "
+            "site we have. That skew, not model tuning, is the "
+            "binding constraint on geographic generalization — see "
+            "the deployment discussion below."
+        ),
     ])
-    return
+    return (
+        represented_state_count,
+        singleton_state_count,
+        top3_state_share,
+        total_site_count,
+    )
 
 
 @app.cell(hide_code=True)
@@ -1588,113 +1605,146 @@ def _(mo):
 
 
 @app.cell(hide_code=True)
-def _(mo, task_callout):
-    mo.vstack(
-        [
-            mo.md("#### Deployment & lessons-learned narrative"),
-            task_callout(
-                "T10",
-                category="Step 5 - Deployment",
-                lead="Emir, Yai",
-                depends_on="T9",
-                summary=(
-                    "Draft the discussion of deployment feasibility, "
-                    "pitfalls, and lessons learned required by Step 5. "
-                    "Shares the site-sparsity scope absorbed into the "
-                    "benchmarking above: explicitly acknowledging that "
-                    "limitation in the conclusion, per Check-In #2 "
-                    "feedback."
-                ),
-                guiding_questions=[
-                    (
-                        "What would an operator need beyond the model "
-                        "itself to actually use it (input data availability, "
-                        "refresh cadence, who interprets a flagged site)?"
-                    ),
-                    (
-                        "What's the single biggest pitfall the team ran "
-                        "into across Steps 1-5 that a future team repeating "
-                        "this project should know about going in? The "
-                        "held-out evaluation found a stark CV-to-held-out "
-                        "generalization gap "
-                        "(grouped-CV `mcl_exceedance` recall of 0.41-0.52 "
-                        "during tuning collapsed to 0.00-0.07 on 3 unseen "
-                        "held-out studies) with only 190 training rows "
-                        "across 7 study groups — is this the leading "
-                        "candidate, or did something else cost the team "
-                        "more?"
-                    ),
-                    (
-                        "Neither model clears Step 3's recall floor on "
-                        "the held-out set — does that change how "
-                        "'the recommended model's main limitation' should "
-                        "even be framed here? Rather than choosing between "
-                        "interpretability vs. accuracy, or the land-use-"
-                        "only predictor scope excluding the geochemical/"
-                        "age-tracer signal McMahon et al. (2022) found "
-                        "most predictive, does the deployment "
-                        "recommendation need to lead with 'neither model "
-                        "is deployment-ready' before any single-model "
-                        "limitation is discussed?"
-                    ),
-                    (
-                        "Per Check-In #2 peer feedback, does the "
-                        "conclusion explicitly acknowledge that "
-                        "state-level data sparsity limits how well the "
-                        "benchmarking generalizes across geography, "
-                        "rather than leaving that gap implicit?"
-                    ),
-                    (
-                        "Given that gap, does the narrative recommend "
-                        "narrowing the model's scope to a data-denser "
-                        "subregion, or framing it as exploratory rather "
-                        "than screening-ready — and which one does it "
-                        "land on?"
-                    ),
-                ],
-            ),
-        ]
-    )
+def _(mo):
+    mo.md("""
+    #### Deployment feasibility
+
+    Neither model is ready for operational deployment. On the held-out
+    studies, both models failed our prespecified recall threshold for the
+    `mcl_exceedance` tier and predominantly predicted the majority risk
+    tier. In practice, this failure could cause water-resource operators
+    to deprioritize sites that actually require confirmatory sampling—the
+    outcome our recall threshold was specifically designed to prevent.
+
+    We would retain Model A as the more suitable prototype for further
+    development, but we do not recommend deploying it in its current form.
+    Model B correctly classified only one additional site among the 46
+    held-out observations, which is not enough improvement to justify its
+    additional complexity and reduced interpretability. Model A's relative
+    simplicity would make its behavior easier to inspect as we improve the
+    data and modeling pipeline. This is a development preference, not
+    evidence that Model A is presently safe for operational screening.
+    """)
     return
 
 
 @app.cell(hide_code=True)
-def _(mo, task_callout):
-    mo.vstack(
-        [
-            mo.md("### Public codebase"),
-            mo.md("""
-    Per the spec, the report and presentation must both link the
-    public codebase. This project's codebase is public at
-    <https://github.com/egsy-intell/team-project>, the same repository
-    this report itself is published from.
-    """),
-            task_callout(
-                "T11",
-                category="Step 5 - Submission",
-                lead="Yai, Raj",
-                depends_on="T5, T6",
-                summary=(
-                    "Push Step 5 code to the public repo and confirm "
-                    "it's publicly accessible for the writeup/deck link, "
-                    "once both models have landed."
-                ),
-                guiding_questions=[
-                    (
-                        "Right before submission, does a signed-out "
-                        "browser (not just a logged-in team member) "
-                        "actually load the repo without a permission "
-                        "prompt?"
-                    ),
-                    (
-                        "Does the linked repo state match what the "
-                        "writeup describes, or is there unmerged work "
-                        "the writeup depends on?"
-                    ),
-                ],
-            ),
-        ]
-    )
+def _(mo):
+    mo.md("""
+    #### Requirements for future operational use
+
+    An operator would need more than a trained model to use this approach
+    responsibly. Deployment would require a stable process for collecting
+    the same land-use and potential PFAS-source predictors used during
+    training, periodically refreshing those inputs, and retraining the
+    model as new PFAS measurements become available. A water-quality
+    specialist would also need to review predictions and determine which
+    sites receive confirmatory testing.
+
+    Until the model demonstrates reliable high-risk recall on unseen
+    regions, its predictions should not be used to exclude sites from
+    sampling. A future system could instead use predictions as one source
+    of exploratory information alongside regulatory measurements, local
+    knowledge, known PFAS sources, and existing monitoring priorities.
+    Operators—not the model—would retain responsibility for final sampling
+    decisions.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(
+    mo,
+    represented_state_count,
+    singleton_state_count,
+    top3_state_share,
+    total_site_count,
+):
+    mo.md(f"""
+    #### Pitfalls and lessons learned
+
+    The main lesson from this project is that validation performance
+    within the available studies did not translate reliably to unseen
+    studies. During grouped cross-validation, the best
+    `mcl_exceedance` recall ranged from 0.41 to 0.52, but it fell to
+    0.00-0.07 across the held-out studies. The training data contained
+    only 190 sites across seven study groups, so even grouped
+    cross-validation provided limited evidence about how the models
+    would generalize to new populations.
+
+    Sparse and uneven geographic coverage compounds that limitation.
+    Our {total_site_count} combined training and held-out sites are
+    spread across only {represented_state_count} states and
+    territories, {singleton_state_count} of them represented by a
+    single site, and the three best-covered states alone account for
+    {top3_state_share:.1%} of every site we have. The held-out errors
+    appeared to follow differences in each study's risk-tier
+    composition rather than geography alone, but with coverage this
+    thin we cannot separate geographic effects from study design and
+    class composition with any confidence. Closing that gap is a
+    data-collection problem before it is a modeling one: the next
+    step is scaling up site sampling in the underrepresented states,
+    not further tuning against the sites we already have.
+
+    A second limitation is predictor scope. Our models use land-use
+    and potential PFAS-source variables, whereas McMahon et al. (2022)
+    found important predictive value in geochemical and
+    groundwater-age variables for a different PFAS-detection target.
+    Because the targets and predictor sets differ, their reported
+    performance is not a directly comparable benchmark. Their top
+    five predictors were tritium concentration, distance to the
+    nearest fire-training area, dissolved organic carbon (DOC),
+    percentage of urban land use, and summed volatile organic
+    compound (VOC) concentration - three of five are chemical
+    measurements we do not currently model. DOC
+    and VOC look like the more feasible additions of the three: both
+    are measured with standard water-quality lab methods, whereas
+    McMahon et al. note that tritium is "rarely collected in
+    assessments of PFAS contamination of groundwater" because it
+    requires specialized isotope-lab analysis. We have not yet
+    confirmed whether a source comparable to Seawolf reports DOC or
+    VOC for our training sites, so this is a candidate for the next
+    data-scoping pass, not a confirmed plan.
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo, represented_state_count, singleton_state_count, total_site_count):
+    mo.md(f"""
+    #### Recommendation
+
+    We recommend treating the current model as an exploratory research
+    prototype rather than a screening-ready tool. The next development
+    cycle should prioritize: scaling up site sampling, since our
+    {total_site_count}-site, {represented_state_count}-state footprint
+    (including {singleton_state_count} single-site states) is too
+    sparse to support a national model; incorporating additional
+    scientifically supported predictors, such as McMahon et al.
+    (2022)'s DOC and VOC measurements; and evaluating the revised
+    model on entirely unseen regions or utilities. We should
+    reconsider deployment only after the model consistently meets the
+    high-risk recall threshold under that external validation.
+
+    Check-In #2 peer review separately questioned whether a project
+    this broad is well scoped for the data available, suggesting a
+    single-state or regional analysis would let us control for
+    landform and geography more precisely and remove confounding
+    variables a national model has to absorb. McMahon et al. (2022)
+    took exactly that narrower approach - five aquifer systems in the
+    eastern United States rather than a national sample - and their
+    model reached 0.96 sensitivity and 0.72 specificity, well above
+    what either of our national models produced even during
+    cross-validation. That comparison is not a controlled test of
+    regional scope (different targets and predictor sets, as noted
+    above), but it is consistent with the feedback, so we now weigh a
+    regional pilot as a stronger next step than our earlier framing
+    credited it as. It would still need its own representative
+    training data, held-out evaluation, human-review procedure, and
+    performance-monitoring plan - narrowing scope does not remove
+    those requirements, it only makes them easier to satisfy with the
+    data we can realistically collect.
+    """)
     return
 
 
