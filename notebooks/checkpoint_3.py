@@ -429,7 +429,7 @@ def _(pd):
 
 
 @app.cell
-def _(mo, plt):
+def _(plt):
     def plot_error_rate_by_study(breakdown_df, title):
         # Sequential, single-hue (same blue family as make_plot_grid's
         # histograms): this is one measurement varying by study, not
@@ -457,11 +457,7 @@ def _(mo, plt):
         for _spine in ("top", "right", "left"):
             ax.spines[_spine].set_visible(False)
         fig.tight_layout()
-        # mo.mpl.interactive adds pan/zoom/hover for anyone running the
-        # notebook live; it degrades to the same static PNG as a plain
-        # figure in the published static HTML, so there's no downside
-        # there.
-        return mo.mpl.interactive(fig)
+        return fig
 
     return (plot_error_rate_by_study,)
 
@@ -526,7 +522,6 @@ def _(
     MODEL_COMPARISON_PALETTE,
     PRECISION_FLOOR,
     RECALL_FLOOR,
-    mo,
     plt,
 ):
     def plot_model_comparison(comparison_df, title):
@@ -595,7 +590,7 @@ def _(
                 frameon=False,
             )
         fig.tight_layout()
-        return mo.mpl.interactive(fig)
+        return fig
 
     return (plot_model_comparison,)
 
