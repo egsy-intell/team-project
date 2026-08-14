@@ -1360,7 +1360,20 @@ def _(
     mo.vstack(
         [
             mo.md("##### Model comparison: Model A vs. Model B"),
-            mo.ui.table(comparison_df),
+            # Show only the headline columns here - comparison_df also
+            # carries all-three-tier recall for the benchmarking table
+            # below, but this table stays narrow enough to print cleanly.
+            mo.ui.table(
+                comparison_df[
+                    [
+                        "Model",
+                        "mcl_exceedance recall",
+                        "Macro F1",
+                        "mcl_exceedance precision",
+                        "Meets all Step 3 criteria",
+                    ]
+                ]
+            ),
             plot_model_comparison(
                 comparison_df, "Model comparison vs. Step 3 thresholds"
             ),
