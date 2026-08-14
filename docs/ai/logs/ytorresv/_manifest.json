@@ -5,13 +5,13 @@
   "tool_tier": "Claude subscription — not the free or public tier",
   "how": "Pair-programmed notebook implementation, debugging, lint/CI fixes, git housekeeping (merges/conflicts), and editorial passes on reader-facing prose.",
   "why": "To work through unfamiliar parts of the stack step by step as a learning partner rather than a black box, and to move faster through mechanical work so more time went to modeling/analysis calls.",
-  "total_commits": 142,
-  "date_range": "Jul 11–Aug 12",
-  "days": 33,
+  "total_commits": 172,
+  "date_range": "Jul 11–Aug 13",
+  "days": 34,
   "policy_url": "https://purdue.brightspace.com/d2l/le/content/1565125/viewContent/21824036/View",
   "lede": "I'm <strong>Yai Torres</strong>, one of four people on this GRAD 50400 project (Group 14). This page is my individual pair-programming disclosure under the course's <a href=\"https://purdue.brightspace.com/d2l/le/content/1565125/viewContent/21824036/View\">AI Tool Use Policy</a>, which asks for exactly which tools were used and their tier, the history of each exchange, and how and why each tool was used — answered below, then backed by a real timeline instead of a paraphrase.",
-  "methodology_note": "The commits shown are every commit carrying a <code>Co-Authored-By: Claude Sonnet 5</code> trailer. The 30 threads are the actual coding sessions behind them — some run directly on <code>main</code>/a feature branch in this checkout, others in a git worktree under a <code>claude/*</code> branch — matched to each commit by timestamp (a commit is attributed to the thread whose active window contains it). I'm the author and committer of record on every commit: I decided what to build, which fix to take, and when a section was actually done. Quoted lines are the thread's own opening message, lightly trimmed for length; full transcripts are linked, not reconstructed dialogue. See <a href=\"../notebooks/index.html\">the published report</a> for the project itself, or its closing \"AI usage appendix\" for the team's external chat-thread disclosures (Perplexity, Claude.ai) covering project planning and exploration rather than pair-programming.",
-  "footer_note": "Threads sourced from local Claude Code session logs (21 in this checkout, 9 run inside git worktrees) covering this repository; commits from <code>git log --all --grep=\"Co-Authored-By: Claude\"</code>. Each commit is attributed to the thread whose active time window contains it, except two threads (Aug 5, Aug 7) whose commits merged days later via PR — those list their commit manually rather than by timestamp window. Full prompt/response transcripts for all 30 threads are in <a href=\"logs/ytorresv/index.md\"><code>docs/ai/logs/</code></a>. Regenerate after adding threads or commits with <code>uv run python scripts/toolkit.py ai-disclosure ytorresv</code>.",
+  "methodology_note": "The commits shown are every commit carrying a <code>Co-Authored-By: Claude Sonnet 5</code> trailer. The 35 threads are the actual coding sessions behind them — some run directly on <code>main</code>/a feature branch in this checkout, others in a git worktree under a <code>claude/*</code> branch — matched to each commit by timestamp (a commit is attributed to the thread whose active window contains it). I'm the author and committer of record on every commit: I decided what to build, which fix to take, and when a section was actually done. Quoted lines are the thread's own opening message, lightly trimmed for length; full transcripts are linked, not reconstructed dialogue. See <a href=\"../notebooks/index.html\">the published report</a> for the project itself, or its closing \"AI usage appendix\" for the team's external chat-thread disclosures (Perplexity, Claude.ai) covering project planning and exploration rather than pair-programming.",
+  "footer_note": "Threads sourced from local Claude Code session logs (25 in this checkout, 9 run inside git worktrees) covering this repository; commits from <code>git log --all --grep=\"Co-Authored-By: Claude\"</code>. Each commit is attributed to the thread whose active time window contains it, except two threads (Aug 5, Aug 7) whose commits merged days later via PR — those list their commit manually rather than by timestamp window. Full prompt/response transcripts for all 35 threads are in <a href=\"logs/ytorresv/index.md\"><code>docs/ai/logs/</code></a>. Regenerate after adding threads or commits with <code>uv run python scripts/toolkit.py ai-disclosure ytorresv</code>.",
   "git_author_patterns": [
     "Yaisiel",
     "yaitorr"
@@ -64,6 +64,14 @@
     "phase12": {
       "title": "Writing up and closing out T7",
       "blurb": "Same evening as Model B's review: a report-wide heading-hierarchy bug caught while pulling real held-out numbers, T7's findings drafted against those numbers, that context carried into T8-T10's guiding questions, then T7 closed out."
+    },
+    "phase13": {
+      "title": "Closing out T4/T8/T9/T10",
+      "blurb": "The last stretch of task-tracking cleanup and section-writing: merging T4 into T9/T10 and dropping T8, prepping T9's PR for merge through a round of CI fixes and de-duplication, then fleshing out and closing T10's deployment discussion."
+    },
+    "phase14": {
+      "title": "Wrap-up: conclusion and final deck",
+      "blurb": "With every Step 5 task complete, the last two threads: rewriting the report's Conclusion around the project's actual finding, then building the Check-In #3 presentation deck from the finished notebook."
     }
   },
   "threads": [
@@ -905,6 +913,202 @@
         }
       ],
       "quote": "All modeling tasks are done, and now I need to make sense of the results in prose and answer the guiding questions for T7."
+    },
+    {
+      "order": 31,
+      "sid": "6305be49",
+      "phase": "phase13",
+      "title": "Merging T4/T8/T11, then briefing the team on the T9/T10 handoff",
+      "branch": "T4-T8-T11-update",
+      "date": "Aug 13, 07:15",
+      "transcript": "31-merging-t4-t8-t11-and-briefing-the-team.md",
+      "prompts": 5,
+      "responses": 17,
+      "commits": [
+        {
+          "hash": "5161dd9",
+          "subject": "CP-3: merge T4 into T9/T10, drop T8",
+          "time": "07:20",
+          "summary": "T4's remaining scope (site-sparsity quantification, lead-with-results framing) was already threaded entirely into T9/T10's guiding questions with no separate deliverable of its own, so folded it in rather than leaving it stuck Pending and blocking T11/T12. Dropped T8 (scalability profiling) as premature now that T7 found neither model clears Step 3's recall floor. Both CSV rows kept as the durable record rather than deleted.",
+          "diffstat": "2 files &middot; <span class=\"plus\">+18</span> −81"
+        },
+        {
+          "hash": "e1df3eb",
+          "subject": "CP-3: merge T4 into T9/T10, drop T8, validate T11 (#88)",
+          "time": "07:27",
+          "summary": "PR merge of the above, plus a rehearsal validation of T11 (public repo check) with no changes needed — repo is public, gh-pages is live and current, nothing unmerged that the writeup depends on yet.",
+          "diffstat": "2 files &middot; <span class=\"plus\">+18</span> −81"
+        }
+      ],
+      "quote": "good morning! Let's be done with the prework for today: merge T4 into T9/T10, remove T8 and perform a quick validation of T11 (no changes)."
+    },
+    {
+      "order": 32,
+      "sid": "4d966b38",
+      "phase": "phase13",
+      "title": "Prepping T9 for merge: CI fixes, de-duplication, and a real print-workflow fix",
+      "branch": "t9-evaluation",
+      "date": "Aug 13, 21:52",
+      "transcript": "32-prepping-t9-for-merge.md",
+      "prompts": 20,
+      "responses": 119,
+      "commits": [
+        {
+          "hash": "b672313",
+          "subject": "Fix CI failures in T9 comparison cell: remove empty cells, wrap long lines, reuse build_model_comparison()",
+          "time": "21:56",
+          "summary": "A teammate's T9 PR failed CI on leftover empty cells and ruff line-length/unused-variable violations. Wired the unused Step-3 pass/fail variables into the existing build_model_comparison() helper instead of just deleting them.",
+          "diffstat": "1 file &middot; <span class=\"plus\">+32</span> −21"
+        },
+        {
+          "hash": "4d5caf7",
+          "subject": "Finish T9: remove duplicated task_callout scaffolding, add findings and error-rate charts",
+          "time": "22:06",
+          "summary": "The T9 PR was purely additive and left the old task_callout(\"T9\", ...) placeholder in place alongside the real section, rendering it twice. Removed the placeholder, marked T9 Complete, and added the findings paragraph and error-rate charts the section's own intro had promised but didn't deliver.",
+          "diffstat": "2 files &middot; <span class=\"plus\">+20</span> −76"
+        },
+        {
+          "hash": "c2d0baa",
+          "subject": "Nest T9 as a continuation of the existing evaluation section, not a peer H3",
+          "time": "22:09",
+          "summary": "T9 re-scored the same T7 held-out results the existing evaluation section already covered down to H5. Demoted T9 from a peer H3 to a nested H4 (and its subsections to H5) instead of standing as an almost-identical sibling section.",
+          "diffstat": "1 file &middot; <span class=\"plus\">+4</span> −4"
+        },
+        {
+          "hash": "c1f083b",
+          "subject": "Rewrite T9 intro as flowing continuation prose, drop task-ID references",
+          "time": "22:12",
+          "summary": "Rewrote the intro from a standalone-restart list with task-ID references into one flowing first-person paragraph that picks up the prior section's own handoff line, and folded in the McMahon comparison sentence that was promised but never delivered.",
+          "diffstat": "1 file &middot; <span class=\"plus\">+12</span> −39"
+        },
+        {
+          "hash": "9d9742a",
+          "subject": "Drop task-ID references from checkpoint_3.py comments and variable names",
+          "time": "22:18",
+          "summary": "Reworded inline comments and renamed two visible-source dataframe variables (t9_headline_comparison, t9_full_comparison) away from task IDs, and fixed a stale cross-reference to T9's now-nonexistent guiding-questions callout.",
+          "diffstat": "1 file &middot; <span class=\"plus\">+20</span> −20"
+        },
+        {
+          "hash": "ae174a7",
+          "subject": "Remove T9 content that duplicated the section directly above it",
+          "time": "22:24",
+          "summary": "Now nested under the existing evaluation section, three of T9's pieces turned out to be pure duplicates of content already rendered just above it. Kept only what was genuinely new: the all-three-tier recall comparison and the site-sparsity figure.",
+          "diffstat": "1 file &middot; <span class=\"plus\">+16</span> −59"
+        },
+        {
+          "hash": "2481f89",
+          "subject": "Drop remaining T4/T7/T9 ID references from T10's still-open callout prose",
+          "time": "22:26",
+          "summary": "Reworded T10's still-open task_callout() summary/guiding-questions prose to describe what completed tasks found rather than naming them by ID, leaving the working depends_on=\"T9\" field untouched.",
+          "diffstat": "1 file &middot; <span class=\"plus\">+9</span> −7"
+        },
+        {
+          "hash": "838a55d",
+          "subject": "Source T9's per-tier recall from comparison_df instead of re-deriving it",
+          "time": "22:31",
+          "summary": "T9's comparison cell re-extracted per-tier recall from the same objects comparison_df already used for a different metric slice. Extended build_model_comparison() to include all three tiers' recall so T9 only adds a majority-baseline row to a copy of that table.",
+          "diffstat": "1 file &middot; <span class=\"plus\">+35</span> −38"
+        },
+        {
+          "hash": "519eded",
+          "subject": "Use the actual risk-tier identifiers instead of low/medium/high labels",
+          "time": "22:37",
+          "summary": "Two spots labeled tiers \"low risk\"/\"medium-risk\" instead of the within_reduced_monitoring/above_trigger/mcl_exceedance identifiers the team standardized on before Checkpoint 3. Reworded to match checkpoint_2.py's precise-name-plus-gloss convention.",
+          "diffstat": "1 file &middot; <span class=\"plus\">+5</span> −2"
+        },
+        {
+          "hash": "4eaf66f",
+          "subject": "Keep the T7 comparison table narrow after widening comparison_df",
+          "time": "22:44",
+          "summary": "Widening comparison_df to 7 columns for T9's benefit also widened the original 5-column \"Model comparison\" table where it displays — a print-crop risk per AGENTS.md. Kept that table's display at its original 5 headline columns while comparison_df still carries the extra two internally.",
+          "diffstat": "1 file &middot; <span class=\"plus\">+14</span> −1"
+        },
+        {
+          "hash": "72dce9a",
+          "subject": "Document actual print workflow; split the two widest tables in checkpoint_3",
+          "time": "22:49",
+          "summary": "AGENTS.md's print-workflow doc only mentioned molab, not the team's actual HTML-export-then-Chrome-print path, which can crop wide tables the same way. Documented the real workflow, then split two 12- and 9-column single-row training-summary tables into narrower, logically grouped pairs.",
+          "diffstat": "2 files &middot; <span class=\"plus\">+67</span> −20"
+        }
+      ],
+      "quote": "T9's PR landed. Could you help me prep it for merge? First, let's work on fixing the build. Then, let's walk through the changes together (link: https://github.com/egsy-intell/team-project/pull/89, local branch in local). And then go through any recommendations"
+    },
+    {
+      "order": 33,
+      "sid": "f63333fd",
+      "phase": "phase13",
+      "title": "Fleshing out T10's deployment discussion, then closing T10/T11",
+      "branch": "E_t10",
+      "date": "Aug 13, 23:07",
+      "transcript": "33-fleshing-out-t10-deployment-discussion.md",
+      "prompts": 5,
+      "responses": 24,
+      "commits": [
+        {
+          "hash": "6a109a8",
+          "subject": "Add site-sparsity, predictor-scope, and regional-scope context to Step 5 deployment discussion",
+          "time": "23:36",
+          "summary": "Extended T10 with computed (not estimated) site-sparsity figures pulled from the real train/test partition, fact-checked McMahon et al. (2022)'s predictor set to argue DOC/VOC are more feasible near-term additions than tritium, and incorporated a third Check-In #2 peer-review item weighing a regional pilot against McMahon's narrower, better-performing design.",
+          "diffstat": "1 file &middot; <span class=\"plus\">+115</span> −43"
+        },
+        {
+          "hash": "d0ec21f",
+          "subject": "Mark T10/T11 complete: strip task callouts, move public-repo link to References",
+          "time": "23:36",
+          "summary": "Stripped both task_callout()s now that T10's deployment discussion and T11's public-repo confirmation were done, moved T11's public-codebase paragraph into footer.py's References as project-wide trailing content, and dropped the now-dead checkpoint_1.py import it was the last reason for.",
+          "diffstat": "3 files &middot; <span class=\"plus\">+17</span> −133"
+        }
+      ],
+      "quote": "T10 landed in PR (https://github.com/egsy-intell/team-project/pull/90, available locally), and we need to add some additional context: 1. emphasis on site-sparsity. Use calculated sparsity numbers to emphasize the need for more data[…]"
+    },
+    {
+      "order": 34,
+      "sid": "3e0d5e56",
+      "phase": "phase14",
+      "title": "Rewriting the conclusion for the finished report",
+      "branch": "conclusion-wrap-up",
+      "date": "Aug 13, 23:47",
+      "transcript": "34-rewriting-the-conclusion.md",
+      "prompts": 1,
+      "responses": 6,
+      "commits": [
+        {
+          "hash": "99bdfa5",
+          "subject": "Write-up Wrap-up: Update conclusion",
+          "time": "23:52",
+          "summary": "Compressed Steps 1-4 into one \"How we got here\" retrospective and gave Step 5's actual results a full \"What Step 5 found\" section — the recall failures, the majority-baseline comparison, and a closing call for government/private entities to close the data-sparsity gap the project uncovered, since the modeling itself was properly cautious about leakage and that discipline wasn't the limiting factor.",
+          "diffstat": "1 file &middot; <span class=\"plus\">+88</span> −70"
+        },
+        {
+          "hash": "3882426",
+          "subject": "Write-up Wrap-up: Update conclusion (#91)",
+          "time": "23:54",
+          "summary": "PR merge of the above.",
+          "diffstat": "1 file &middot; <span class=\"plus\">+88</span> −70"
+        }
+      ],
+      "quote": "now that the step 5 is complete, we should update the conclusion to reflect the whole project. We should compress what we have about past checkpoints and give more breathing room to the completed step 5 tasks."
+    },
+    {
+      "order": 35,
+      "sid": "10dc6b7b",
+      "phase": "phase14",
+      "title": "Building the Check-In #3 deck",
+      "branch": "cp3-preso",
+      "date": "Aug 14, 00:10",
+      "transcript": "35-building-the-check-in-3-deck.md",
+      "prompts": 3,
+      "responses": 15,
+      "commits": [
+        {
+          "hash": "bf6a31a",
+          "subject": "Add Check-In #3 (Final) presentation deck",
+          "time": "01:05",
+          "summary": "Built the 20-slide results-first Final deck by actually executing checkpoint_3.py for every figure rather than trusting stale exports (catching a 44/46-vs-46/46 drafting error along the way), naming peer-feedback items the spec requires, and generalizing scripts/toolkit.py's presentation command with a --source flag so each checkpoint can build its own deck.",
+          "diffstat": "6 files &middot; <span class=\"plus\">+212</span> −10"
+        }
+      ],
+      "quote": "based on @specs/checkpoint-3/GRAD 50400 - Project Checkpoint-3.pdf and @preso/checkpoint2_deck.md , let's generate the checkpoint3_deck.md. At a high-level, it should satisfy the spec and provide a continuation of the narrative, now that the project is done."
     }
   ]
 }

@@ -32,5 +32,10 @@ Full prompt/response history for every Claude Code thread behind [Yai's pairing-
 28. [T6/T7 retuning guidance, then T7 prep placeholder cells](28-t6-t7-retuning-and-prep-placeholders.md)
 29. [Reviewing Model B, then DRYing its training cells](29-reviewing-and-drying-model-b.md)
 30. [Fixing heading hierarchy, then drafting and closing out T7](30-heading-hierarchy-and-closing-out-t7.md)
+31. [Merging T4/T8/T11, then briefing the team on the T9/T10 handoff](31-merging-t4-t8-t11-and-briefing-the-team.md)
+32. [Prepping T9 for merge: CI fixes, de-duplication, and a real print-workflow fix](32-prepping-t9-for-merge.md)
+33. [Fleshing out T10's deployment discussion, then closing T10/T11](33-fleshing-out-t10-deployment-discussion.md)
+34. [Rewriting the conclusion for the finished report](34-rewriting-the-conclusion.md)
+35. [Building the Check-In #3 deck](35-building-the-check-in-3-deck.md)
 
 Other teammates' disclosures live in their own sibling directory under `docs/ai/logs/`.
