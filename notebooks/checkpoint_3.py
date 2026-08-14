@@ -197,8 +197,9 @@ def _(mo):
     lighter on detail and leading with results, and quantifying the
     underlying site-count sparsity (e.g. ~5 sites/state on average
     across the bottom 15 states) to acknowledge the geographic
-    generalizability limit it creates. Both are threaded into T9's
-    and T10's guiding questions below.
+    generalizability limit it creates. Both are threaded into the
+    benchmarking below and the deployment discussion's guiding
+    questions.
     """)
     return
 
@@ -293,8 +294,8 @@ def _(StratifiedGroupKFold, tapwater_train_df):
 
 @app.cell(hide_code=True)
 def _(f1_score, precision_score, recall_score):
-    # Shared CV metrics. T5 selects Model A by macro-F1 only.
-    # Recall and precision are retained as diagnostics for T7/T9.
+    # Shared CV metrics. Model A is selected by macro-F1 only; recall
+    # and precision are retained as diagnostics for later evaluation.
     def _macro_f1(estimator, X_valid, y_valid):
         _pred = estimator.predict(X_valid)
         return f1_score(
@@ -377,8 +378,8 @@ def _(mo):
     model by adding a dict entry, not by restructuring it - and
     `plot_model_comparison()` renders that table as small multiples,
     one panel per metric with its Step 3 threshold line. All five
-    live here, next to `tier_model_scoring`, so T9's benchmarking can
-    reuse them too.
+    live here, next to `tier_model_scoring`, so the benchmarking
+    section below can reuse them too.
     """)
     return
 
@@ -490,10 +491,9 @@ def _(pd):
 
         `results` is `{model_name: score_model() result}`; add a
         model by adding a dict entry, not by restructuring the table.
-        Pulls the three T7/T9 headline metrics (mcl_exceedance
-        recall, macro F1, mcl_exceedance precision) plus the overall
-        Step 3 pass/fail from each model's `check_success_criteria()`
-        output.
+        Pulls the three headline metrics (mcl_exceedance recall,
+        macro F1, mcl_exceedance precision) plus the overall Step 3
+        pass/fail from each model's `check_success_criteria()` output.
         """
         _rows = []
         for _name, _result in results.items():
@@ -785,8 +785,8 @@ def _(
         "model__class_weight": [None, "balanced"],
     }
 
-    # T5 selects the candidate with the highest mean grouped-CV
-    # macro-F1. High-risk recall/precision remain diagnostics only.
+    # The candidate with the highest mean grouped-CV macro-F1 is
+    # selected. High-risk recall/precision remain diagnostics only.
     model_a_grid_search = GridSearchCV(
         estimator=_pipeline,
         param_grid=_param_grid,
@@ -1476,12 +1476,12 @@ def _(
     # Apply the Step 3 risk-tier thresholds and benchmark each model
     # against them, reusing the same headline-metrics-plus-pass/fail
     # table built earlier in the notebook rather than re-deriving it.
-    t9_headline_comparison = build_model_comparison(
+    step3_criteria_comparison_df = build_model_comparison(
         {"Model A": model_a_result, "Model B": model_b_result}
     )
 
     # Majority baseline, computed correctly: on the SAME 46-site test
-    # partition T7 scored against, not Step 3's 236-site ss_scored_df.
+    # partition scored above, not Step 3's 236-site ss_scored_df.
     _majority_share = (
         tapwater_test_df["pfas_risk_tier"] == "within_reduced_monitoring"
     ).mean()
@@ -1504,7 +1504,7 @@ def _(
             "macro_f1": round(_macro_f1, 4),
         }
 
-    t9_full_comparison = pd.DataFrame([
+    all_tier_recall_comparison_df = pd.DataFrame([
         {
             "model": "Majority baseline (always guesses low risk)",
             "recall_low_risk": 1.0,
@@ -1516,8 +1516,8 @@ def _(
         _recall_row("Model B", model_b_result),
     ])
 
-    # Absorb T4's scope: compute the real site-sparsity-by-state figure,
-    # replacing the Check-In #2 placeholder estimate with an actual number.
+    # Compute the real site-sparsity-by-state figure, replacing the
+    # Check-In #2 placeholder estimate with an actual number.
     _sites_per_state = pd.concat(
         [tapwater_train_df["State"], tapwater_test_df["State"]]
     ).value_counts().sort_values()
@@ -1538,9 +1538,9 @@ def _(
     # breakdown - no extra metrics dumped beyond what's needed.
     mo.vstack([
         mo.md("##### Model comparison against Step 3 success criteria"),
-        mo.ui.table(t9_headline_comparison),
+        mo.ui.table(step3_criteria_comparison_df),
         mo.md("##### Model comparison, all three risk tiers"),
-        mo.ui.table(t9_full_comparison),
+        mo.ui.table(all_tier_recall_comparison_df),
         mo.md(
             f"15 sparsest states average "
             f"**{bottom_15_avg_sites} sites each**."
@@ -1568,7 +1568,7 @@ def _(
             "Northeast Iowa, has zero error — so state-level sparsity "
             "alone doesn't explain the gap; it lines up instead with "
             "each held-out study's true risk-tier mix, consistent "
-            "with T7's finding."
+            "with the earlier held-out error analysis above."
         ),
     ])
     return
