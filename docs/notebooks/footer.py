@@ -199,6 +199,8 @@ def _(mo):
       and introduced a new justification, developed during this conversation,
       around private-well populations falling outside EPA's public-water-system
       rule.
+    * For coding assistance disclosure please refer to the project's README.md
+      ([direct link](https://github.com/egsy-intell/team-project#ai-use-disclosure))
     """)
     return
 
