@@ -11,7 +11,7 @@
 
 import marimo
 
-__generated_with = "0.23.16"
+__generated_with = "0.23.14"
 app = marimo.App(width="medium")
 
 
@@ -197,8 +197,9 @@ def _(mo):
     lighter on detail and leading with results, and quantifying the
     underlying site-count sparsity (e.g. ~5 sites/state on average
     across the bottom 15 states) to acknowledge the geographic
-    generalizability limit it creates. Both are threaded into T9's
-    and T10's guiding questions below.
+    generalizability limit it creates. Both are threaded into the
+    benchmarking below and the deployment discussion's guiding
+    questions.
     """)
     return
 
@@ -293,8 +294,8 @@ def _(StratifiedGroupKFold, tapwater_train_df):
 
 @app.cell(hide_code=True)
 def _(f1_score, precision_score, recall_score):
-    # Shared CV metrics. T5 selects Model A by macro-F1 only.
-    # Recall and precision are retained as diagnostics for T7/T9.
+    # Shared CV metrics. Model A is selected by macro-F1 only; recall
+    # and precision are retained as diagnostics for later evaluation.
     def _macro_f1(estimator, X_valid, y_valid):
         _pred = estimator.predict(X_valid)
         return f1_score(
@@ -377,8 +378,8 @@ def _(mo):
     model by adding a dict entry, not by restructuring it - and
     `plot_model_comparison()` renders that table as small multiples,
     one panel per metric with its Step 3 threshold line. All five
-    live here, next to `tier_model_scoring`, so T9's benchmarking can
-    reuse them too.
+    live here, next to `tier_model_scoring`, so the benchmarking
+    section below can reuse them too.
     """)
     return
 
@@ -490,19 +491,25 @@ def _(pd):
 
         `results` is `{model_name: score_model() result}`; add a
         model by adding a dict entry, not by restructuring the table.
-        Pulls the three T7/T9 headline metrics (mcl_exceedance
-        recall, macro F1, mcl_exceedance precision) plus the overall
-        Step 3 pass/fail from each model's `check_success_criteria()`
-        output.
+        Pulls recall on all three risk tiers, macro F1, mcl_exceedance
+        precision, and the overall Step 3 pass/fail from each model's
+        `check_success_criteria()`/`evaluate_tier_model()` output.
         """
         _rows = []
         for _name, _result in results.items():
             _criteria = _result["criteria"]["criteria"].set_index("Metric")[
                 "Value"
             ]
+            _pc = _result["metrics"]["per_class"]
             _rows.append(
                 {
                     "Model": _name,
+                    "within_reduced_monitoring recall": round(
+                        _pc.loc["within_reduced_monitoring", "recall"], 2
+                    ),
+                    "above_trigger recall": round(
+                        _pc.loc["above_trigger", "recall"], 2
+                    ),
                     "mcl_exceedance recall": _criteria[
                         "mcl_exceedance recall"
                     ],
@@ -785,8 +792,8 @@ def _(
         "model__class_weight": [None, "balanced"],
     }
 
-    # T5 selects the candidate with the highest mean grouped-CV
-    # macro-F1. High-risk recall/precision remain diagnostics only.
+    # The candidate with the highest mean grouped-CV macro-F1 is
+    # selected. High-risk recall/precision remain diagnostics only.
     model_a_grid_search = GridSearchCV(
         estimator=_pipeline,
         param_grid=_param_grid,
@@ -836,7 +843,10 @@ def _(
 
     _selected = model_a_cv_results[model_a_cv_results["Selected"]].iloc[0]
 
-    model_a_training_summary = pd.DataFrame(
+    # Split into two narrower tables rather than one 12-column row -
+    # data counts on one side, selected hyperparameters/CV scores on
+    # the other, so neither table risks cropping when printed.
+    model_a_training_data_summary = pd.DataFrame(
         [
             {
                 "Training rows": len(_X_train),
@@ -845,6 +855,12 @@ def _(
                 "Encoded predictors": _encoded_count,
                 "Missing predictor values": int(_X_train.isna().sum().sum()),
                 "log1p predictors": _skewed_count,
+            }
+        ]
+    )
+    model_a_tuning_summary = pd.DataFrame(
+        [
+            {
                 "Best C": model_a_grid_search.best_params_["model__C"],
                 "Best class weight": (
                     "unweighted"
@@ -864,7 +880,8 @@ def _(
     return (
         model_a_best_estimator,
         model_a_cv_results,
-        model_a_training_summary,
+        model_a_training_data_summary,
+        model_a_tuning_summary,
         model_a_unseen_categories,
     )
 
@@ -938,7 +955,8 @@ def _(
     model_a_cv_results,
     model_a_direction_audit,
     model_a_top_coefficients,
-    model_a_training_summary,
+    model_a_training_data_summary,
+    model_a_tuning_summary,
     model_a_unseen_categories,
 ):
     if model_a_unseen_categories.empty:
@@ -1008,8 +1026,10 @@ def _(
 
     mo.vstack(
         [
-            mo.md("##### Training and tuning summary"),
-            mo.ui.table(model_a_training_summary),
+            mo.md("##### Training data summary"),
+            mo.ui.table(model_a_training_data_summary),
+            mo.md("##### Selected hyperparameters & CV scores"),
+            mo.ui.table(model_a_tuning_summary),
             mo.md(
                 """
                 ##### Tuning grid results
@@ -1152,12 +1172,22 @@ def _(
     )
 
     _selected = model_b_cv_results[model_b_cv_results["Selected"]].iloc[0]
-    model_b_training_summary = pd.DataFrame(
+
+    # Split into two narrower tables rather than one 9-column row -
+    # data counts on one side, selected hyperparameters/CV scores on
+    # the other, so neither table risks cropping when printed.
+    model_b_training_data_summary = pd.DataFrame(
         [
             {
                 "Training rows": len(_X_train),
                 "Study groups": study_groups.nunique(),
                 "Raw predictors": len(model_predictors),
+            }
+        ]
+    )
+    model_b_tuning_summary = pd.DataFrame(
+        [
+            {
                 "Best trees": model_b_grid_search.best_params_[
                     "model__n_estimators"
                 ],
@@ -1176,15 +1206,27 @@ def _(
             }
         ]
     )
-    return model_b_best_estimator, model_b_cv_results, model_b_training_summary
+    return (
+        model_b_best_estimator,
+        model_b_cv_results,
+        model_b_training_data_summary,
+        model_b_tuning_summary,
+    )
 
 
 @app.cell(hide_code=True)
-def _(mo, model_b_cv_results, model_b_training_summary):
+def _(
+    mo,
+    model_b_cv_results,
+    model_b_training_data_summary,
+    model_b_tuning_summary,
+):
     mo.vstack(
         [
-            mo.md("##### Model B training and tuning summary"),
-            mo.ui.table(model_b_training_summary),
+            mo.md("##### Model B training data summary"),
+            mo.ui.table(model_b_training_data_summary),
+            mo.md("##### Model B selected hyperparameters & CV scores"),
+            mo.ui.table(model_b_tuning_summary),
             mo.md("##### Randomized-search results"),
             mo.ui.table(model_b_cv_results.round(4)),
         ]
@@ -1353,7 +1395,20 @@ def _(
     mo.vstack(
         [
             mo.md("##### Model comparison: Model A vs. Model B"),
-            mo.ui.table(comparison_df),
+            # Show only the headline columns here - comparison_df also
+            # carries all-three-tier recall for the benchmarking table
+            # below, but this table stays narrow enough to print cleanly.
+            mo.ui.table(
+                comparison_df[
+                    [
+                        "Model",
+                        "mcl_exceedance recall",
+                        "Macro F1",
+                        "mcl_exceedance precision",
+                        "Meets all Step 3 criteria",
+                    ]
+                ]
+            ),
             plot_model_comparison(
                 comparison_df, "Model comparison vs. Step 3 thresholds"
             ),
@@ -1429,76 +1484,98 @@ def _(RECALL_FLOOR, comparison_df, mo, model_a_cv_results, model_b_cv_results):
     return
 
 
-@app.cell(hide_code=True)
-def _(mo, task_callout):
-    mo.vstack(
-        [
-            mo.md("#### Model validation & benchmarking"),
-            task_callout(
-                "T9",
-                category="Step 5 - Evaluation",
-                lead="Yai, Somyaranjan",
-                depends_on="T7",
-                summary=(
-                    "Apply the per-class metrics framework and "
-                    "risk-tier thresholds to both models; benchmark "
-                    "against the Step 3 evaluation plan. Absorbs T4's "
-                    "scope: computing the actual site-sparsity-by-state "
-                    "figures for the Check-In #2 feedback integration, "
-                    "rather than leaving the ~5 sites/state figure as a "
-                    "placeholder estimate."
-                ),
-                guiding_questions=[
-                    (
-                        "How do the tuned models compare to the majority "
-                        "baseline and to each other on macro-F1 and "
-                        "per-tier recall, not just on `mcl_exceedance`? "
-                        "Note: Step 3's `majority_baseline` is computed "
-                        "over the full 236-site `ss_scored_df`, not the "
-                        "46-site held-out partition T7 actually scored "
-                        "against — a same-partition majority baseline is "
-                        "the fairer comparison, and on that partition "
-                        "Model A's held-out macro F1 (0.2347) already "
-                        "matches it exactly, since Model A predicts the "
-                        "majority tier for all 46 held-out sites."
-                    ),
-                    (
-                        "Does the benchmarking result change which model "
-                        "the team recommends for the deployment discussion "
-                        "in T10?"
-                    ),
-                    (
-                        "Per Check-In #2 peer feedback, does this section "
-                        "stay lighter on detail and lead with results, "
-                        "rather than listing every metric computed?"
-                    ),
-                    (
-                        "Per that same feedback, can we quantify how "
-                        "sparse the underlying site data is by state "
-                        "(e.g. ~5 sites/state on average across the "
-                        "bottom 15 states), and does that sparsity line "
-                        "up with where either model's errors concentrate? "
-                        "T7 found errors track each held-out study's true "
-                        "tier composition rather than geography per se "
-                        "(Cape Cod's 92%/85% error rates reflect it being "
-                        "overwhelmingly high-risk, not where it is) — does "
-                        "state-level sparsity explain why neither model "
-                        "ever learns enough signal to override the "
-                        "majority-tier default in the first place?"
-                    ),
-                    (
-                        "For context only, not as a scored benchmark: how "
-                        "does either model's `mcl_exceedance` recall/"
-                        "precision compare to McMahon et al. (2022)'s own "
-                        "boosted-regression-tree model (SI §S5: 0.96 "
-                        "sensitivity, 0.72 specificity), given its target "
-                        "(binary PFAS detection) and predictor set "
-                        "(geochemistry-inclusive) both differ from ours?"
-                    ),
-                ],
-            ),
-        ]
+@app.cell
+def _(mo):
+    mo.md(r"""
+    #### Model validation & benchmarking
+
+    We check that held-out result against a fairer baseline and a
+    fuller picture: recall across all three risk tiers rather than
+    just the highest-risk one, a majority baseline recomputed on the
+    same 46-site partition rather than Step 3's original 236-site
+    figure, and — per Check-In #2 feedback — how sparse the underlying
+    site data actually is, set against where each model's errors
+    concentrate by held-out study.
+
+    For context only, not as a scored benchmark — its binary target
+    and geochemistry-inclusive predictor set aren't directly
+    comparable — McMahon et al. (2022)'s own model reaches 0.96
+    sensitivity and 0.72 specificity (SI §S5).
+    """)
+    return
+
+
+@app.cell
+def _(comparison_df, mo, pd, tapwater_test_df, tapwater_train_df):
+    # Majority baseline, computed correctly: on the SAME 46-site test
+    # partition scored above, not Step 3's 236-site ss_scored_df.
+    _majority_share = (
+        tapwater_test_df["pfas_risk_tier"] == "within_reduced_monitoring"
+    ).mean()
+    majority_baseline_macro_f1 = round(
+        2 * _majority_share / (3 * (1 + _majority_share)), 4
     )
+
+    # Add the corrected baseline to the same per-tier recall columns
+    # already built into comparison_df above, rather than re-deriving
+    # each model's recall from its held-out result a second time.
+    all_tier_recall_comparison_df = pd.concat(
+        [
+            pd.DataFrame([{
+                "Model": (
+                    "Majority baseline (always guesses "
+                    "within_reduced_monitoring)"
+                ),
+                "within_reduced_monitoring recall": 1.0,
+                "above_trigger recall": 0.0,
+                "mcl_exceedance recall": 0.0,
+                "Macro F1": majority_baseline_macro_f1,
+            }]),
+            comparison_df[
+                [
+                    "Model",
+                    "within_reduced_monitoring recall",
+                    "above_trigger recall",
+                    "mcl_exceedance recall",
+                    "Macro F1",
+                ]
+            ],
+        ],
+        ignore_index=True,
+    )
+
+    # Compute the real site-sparsity-by-state figure, replacing the
+    # Check-In #2 placeholder estimate with an actual number.
+    _sites_per_state = pd.concat(
+        [tapwater_train_df["State"], tapwater_test_df["State"]]
+    ).value_counts().sort_values()
+    bottom_15_avg_sites = round(_sites_per_state.head(15).mean(), 1)
+    sparsest_states = _sites_per_state.head(15)
+
+    mo.vstack([
+        mo.md("##### Model comparison, all three risk tiers"),
+        mo.ui.table(all_tier_recall_comparison_df),
+        mo.md(
+            f"15 sparsest states average "
+            f"**{bottom_15_avg_sites} sites each**."
+        ),
+        mo.ui.table(
+            sparsest_states.reset_index().rename(
+                columns={"index": "state", "State": "sites"}
+            )
+        ),
+        mo.md(
+            "Against the corrected, same-partition baseline, Model A "
+            "is statistically indistinguishable from it (identical "
+            f"{majority_baseline_macro_f1} macro F1) - it predicts the "
+            "majority tier for every held-out site. Model B moves "
+            "slightly off that default but still misses every "
+            "`above_trigger` site. State-level sparsity alone doesn't "
+            "explain the gap: per the error-rate-by-study breakdown "
+            "above, it lines up instead with each held-out study's "
+            "true risk-tier mix."
+        ),
+    ])
     return
 
 
@@ -1625,9 +1702,10 @@ def _(mo, task_callout):
                 summary=(
                     "Draft the discussion of deployment feasibility, "
                     "pitfalls, and lessons learned required by Step 5. "
-                    "Shares T4's absorbed scope with T9: explicitly "
-                    "acknowledging the site-sparsity limitation in the "
-                    "conclusion, per Check-In #2 feedback."
+                    "Shares the site-sparsity scope absorbed into the "
+                    "benchmarking above: explicitly acknowledging that "
+                    "limitation in the conclusion, per Check-In #2 "
+                    "feedback."
                 ),
                 guiding_questions=[
                     (
@@ -1638,8 +1716,9 @@ def _(mo, task_callout):
                     (
                         "What's the single biggest pitfall the team ran "
                         "into across Steps 1-5 that a future team repeating "
-                        "this project should know about going in? T7 found "
-                        "a stark CV-to-held-out generalization gap "
+                        "this project should know about going in? The "
+                        "held-out evaluation found a stark CV-to-held-out "
+                        "generalization gap "
                         "(grouped-CV `mcl_exceedance` recall of 0.41-0.52 "
                         "during tuning collapsed to 0.00-0.07 on 3 unseen "
                         "held-out studies) with only 190 training rows "
@@ -1648,8 +1727,8 @@ def _(mo, task_callout):
                         "more?"
                     ),
                     (
-                        "T7 found neither model clears Step 3's recall "
-                        "floor on the held-out set — does that change how "
+                        "Neither model clears Step 3's recall floor on "
+                        "the held-out set — does that change how "
                         "'the recommended model's main limitation' should "
                         "even be framed here? Rather than choosing between "
                         "interpretability vs. accuracy, or the land-use-"
