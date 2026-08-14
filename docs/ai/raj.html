@@ -1,0 +1,235 @@
+<title>Pairing Log &mdash; Gulshan Raj Shetty</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="AI use disclosure for Gulshan Raj Shetty, per the course AI Tool Use Policy.">
+<style>
+  @font-face {
+    font-family: "ui-mono";
+    src: local("SF Mono"), local("Cascadia Code"), local("Consolas");
+  }
+
+  :root {
+    --bg: #f4f7f6;
+    --surface: #ffffff;
+    --surface-2: #eaf0ee;
+    --ink: #12201c;
+    --ink-soft: #4f625c;
+    --ink-faint: #7c8c86;
+    --line: #d7e2de;
+    --accent: #1c7268;
+    --accent-soft: #e3f0ed;
+    --accent-ink: #0f4a44;
+    color-scheme: light;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0c1412; --surface: #121d1a; --surface-2: #172521;
+      --ink: #e7efec; --ink-soft: #a7bab3; --ink-faint: #6d827b;
+      --line: #22332e; --accent: #45b0a3; --accent-soft: #16302c;
+      --accent-ink: #8fdccf; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0c1412; --surface: #121d1a; --surface-2: #172521;
+    --ink: #e7efec; --ink-soft: #a7bab3; --ink-faint: #6d827b;
+    --line: #22332e; --accent: #45b0a3; --accent-soft: #16302c;
+    --accent-ink: #8fdccf; color-scheme: dark;
+  }
+  :root[data-theme="light"] {
+    --bg: #f4f7f6; --surface: #ffffff; --surface-2: #eaf0ee;
+    --ink: #12201c; --ink-soft: #4f625c; --ink-faint: #7c8c86;
+    --line: #d7e2de; --accent: #1c7268; --accent-soft: #e3f0ed;
+    --accent-ink: #0f4a44; color-scheme: light;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, "Segoe UI", system-ui, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.5; -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 800px; margin: 0 auto; padding: 4rem 1.5rem 6rem; overflow-x: hidden; }
+  code { font-family: ui-mono, "SF Mono", "Cascadia Code", Consolas, monospace; font-size: 0.92em; }
+  a { color: var(--accent-ink); text-decoration-color: var(--line); }
+  a:hover { text-decoration-color: currentColor; }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .eyebrow {
+    font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--accent-ink); margin: 0 0 0.75rem;
+  }
+  h1 { font-size: clamp(1.9rem, 4vw, 2.5rem); line-height: 1.15; letter-spacing: -0.01em; margin: 0 0 0.9rem; text-wrap: balance; }
+  .lede { font-size: 1.05rem; color: var(--ink-soft); max-width: 62ch; margin: 0 0 2rem; }
+  .lede strong { color: var(--ink); font-weight: 600; }
+  .stats {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1px; background: var(--line); border: 1px solid var(--line);
+    border-radius: 10px; overflow: hidden; margin-bottom: 1.75rem;
+  }
+  .stat { background: var(--surface); padding: 0.9rem 1rem; }
+  .stat .n {
+    font-family: ui-mono, monospace; font-variant-numeric: tabular-nums;
+    font-size: 1.35rem; font-weight: 600; color: var(--accent-ink); display: block;
+  }
+  .stat .l { font-size: 0.72rem; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.06em; }
+  .note {
+    font-size: 0.88rem; color: var(--ink-faint); border-left: 2px solid var(--line);
+    padding-left: 0.9rem; margin: 0 0 2rem;
+  }
+  .disclosure {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px;
+    background: var(--line); border: 1px solid var(--line); border-radius: 10px;
+    overflow: hidden; margin: 0 0 1.75rem;
+  }
+  .disclosure-item { background: var(--surface); padding: 1rem 1.15rem; }
+  .disclosure-item .dl-label {
+    display: block; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--accent-ink); margin-bottom: 0.4rem;
+  }
+  .disclosure-item p { margin: 0; font-size: 0.86rem; color: var(--ink-soft); }
+  @media (max-width: 560px) { .disclosure { grid-template-columns: 1fr; } }
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 1.25rem; margin: 0 0 3rem;
+    font-size: 0.78rem; color: var(--ink-faint);
+  }
+  .legend span { display: inline-flex; align-items: center; gap: 0.4rem; }
+  .legend .dot {
+    width: 9px; height: 9px; border-radius: 50%; background: var(--accent);
+    display: inline-block; flex: none; opacity: 0.55;
+  }
+  .legend .dot.thread { width: 11px; height: 11px; opacity: 1; }
+  .legend .dot.milestone {
+    width: 13px; height: 13px; background: var(--accent-soft);
+    border: 1.5px solid var(--accent); opacity: 1;
+  }
+  .toc {
+    display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0 0 3.5rem;
+    padding: 0; list-style: none;
+  }
+  .toc a {
+    display: block; font-size: 0.82rem; padding: 0.35rem 0.7rem;
+    border: 1px solid var(--line); border-radius: 999px; color: var(--ink-soft);
+    text-decoration: none; white-space: nowrap;
+  }
+  .toc a:hover { border-color: var(--accent); color: var(--accent-ink); }
+  section.phase { margin-bottom: 2.75rem; }
+  .tl-row { display: flex; align-items: flex-start; }
+  .tl-time {
+    flex: 0 0 4.75rem; width: 4.75rem; text-align: right; padding-right: 0.9rem;
+    padding-top: 0.2rem; font-family: ui-mono, monospace; font-variant-numeric: tabular-nums; line-height: 1.4;
+  }
+  .tl-time .d { display: block; font-size: 0.72rem; color: var(--ink-soft); font-weight: 600; }
+  .tl-time .t { display: block; font-size: 0.66rem; color: var(--ink-faint); }
+  .tl-rail { flex: 0 0 1.6rem; width: 1.6rem; position: relative; align-self: stretch; }
+  .tl-rail::before {
+    content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 1px;
+    background: var(--line); transform: translateX(-50%);
+  }
+  .tl-rail .dot {
+    position: absolute; left: 50%; top: 0.55rem; width: 7px; height: 7px; border-radius: 50%;
+    background: var(--accent); opacity: 0.55; transform: translate(-50%, -50%); box-shadow: 0 0 0 3px var(--bg);
+  }
+  .tl-row.thread .tl-rail .dot { width: 10px; height: 10px; opacity: 1; }
+  .tl-row.milestone .tl-rail::before { top: 0.7rem; }
+  .tl-row.milestone .tl-rail .dot {
+    width: 1.55rem; height: 1.55rem; border-radius: 50%; background: var(--accent-soft);
+    border: 1.5px solid var(--accent); opacity: 1; top: 0.7rem; display: flex; align-items: center;
+    justify-content: center; font-family: ui-mono, monospace; font-size: 0.65rem; font-weight: 700;
+    color: var(--accent-ink); box-shadow: 0 0 0 3px var(--bg);
+  }
+  .tl-content { flex: 1 1 auto; min-width: 0; padding-bottom: 1.2rem; }
+  .tl-row.milestone .tl-content { padding-top: 0.2rem; padding-bottom: 0.9rem; }
+  .tl-row.thread .tl-content { padding-bottom: 0.7rem; }
+  .tl-row.milestone h2 { font-size: 1.15rem; margin: 0 0 0.35rem; letter-spacing: -0.005em; scroll-margin-top: 1.5rem; }
+  .phase-blurb { color: var(--ink-soft); font-size: 0.94rem; margin: 0; max-width: 58ch; }
+  .tl-row.thread h3 { font-size: 1rem; font-weight: 700; margin: 0 0 0.3rem; letter-spacing: -0.003em; }
+  .thread-quote {
+    margin: 0 0 0.4rem; padding: 0.15rem 0 0.15rem 0.75rem; border-left: 2px solid var(--accent);
+    color: var(--ink-soft); font-size: 0.87rem; font-style: italic; max-width: 56ch;
+  }
+  .thread-meta { font-family: ui-mono, monospace; font-size: 0.68rem; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+  ol.entries { list-style: none; margin: 0 0 0.3rem; padding: 0; }
+  .entry-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; }
+  .entry-head h4 { font-size: 0.93rem; font-weight: 600; margin: 0 0 0.28rem; letter-spacing: -0.003em; color: var(--ink); }
+  .entry-head .hash { font-family: ui-mono, monospace; font-size: 0.66rem; color: var(--ink-faint); flex: 0 0 auto; padding-top: 0.12rem; }
+  .tl-content p.entry-p { margin: 0 0 0.4rem; color: var(--ink-soft); font-size: 0.87rem; max-width: 55ch; }
+  .diffstat { font-family: ui-mono, monospace; font-size: 0.68rem; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+  .diffstat .plus { color: var(--accent-ink); }
+  @media (max-width: 620px) {
+    .wrap { padding: 2.5rem 1rem 4rem; }
+    .tl-time { flex-basis: 3.4rem; width: 3.4rem; padding-right: 0.5rem; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .entry-head { flex-direction: column; gap: 0.1rem; }
+    .thread-meta { line-height: 1.5; }
+  }
+  @media (max-width: 400px) {
+    .tl-time { flex-basis: 2.5rem; width: 2.5rem; padding-right: 0.4rem; }
+    .tl-rail { flex-basis: 1.2rem; width: 1.2rem; }
+    .stats { grid-template-columns: 1fr 1fr; }
+  }
+  footer.page { border-top: 1px solid var(--line); padding-top: 1.5rem; color: var(--ink-faint); font-size: 0.82rem; }
+  footer.page a { color: inherit; }
+</style>
+
+<div class="wrap">
+
+  <p class="eyebrow">AI Use Disclosure</p>
+  <h1>Every thread and commit where GitHub Copilot Free + ChatGPT Free paired with Gulshan on this project</h1>
+  <p class="lede">
+    This page is Gulshan Raj Shetty's individual pair-programming disclosure under the course's <a href="https://purdue.brightspace.com/d2l/le/content/1565125/viewContent/21824036/View">AI Tool Use Policy</a>, which asks for exactly which tools were used and their tier, the history of each exchange, and how and why each tool was used.
+  </p>
+
+  <div class="disclosure">
+    <div class="disclosure-item">
+      <span class="dl-label">Tool &amp; tier</span>
+      <p>GitHub Copilot Free + ChatGPT Free &mdash; Free/publicly available tiers (no paid subscription).</p>
+    </div>
+    <div class="disclosure-item">
+      <span class="dl-label">How</span>
+      <p>GitHub Copilot Free was used for inline code completion and to help troubleshoot syntax and lint errors. ChatGPT Free was used as a coding assistant to reason through the Model A implementation, review peer feedback, and finalize the T5 code and report wording.</p>
+    </div>
+    <div class="disclosure-item">
+      <span class="dl-label">Why</span>
+      <p>These tools were used to speed up repetitive coding work, identify syntax or implementation issues, and provide a second check on the model-training logic and report wording while the final technical decisions remained with me.</p>
+    </div>
+    <div class="disclosure-item">
+      <span class="dl-label">History of the exchange</span>
+      <p>Every thread below links its full prompt/response transcript; all
+      2 are also collected in
+      <a href="logs/raj/ShettyG/index.md"><code>docs/ai/logs/raj/ShettyG/</code></a>.</p>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><span class="n">2</span><span class="l">Threads</span></div><div class="stat"><span class="n">0</span><span class="l">Commits with GitHub Copilot Free + ChatGPT Free</span></div>
+  </div>
+
+  <p class="note">
+    <strong>Methodology.</strong> Generated from a manifest at <code>docs/ai/logs/raj/ShettyG/_manifest.json</code> via <code>uv run python scripts/toolkit.py ai-disclosure raj/ShettyG</code> - see <a href="skill/README.md">docs/ai/skill/</a> for how that manifest and its transcripts were put together, and <a href="skill/POLICY.md">the policy text</a> this disclosure responds to.
+  </p>
+
+  <section class="phase">
+    <div class="tl-row thread">
+      <div class="tl-time"><span class="d">Aug 2026</span></div>
+      <div class="tl-rail"><span class="dot"></span></div>
+      <div class="tl-content">
+        <h3>Model A implementation and T5 peer-review revisions</h3>
+        <p class="thread-meta">branch Task-T5-Model-A &middot; 10 prompts, 10 responses &middot; <a href="logs/raj/ShettyG/01-chatgpt-t5-model-a.md">full transcript &rarr;</a></p>
+      </div>
+    </div>
+    <div class="tl-row thread">
+      <div class="tl-time"><span class="d">Aug 2026</span></div>
+      <div class="tl-rail"><span class="dot"></span></div>
+      <div class="tl-content">
+        <h3>Code completion and syntax troubleshooting</h3>
+        <p class="thread-meta">branch Task-T5-Model-A &middot; 5 prompts, 5 responses &middot; <a href="logs/raj/ShettyG/02-github-copilot-reconstructed.md">full transcript &rarr;</a></p>
+      </div>
+    </div>
+  </section>
+
+  <footer class="page">
+    <p>
+      <strong>Supporting non-AI tool:</strong> Marimo Web Notebook was used to enter and format reader-facing text, including callouts and Markdown content. It was used as the notebook authoring environment, not as an AI-generation tool.
+    </p>
+  </footer>
+
+</div>
