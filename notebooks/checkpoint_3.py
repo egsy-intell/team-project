@@ -1589,7 +1589,6 @@ def _(comparison_df, mo, pd, tapwater_test_df, tapwater_train_df):
         ),
     ])
     return (
-        bottom_15_avg_sites,
         represented_state_count,
         singleton_state_count,
         top3_state_share,
