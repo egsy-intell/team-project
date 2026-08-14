@@ -1434,45 +1434,18 @@ def _(mo):
     mo.md(r"""
     #### Model validation & benchmarking
 
-    Absorbs T4's scope: this section computes the actual
-    site-sparsity-by-state figure for the Check-In #2 feedback
-    integration, replacing the ~5 sites/state placeholder estimate with
-    a real number.
+    We check that held-out result against a fairer baseline and a
+    fuller picture: recall across all three risk tiers rather than
+    just the highest-risk one, a majority baseline recomputed on the
+    same 46-site partition rather than Step 3's original 236-site
+    figure, and — per Check-In #2 feedback — how sparse the underlying
+    site data actually is, set against where each model's errors
+    concentrate by held-out study.
 
-    T7 scored both models against Step 3's thresholds and found neither
-    passes. This section checks that result against a fair baseline,
-    looks at all three risk tiers rather than just the highest-risk one,
-    and asks whether data sparsity explains the gap.
-
-    **What this section does:**
-
-    1. Runs both tuned models on the 46 held-out test sites and computes
-       precision, recall, and F1 for all three risk tiers - the
-       per-class metrics framework from Task 3.1.
-    2. Checks those numbers against Step 3's thresholds (recall ≥0.70,
-       macro F1 ≥0.60, precision ≥0.45 on `mcl_exceedance`) and states
-       whether each model passes.
-    3. Recomputes the majority-class baseline on the same 46-site test
-       partition T7 scored against, rather than reusing Step 3's
-       236-site figure - the fairer, apples-to-apples comparison. On
-       this partition, Model A's macro F1 matches the baseline exactly,
-       since it predicts the majority tier for every test site.
-    4. Reports the real site-sparsity-by-state figure (average sites
-       across the 15 sparsest states), replacing the earlier placeholder
-       estimate, and checks it against where each model's errors
-       concentrate by held-out study - to see whether thin, scattered
-       training data is why neither model moves off the majority-tier
-       default in the first place, given T7 already found the errors
-       track each study's true risk mix rather than its geography.
-
-    McMahon et al. (2022)'s own model performance (SI §S5: 0.96
-    sensitivity, 0.72 specificity) is noted separately below as
-    unscored context only - its binary target and geochemistry-inclusive
-    predictors aren't a fair comparison to either model here.
-
-    Per Check-In #2 feedback, the table and figures below carry the
-    section - the paragraph after them states the finding rather than
-    walking through every metric computed.
+    For context only, not as a scored benchmark — its binary target
+    and geochemistry-inclusive predictor set aren't directly
+    comparable — McMahon et al. (2022)'s own model reaches 0.96
+    sensitivity and 0.72 specificity (SI §S5).
     """)
     return
 
