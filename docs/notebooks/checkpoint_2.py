@@ -89,8 +89,6 @@ def _():
 @app.cell(hide_code=True)
 def _(mc_clean_df, mc_scored_df, mo, ss_scored_df):
     mo.md(f"""
-    ## Step 3-4: Model Selection, Training & Evaluation Design
-
     With our data cleaned and scored in Step 2, we turn here to a
     formal plan for evaluating model efficacy (Step 3) and a set of
     modeling techniques we propose to try (Step 4).
@@ -108,7 +106,7 @@ def _(mc_clean_df, mc_scored_df, mo, ss_scored_df):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    ### Step 3: Evaluation Plan
+    ## Step 3: Evaluation Plan
 
     We ground this plan in four questions: which metrics are
     appropriate, what constitutes success, what data the evaluation
@@ -120,13 +118,13 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo, tier_distribution):
     mo.md(rf"""
-    #### Per-class metrics and evaluation rationale
+    ### Per-class metrics and evaluation rationale
 
     **Target:** the ∑TQ risk tier — `within_reduced_monitoring`
     (∑TQ < 0.5), `above_trigger` (0.5 ≤ ∑TQ < 1.0), `mcl_exceedance`
     (∑TQ ≥ 1.0).
 
-    ##### Why plain accuracy is the wrong headline metric
+    #### Why plain accuracy is the wrong headline metric
 
     **Class imbalance.** The ∑TQ construction's `ss_scored_df` (236
     Smalling/Seawolf sites) splits
@@ -150,7 +148,7 @@ def _(mo, tier_distribution):
       Recoverable, and consistent with the tool's stated role as
       sampling prioritization rather than a compliance determination.
 
-    ##### Metric framework
+    #### Metric framework
 
     * **Per-class precision, recall, and F1** reported for all three
       tiers separately, never collapsed into a single accuracy figure.
@@ -172,7 +170,7 @@ def _(mo, tier_distribution):
       and it maps directly onto the trigger-vs-MCL vocabulary
       operators already act on.
 
-    ##### Scope note
+    #### Scope note
 
     This framework is defined per evaluation slice. The McMahon ∑TQ
     scoring found that all 254 McMahon sites carry `sum_tq_epa` ≥
@@ -340,7 +338,7 @@ def _(RISK_LABELS, classify_pfas_risk_tier, evaluate_tier_model, ss_scored_df):
 @app.cell(hide_code=True)
 def _(majority_baseline, mo, random_baseline, tier_distribution):
     mo.md(rf"""
-    #### Model success criteria and operational benchmarks
+    ### Model success criteria and operational benchmarks
 
     Determining whether the land-use classification models provide
     actionable value for water-resource managers requires formal
@@ -348,7 +346,7 @@ def _(majority_baseline, mo, random_baseline, tier_distribution):
     (`within_reduced_monitoring`, `above_trigger`, `mcl_exceedance`)
     prior to model training.
 
-    ##### Baseline benchmark comparison
+    #### Baseline benchmark comparison
     Computed against `ss_scored_df`'s actual tier distribution
     ({tier_distribution["within_reduced_monitoring"]:.1%}
     `within_reduced_monitoring`,
@@ -380,7 +378,7 @@ def _(majority_baseline, mo, random_baseline, tier_distribution):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ##### Quantitative operational thresholds
+    #### Quantitative operational thresholds
     Three core success thresholds apply when evaluating the models on
     held-out test data, each pegged to a multiple of the random-
     uniform baseline computed above rather than chosen arbitrarily:
@@ -459,7 +457,7 @@ def _(MACRO_F1_FLOOR, PRECISION_FLOOR, RECALL_FLOOR, majority_baseline, mo):
         "Control false alarms and preserve re-testing budgets |"
     )
     mo.md(f"""
-    ##### Summary of evaluation targets
+    #### Summary of evaluation targets
 
     | Metric | Target | Naive Baseline | Threshold | Rationale |
     |---|---|---|---|---|
@@ -899,7 +897,7 @@ def _(
         [
             mo.md(
                 """
-                #### Split strategy - group by study
+                ### Split strategy - group by study
 
                 A study-grouped train/test split for the tap-water
                 model uses the completed `ss_scored_df` target: all
@@ -915,7 +913,7 @@ def _(
             ),
             mo.md(
                 f"""
-                ##### Target and grouping definition
+                #### Target and grouping definition
 
                 The ∑TQ construction supplies `ss_scored_df`, including
                 the completed `sum_tq_epa` value. That continuous score is
@@ -932,11 +930,11 @@ def _(
                 same site and follows it into the same partition.
                 """
             ),
-            mo.md("##### Current tap-water risk tiers by study"),
+            mo.md("#### Current tap-water risk tiers by study"),
             mo.ui.table(_study_risk_profile),
             mo.md(
                 """
-                ##### Holdout-selection rules
+                #### Holdout-selection rules
 
                 Candidate holdouts are complete study groups, not
                 individual rows. Every candidate is scored using:
@@ -950,7 +948,7 @@ def _(
                 and distribution similarity.
                 """
             ),
-            mo.md("##### Exhaustive versus sklearn comparison"),
+            mo.md("#### Exhaustive versus sklearn comparison"),
             mo.ui.table(
                 _method_best_summary, wrapped_columns=["Held-out studies"]
             ),
@@ -965,18 +963,18 @@ def _(
                 _split_comparison_preview,
                 wrapped_columns=["Held-out studies"],
             ),
-            mo.md("##### Selected partition"),
+            mo.md("#### Selected partition"),
             mo.ui.table(_partition_summary, wrapped_columns=["Studies"]),
-            mo.md("##### Risk-tier counts by partition"),
+            mo.md("#### Risk-tier counts by partition"),
             mo.ui.table(_partition_class_summary),
-            mo.md("##### Leakage validation"),
+            mo.md("#### Leakage validation"),
             mo.ui.table(
                 _leakage_summary,
                 wrapped_columns=["Validation check", "Assessment"],
             ),
             mo.md(
                 r"""
-                ##### Model optimization inside the training partition
+                #### Model optimization inside the training partition
 
                 Hyperparameter selection will use grouped
                 cross-validation only within `tapwater_train_df`.
@@ -1009,7 +1007,7 @@ def _(
                 predictors. All preprocessing must be fitted inside
                 each training fold through one pipeline.
 
-                ##### McMahon treatment
+                #### McMahon treatment
 
                 `mc_scored_df` is excluded from this tap-water split
                 entirely. McMahon contains groundwater observations,
@@ -1028,7 +1026,7 @@ def _(
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    #### Groundwater's role - held-out vs. combined
+    ### Groundwater's role - held-out vs. combined
     """)
     return
 
@@ -1074,7 +1072,7 @@ def _(groundwater_comparison_df, mo):
         [
             mo.md(
                 """
-                ##### Structural comparison
+                #### Structural comparison
 
                 McMahon's ∑TQ isn't on the same footing as
                 Smalling/Seawolf's, for two compounding reasons: it sums
@@ -1091,7 +1089,7 @@ def _(groundwater_comparison_df, mo):
             mo.ui.table(groundwater_comparison_df.set_index("Study").T),
             mo.md(
                 """
-                ##### Decision: hold out, don't combine
+                #### Decision: hold out, don't combine
 
                 Combining McMahon into the Smalling/Seawolf training set
                 would let a model achieve perfect recall on the
@@ -1125,7 +1123,7 @@ def _(groundwater_comparison_df, mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    #### Deployment evaluation: batch-scoring throughput
+    ### Deployment evaluation: batch-scoring throughput
 
     The PFAS model is intended to help water-resource operators and
     researchers prioritize locations for confirmatory sampling. Predictive
@@ -1185,7 +1183,7 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    ### Step 4: Modeling Techniques
+    ## Step 4: Modeling Techniques
 
     We propose two modeling techniques below, covering why each is
     appropriate, the tools we'll use, and the compute and other
@@ -1197,7 +1195,7 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    #### Handling skew & encoding on the finalized feature table
+    ### Handling skew & encoding on the finalized feature table
     """)
     return
 
@@ -1212,7 +1210,7 @@ def _(mo):
     excluded here — per the groundwater-role decision, it's held out
     of training entirely and used only as a validation slice.
 
-    ##### Rationale for skew transformation ($\log_{1p}$)
+    #### Rationale for skew transformation ($\log_{1p}$)
     Environmental landscape variables — such as distances to nearest
     industrial facilities, military sites, or localized urban burn
     areas — frequently exhibit strong right-skewed distributions with
@@ -1229,7 +1227,7 @@ def _(mo):
       mathematical division errors. Numeric columns are then
       standardized with `StandardScaler`.
 
-    ##### Categorical encoding, fit on the training split only
+    #### Categorical encoding, fit on the training split only
     Categorical flags — such as site type (public supply vs. private
     wells) and state — are converted into numeric format using
     **one-hot encoding**
@@ -1361,9 +1359,9 @@ def _(mo, preprocess_tapwater_features, tapwater_test_df, tapwater_train_df):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    #### Tooling & compute plan for baseline
+    ### Tooling & compute plan for baseline
 
-    ##### Software and modeling tools
+    #### Software and modeling tools
 
     We use widely available, batteries-included Python tooling for
     the baseline: `pandas` and `numpy` for data preparation, and
@@ -1379,7 +1377,7 @@ def _(mo):
     supervised learning, fit from scratch on the project's own
     training data.
 
-    ##### Compute-time estimate
+    #### Compute-time estimate
 
     `LogisticRegression` defaults to the `lbfgs` solver
     (Scikit-learn developers, 2026a), which fits one coefficient
@@ -1427,7 +1425,7 @@ def _(mo):
     or distributed-computing requirement. Actual training and
     prediction times will be measured and reported during Step 5.
 
-    ##### Reproducibility
+    #### Reproducibility
 
     Package requirements stay in the notebook's dependency block. We
     retain the approved feature list, excluded leakage fields,
@@ -1442,10 +1440,10 @@ def _(mo):
 def _(mo):
     mo.vstack(
         [
-            mo.md("#### Model A: multinomial logistic regression"),
+            mo.md("### Model A: multinomial logistic regression"),
             mo.md(
                 """
-                ##### Proposed modeling technique
+                #### Proposed modeling technique
 
                 Model A will use multinomial logistic regression to
                 predict `within_reduced_monitoring`,
@@ -1454,7 +1452,7 @@ def _(mo):
                 concentrations, toxicity-quotient fields, site
                 identifiers, and study labels will be excluded.
 
-                ##### Why this technique is appropriate
+                #### Why this technique is appropriate
 
                 Logistic regression is appropriate because the target
                 is categorical and the dataset is small, structured,
@@ -1479,7 +1477,7 @@ def _(mo):
                 through the confusion matrix and critical-miss count
                 defined in Step 3.
 
-                ##### Training and optimization plan
+                #### Training and optimization plan
 
                 The approved raw feature table and preprocessing
                 specification are defined above, in "Handling skew &
@@ -1505,7 +1503,7 @@ def _(mo):
                 partition and evaluated once on the untouched grouped
                 test partition.
 
-                ##### Expected strengths and limitations
+                #### Expected strengths and limitations
 
                 The main strengths are interpretability, low compute
                 cost, reproducibility, and a clear benchmark for the
@@ -1521,7 +1519,7 @@ def _(mo):
                 not causal effects, because this is observational
                 environmental data.
 
-                ##### Overall suitability and evaluation readiness
+                #### Overall suitability and evaluation readiness
 
                 In our opinion, Model A is ready for evaluation
                 against the Step 3 thresholds: the feature table,
@@ -1550,10 +1548,10 @@ def _(mo):
 def _(mo):
     mo.vstack(
         [
-            mo.md("#### Model B: random forest classifier"),
+            mo.md("### Model B: random forest classifier"),
             mo.md(
                 """
-                ##### Proposed modeling technique
+                #### Proposed modeling technique
 
                 Model B will use a random forest classifier to predict
                 the same three targets as Model A:
@@ -1568,7 +1566,7 @@ def _(mo):
                 PFAS concentrations, toxicity-quotient fields, site
                 identifiers, and study labels are excluded.
 
-                ##### Why this technique is appropriate
+                #### Why this technique is appropriate
 
                 A random forest reduces the risk of overfitting relative
                 to a single tree and generally handles datasets with
@@ -1593,7 +1591,7 @@ def _(mo):
                 foundation model, pretrained model, or external service
                 is required.
 
-                ##### Training and optimization plan
+                #### Training and optimization plan
 
                 Implementation will use scikit-learn's
                 `RandomForestClassifier` with a fixed random seed and
@@ -1620,7 +1618,7 @@ def _(mo):
                 standard CPU with no GPU or distributed-computing
                 requirement at this dataset size.
 
-                ##### Expected strengths and limitations
+                #### Expected strengths and limitations
 
                 The main strengths are robustness to overfitting, the
                 ability to capture nonlinear and interaction effects
@@ -1638,7 +1636,7 @@ def _(mo):
                 whether the added complexity was worth its
                 interpretability cost.
 
-                ##### Overall suitability and evaluation readiness
+                #### Overall suitability and evaluation readiness
 
                 In our opinion, Model B is ready for evaluation against
                 the Step 3 thresholds: the feature table, preprocessing
