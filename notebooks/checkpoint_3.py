@@ -1452,34 +1452,13 @@ def _(mo):
 
 @app.cell
 def _(
-    build_model_comparison,
-    error_breakdown_by_study,
     mo,
-    model_a_best_estimator,
-    model_b_best_estimator,
+    model_a_held_out,
+    model_b_held_out,
     pd,
-    plot_error_rate_by_study,
-    score_model,
     tapwater_test_df,
     tapwater_train_df,
 ):
-    # Apply the per-class metrics framework to both models: run each
-    # trained pipeline on the 46 held-out test sites and compute
-    # precision/recall/F1 for all three risk tiers.
-    model_a_result = score_model(
-        model_a_best_estimator, tapwater_test_df, "Model A"
-    )
-    model_b_result = score_model(
-        model_b_best_estimator, tapwater_test_df, "Model B"
-    )
-
-    # Apply the Step 3 risk-tier thresholds and benchmark each model
-    # against them, reusing the same headline-metrics-plus-pass/fail
-    # table built earlier in the notebook rather than re-deriving it.
-    step3_criteria_comparison_df = build_model_comparison(
-        {"Model A": model_a_result, "Model B": model_b_result}
-    )
-
     # Majority baseline, computed correctly: on the SAME 46-site test
     # partition scored above, not Step 3's 236-site ss_scored_df.
     _majority_share = (
@@ -1489,8 +1468,9 @@ def _(
         2 * _majority_share / (3 * (1 + _majority_share)), 4
     )
 
-    # Compare both models to the corrected baseline and to each other,
-    # using recall on ALL THREE tiers plus macro-F1, not just mcl_exceedance.
+    # Compare both models, already scored above, to the corrected
+    # baseline and to each other, using recall on ALL THREE tiers plus
+    # macro-F1 - not just mcl_exceedance, per the comparison above.
     def _recall_row(name, result):
         _pc = result["metrics"]["per_class"]
         _macro_f1 = result["metrics"]["summary"]["macro_f1"]
@@ -1512,8 +1492,8 @@ def _(
             "recall_high_risk": 0.0,
             "macro_f1": majority_baseline_macro_f1,
         },
-        _recall_row("Model A", model_a_result),
-        _recall_row("Model B", model_b_result),
+        _recall_row("Model A", model_a_held_out),
+        _recall_row("Model B", model_b_held_out),
     ])
 
     # Compute the real site-sparsity-by-state figure, replacing the
@@ -1524,21 +1504,7 @@ def _(
     bottom_15_avg_sites = round(_sites_per_state.head(15).mean(), 1)
     sparsest_states = _sites_per_state.head(15)
 
-    # Check the sparsity figure against where each model's errors
-    # concentrate, by held-out study - to see whether thin training data
-    # explains the lack of signal, not geography directly.
-    model_a_errors_by_study = error_breakdown_by_study(
-        model_a_result, tapwater_test_df
-    )
-    model_b_errors_by_study = error_breakdown_by_study(
-        model_b_result, tapwater_test_df
-    )
-
-    # Keep the section light: one table, one sparsity figure, one error
-    # breakdown - no extra metrics dumped beyond what's needed.
     mo.vstack([
-        mo.md("##### Model comparison against Step 3 success criteria"),
-        mo.ui.table(step3_criteria_comparison_df),
         mo.md("##### Model comparison, all three risk tiers"),
         mo.ui.table(all_tier_recall_comparison_df),
         mo.md(
@@ -1550,25 +1516,16 @@ def _(
                 columns={"index": "state", "State": "sites"}
             )
         ),
-        mo.md("##### Where errors concentrate, by held-out study"),
-        mo.ui.table(model_a_errors_by_study),
-        plot_error_rate_by_study(model_a_errors_by_study, "Model A"),
-        mo.ui.table(model_b_errors_by_study),
-        plot_error_rate_by_study(model_b_errors_by_study, "Model B"),
         mo.md(
-            "Neither model meets Step 3's success criteria on the "
-            "held-out set. Model A is statistically indistinguishable "
-            "from the majority baseline (identical 0.2347 macro F1) — "
-            "it predicts the majority tier for every held-out site. "
-            "Model B does marginally better (0.2825 macro F1, 0.07 "
-            "`mcl_exceedance` recall) but still misses every "
-            "medium-risk site. Errors concentrate heavily in Cape Cod "
-            "(92%/85% error rate for Model A/B) and moderately in "
-            "Minnesota (33% for both), while the smallest study, "
-            "Northeast Iowa, has zero error — so state-level sparsity "
-            "alone doesn't explain the gap; it lines up instead with "
-            "each held-out study's true risk-tier mix, consistent "
-            "with the earlier held-out error analysis above."
+            "Against the corrected, same-partition baseline, Model A "
+            "is statistically indistinguishable from it (identical "
+            f"{majority_baseline_macro_f1} macro F1) - it predicts the "
+            "majority tier for every held-out site. Model B moves "
+            "slightly off that default but still misses every "
+            "medium-risk site. State-level sparsity alone doesn't "
+            "explain the gap: per the error-rate-by-study breakdown "
+            "above, it lines up instead with each held-out study's "
+            "true risk-tier mix."
         ),
     ])
     return
