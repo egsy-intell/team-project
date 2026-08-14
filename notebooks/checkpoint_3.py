@@ -1474,7 +1474,10 @@ def _(comparison_df, mo, pd, tapwater_test_df, tapwater_train_df):
     all_tier_recall_comparison_df = pd.concat(
         [
             pd.DataFrame([{
-                "Model": "Majority baseline (always guesses low risk)",
+                "Model": (
+                    "Majority baseline (always guesses "
+                    "within_reduced_monitoring)"
+                ),
                 "within_reduced_monitoring recall": 1.0,
                 "above_trigger recall": 0.0,
                 "mcl_exceedance recall": 0.0,
@@ -1519,7 +1522,7 @@ def _(comparison_df, mo, pd, tapwater_test_df, tapwater_train_df):
             f"{majority_baseline_macro_f1} macro F1) - it predicts the "
             "majority tier for every held-out site. Model B moves "
             "slightly off that default but still misses every "
-            "medium-risk site. State-level sparsity alone doesn't "
+            "`above_trigger` site. State-level sparsity alone doesn't "
             "explain the gap: per the error-rate-by-study breakdown "
             "above, it lines up instead with each held-out study's "
             "true risk-tier mix."
