@@ -620,7 +620,7 @@ def _(mc_merged_df, seawolf_dict_df, ss_merged_clean_df):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ## Step 2: Dataset-by-dataset review
+    ### Dataset-by-dataset review
 
     The following subsections evaluate the structure, completeness,
     consistency, and modeling suitability of the Smalling, Seawolf, and McMahon
@@ -635,7 +635,7 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ### Combined summary statistics and distributions
+    #### Combined summary statistics and distributions
     """)
     return
 
@@ -923,9 +923,9 @@ def _(make_plot_grid, mc_clean_df, mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ### Smalling et al. (2023)
+    #### Smalling et al. (2023)
 
-    #### Data exploration
+    ##### Data exploration
     """)
     return
 
@@ -1006,7 +1006,7 @@ def _(mo, pd, pfas_cols, ss_clean_df):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    #### Quality assessment
+    ##### Quality assessment
     """)
     return
 
@@ -1128,9 +1128,9 @@ def _(mo, pd, pfas_cols, ss_clean_df):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ### Seawolf et al. (2023)
+    #### Seawolf et al. (2023)
 
-    #### Data exploration
+    ##### Data exploration
     """)
     return
 
@@ -1231,7 +1231,7 @@ def _(mo, pd, ss_clean_df):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    #### Quality assessment
+    ##### Quality assessment
     """)
     return
 
@@ -1370,9 +1370,9 @@ def _(mo, pd, ss_clean_df):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ### McMahon et al. (2022)
+    #### McMahon et al. (2022)
 
-    #### Data exploration
+    ##### Data exploration
     """)
     return
 
@@ -1457,7 +1457,7 @@ def _(mc_clean_df, mo, pd):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    #### Quality assessment
+    ##### Quality assessment
     """)
     return
 
@@ -1609,7 +1609,7 @@ def _(mc_clean_df, mo, pd):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ### Categorical variable evaluation
+    #### Categorical variable evaluation
 
     This section evaluates the categorical variables already available in
     `ss_clean_df` and `mc_clean_df`. The checks focus on category completeness,
@@ -2064,7 +2064,7 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    ## Step 2.5: Toxicity quotient (∑TQ) construction
+    ### Toxicity quotient (∑TQ) construction
 
     Reshape each study's data to one row per site per compound, join
     `all_compound_dict_df`'s EPA/state TQ benchmarks, and compute
@@ -2074,7 +2074,7 @@ def _(mo):
     groundwater data (`mc_clean_df` → `mc_scored_df`) follows the same
     three steps and is scored further down.
 
-    ### Reshape to one row per site per compound
+    #### Reshape to one row per site per compound
     Long-format the wide per-compound columns in `ss_clean_df` so each row is
     a single (site, compound) pair, carrying the site's landscape/land-use
     predictors alongside that compound's concentration.
@@ -2113,7 +2113,7 @@ def _(mc_clean_df, pd, pfas_codes, pfas_cols, ss_clean_df):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    ### Join TQ benchmarks
+    #### Join TQ benchmarks
     Left-join the reshaped table against `all_compound_dict_df`'s benchmark
     columns (EPA final-rule values for the six regulated compounds, Smalling
     et al. Table S5 state-only values for the rest) on compound name.
@@ -2167,7 +2167,7 @@ def _(all_compound_dict_df):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    ### Compute per-compound and summed TQ
+    #### Compute per-compound and summed TQ
     Divide concentration by benchmark for the per-compound TQ, then sum
     within the `epa_ratio_eligible` group to get the classified ∑TQ (Hazard
     Index) and, separately, a supplementary state-only ∑TQ reported as
@@ -2190,7 +2190,7 @@ def _(calc_scored_df, ss_clean_df, ss_long_df):
 def _(mo, ss_scored_df):
     mo.vstack(
         [
-            mo.md("#### ∑TQ summary — Smalling/Seawolf (`ss_scored_df`)"),
+            mo.md("##### ∑TQ summary — Smalling/Seawolf (`ss_scored_df`)"),
             mo.ui.table(
                 ss_scored_df[["sum_tq_epa", "sum_tq_state_only"]]
                 .describe()
@@ -2206,7 +2206,7 @@ def _(mo, ss_scored_df):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    ### McMahon (groundwater) ∑TQ
+    #### McMahon (groundwater) ∑TQ
 
     `mc_clean_df` gets the same reshape/join/compute treatment as
     `ss_clean_df` above via the shared `calc_scored_df()` helper, producing
@@ -2240,7 +2240,7 @@ def _(calc_scored_df, mc_clean_df, mc_long_df):
 def _(mc_scored_df, mo):
     mo.vstack(
         [
-            mo.md("#### ∑TQ summary — McMahon (`mc_scored_df`)"),
+            mo.md("##### ∑TQ summary — McMahon (`mc_scored_df`)"),
             mo.ui.table(
                 mc_scored_df[["sum_tq_epa", "sum_tq_state_only"]]
                 .describe()
