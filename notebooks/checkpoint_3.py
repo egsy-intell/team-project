@@ -1552,9 +1552,10 @@ def _(mo, task_callout):
                 summary=(
                     "Draft the discussion of deployment feasibility, "
                     "pitfalls, and lessons learned required by Step 5. "
-                    "Shares T4's absorbed scope with T9: explicitly "
-                    "acknowledging the site-sparsity limitation in the "
-                    "conclusion, per Check-In #2 feedback."
+                    "Shares the site-sparsity scope absorbed into the "
+                    "benchmarking above: explicitly acknowledging that "
+                    "limitation in the conclusion, per Check-In #2 "
+                    "feedback."
                 ),
                 guiding_questions=[
                     (
@@ -1565,8 +1566,9 @@ def _(mo, task_callout):
                     (
                         "What's the single biggest pitfall the team ran "
                         "into across Steps 1-5 that a future team repeating "
-                        "this project should know about going in? T7 found "
-                        "a stark CV-to-held-out generalization gap "
+                        "this project should know about going in? The "
+                        "held-out evaluation found a stark CV-to-held-out "
+                        "generalization gap "
                         "(grouped-CV `mcl_exceedance` recall of 0.41-0.52 "
                         "during tuning collapsed to 0.00-0.07 on 3 unseen "
                         "held-out studies) with only 190 training rows "
@@ -1575,8 +1577,8 @@ def _(mo, task_callout):
                         "more?"
                     ),
                     (
-                        "T7 found neither model clears Step 3's recall "
-                        "floor on the held-out set — does that change how "
+                        "Neither model clears Step 3's recall floor on "
+                        "the held-out set — does that change how "
                         "'the recommended model's main limitation' should "
                         "even be framed here? Rather than choosing between "
                         "interpretability vs. accuracy, or the land-use-"
