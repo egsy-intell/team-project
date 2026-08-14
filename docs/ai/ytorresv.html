@@ -194,17 +194,17 @@
     <div class="disclosure-item">
       <span class="dl-label">History of the exchange</span>
       <p>Every thread below links its full prompt/response transcript; all
-      30 are also collected in
+      35 are also collected in
       <a href="logs/ytorresv/index.md"><code>docs/ai/logs/ytorresv/</code></a>.</p>
     </div>
   </div>
 
   <div class="stats">
-    <div class="stat"><span class="n">30</span><span class="l">Threads</span></div><div class="stat"><span class="n">61</span><span class="l">Commits with Claude Code</span></div><div class="stat"><span class="n">43%</span><span class="l">Of Yai's 142 commits</span></div><div class="stat"><span class="n">33</span><span class="l">Days, Jul 11–Aug 12</span></div>
+    <div class="stat"><span class="n">35</span><span class="l">Threads</span></div><div class="stat"><span class="n">79</span><span class="l">Commits with Claude Code</span></div><div class="stat"><span class="n">46%</span><span class="l">Of Yai's 172 commits</span></div><div class="stat"><span class="n">34</span><span class="l">Days, Jul 11–Aug 13</span></div>
   </div>
 
   <p class="note">
-    <strong>Methodology.</strong> The commits shown are every commit carrying a <code>Co-Authored-By: Claude Sonnet 5</code> trailer. The 30 threads are the actual coding sessions behind them — some run directly on <code>main</code>/a feature branch in this checkout, others in a git worktree under a <code>claude/*</code> branch — matched to each commit by timestamp (a commit is attributed to the thread whose active window contains it). I'm the author and committer of record on every commit: I decided what to build, which fix to take, and when a section was actually done. Quoted lines are the thread's own opening message, lightly trimmed for length; full transcripts are linked, not reconstructed dialogue. See <a href="../notebooks/index.html">the published report</a> for the project itself, or its closing "AI usage appendix" for the team's external chat-thread disclosures (Perplexity, Claude.ai) covering project planning and exploration rather than pair-programming.
+    <strong>Methodology.</strong> The commits shown are every commit carrying a <code>Co-Authored-By: Claude Sonnet 5</code> trailer. The 35 threads are the actual coding sessions behind them — some run directly on <code>main</code>/a feature branch in this checkout, others in a git worktree under a <code>claude/*</code> branch — matched to each commit by timestamp (a commit is attributed to the thread whose active window contains it). I'm the author and committer of record on every commit: I decided what to build, which fix to take, and when a section was actually done. Quoted lines are the thread's own opening message, lightly trimmed for length; full transcripts are linked, not reconstructed dialogue. See <a href="../notebooks/index.html">the published report</a> for the project itself, or its closing "AI usage appendix" for the team's external chat-thread disclosures (Perplexity, Claude.ai) covering project planning and exploration rather than pair-programming.
   </p>
 
   <div class="legend">
@@ -226,6 +226,8 @@
     <li><a href="#p10">10. Closing out Step 5 planning</a></li>
     <li><a href="#p11">11. Unblocking T7, then reviewing Model B</a></li>
     <li><a href="#p12">12. Writing up and closing out T7</a></li>
+    <li><a href="#p13">13. Closing out T4/T8/T9/T10</a></li>
+    <li><a href="#p14">14. Wrap-up: conclusion and final deck</a></li>
   </ul>
 
   <section class="phase">
@@ -1233,9 +1235,248 @@
     </ol>
   </section>
 
+  <section class="phase">
+    <div class="tl-row milestone" id="p13">
+      <div class="tl-time"></div>
+      <div class="tl-rail"><span class="dot">13</span></div>
+      <div class="tl-content">
+        <h2>Closing out T4/T8/T9/T10</h2>
+        <p class="phase-blurb">The last stretch of task-tracking cleanup and section-writing: merging T4 into T9/T10 and dropping T8, prepping T9's PR for merge through a round of CI fixes and de-duplication, then fleshing out and closing T10's deployment discussion.</p>
+      </div>
+    </div>
+    <div class="tl-row thread">
+      <div class="tl-time"><span class="d">Aug 13</span><span class="t">07:15</span></div>
+      <div class="tl-rail"><span class="dot"></span></div>
+      <div class="tl-content">
+        <h3>Merging T4/T8/T11, then briefing the team on the T9/T10 handoff</h3>
+        <p class="thread-quote">&ldquo;good morning! Let's be done with the prework for today: merge T4 into T9/T10, remove T8 and perform a quick validation of T11 (no changes).&rdquo;</p>
+        <p class="thread-meta">branch T4-T8-T11-update &middot; 5 prompts, 17 responses &middot; <a href="logs/ytorresv/31-merging-t4-t8-t11-and-briefing-the-team.md">full transcript &rarr;</a></p>
+      </div>
+    </div>
+    <ol class="entries">
+      <li class="tl-row entry">
+        <div class="tl-time"><span class="d">Aug 13</span><span class="t">07:20</span></div>
+        <div class="tl-rail"><span class="dot"></span></div>
+        <div class="tl-content">
+          <div class="entry-head"><h4>CP-3: merge T4 into T9/T10, drop T8</h4><span class="hash">5161dd9</span></div>
+          <p class="entry-p">T4's remaining scope (site-sparsity quantification, lead-with-results framing) was already threaded entirely into T9/T10's guiding questions with no separate deliverable of its own, so folded it in rather than leaving it stuck Pending and blocking T11/T12. Dropped T8 (scalability profiling) as premature now that T7 found neither model clears Step 3's recall floor. Both CSV rows kept as the durable record rather than deleted.</p>
+          <div class="diffstat">2 files &middot; <span class="plus">+18</span> −81</div>
+        </div>
+      </li>
+      <li class="tl-row entry">
+        <div class="tl-time"><span class="d">Aug 13</span><span class="t">07:27</span></div>
+        <div class="tl-rail"><span class="dot"></span></div>
+        <div class="tl-content">
+          <div class="entry-head"><h4>CP-3: merge T4 into T9/T10, drop T8, validate T11 (#88)</h4><span class="hash">e1df3eb</span></div>
+          <p class="entry-p">PR merge of the above, plus a rehearsal validation of T11 (public repo check) with no changes needed — repo is public, gh-pages is live and current, nothing unmerged that the writeup depends on yet.</p>
+          <div class="diffstat">2 files &middot; <span class="plus">+18</span> −81</div>
+        </div>
+      </li>
+    </ol>
+    <div class="tl-row thread">
+      <div class="tl-time"><span class="d">Aug 13</span><span class="t">21:52</span></div>
+      <div class="tl-rail"><span class="dot"></span></div>
+      <div class="tl-content">
+        <h3>Prepping T9 for merge: CI fixes, de-duplication, and a real print-workflow fix</h3>
+        <p class="thread-quote">&ldquo;T9's PR landed. Could you help me prep it for merge? First, let's work on fixing the build. Then, let's walk through the changes together (link: https://github.com/egsy-intell/team-project/pull/89, local branch in local). And then go through any recommendations&rdquo;</p>
+        <p class="thread-meta">branch t9-evaluation &middot; 20 prompts, 119 responses &middot; <a href="logs/ytorresv/32-prepping-t9-for-merge.md">full transcript &rarr;</a></p>
+      </div>
+    </div>
+    <ol class="entries">
+      <li class="tl-row entry">
+        <div class="tl-time"><span class="d">Aug 13</span><span class="t">21:56</span></div>
+        <div class="tl-rail"><span class="dot"></span></div>
+        <div class="tl-content">
+          <div class="entry-head"><h4>Fix CI failures in T9 comparison cell: remove empty cells, wrap long lines, reuse build_model_comparison()</h4><span class="hash">b672313</span></div>
+          <p class="entry-p">A teammate's T9 PR failed CI on leftover empty cells and ruff line-length/unused-variable violations. Wired the unused Step-3 pass/fail variables into the existing build_model_comparison() helper instead of just deleting them.</p>
+          <div class="diffstat">1 file &middot; <span class="plus">+32</span> −21</div>
+        </div>
+      </li>
+      <li class="tl-row entry">
+        <div class="tl-time"><span class="d">Aug 13</span><span class="t">22:06</span></div>
+        <div class="tl-rail"><span class="dot"></span></div>
+        <div class="tl-content">
+          <div class="entry-head"><h4>Finish T9: remove duplicated task_callout scaffolding, add findings and error-rate charts</h4><span class="hash">4d5caf7</span></div>
+          <p class="entry-p">The T9 PR was purely additive and left the old task_callout(&quot;T9&quot;, ...) placeholder in place alongside the real section, rendering it twice. Removed the placeholder, marked T9 Complete, and added the findings paragraph and error-rate charts the section's own intro had promised but didn't deliver.</p>
+          <div class="diffstat">2 files &middot; <span class="plus">+20</span> −76</div>
+        </div>
+      </li>
+      <li class="tl-row entry">
+        <div class="tl-time"><span class="d">Aug 13</span><span class="t">22:09</span></div>
+        <div class="tl-rail"><span class="dot"></span></div>
+        <div class="tl-content">
+          <div class="entry-head"><h4>Nest T9 as a continuation of the existing evaluation section, not a peer H3</h4><span class="hash">c2d0baa</span></div>
+          <p class="entry-p">T9 re-scored the same T7 held-out results the existing evaluation section already covered down to H5. Demoted T9 from a peer H3 to a nested H4 (and its subsections to H5) instead of standing as an almost-identical sibling section.</p>
+          <div class="diffstat">1 file &middot; <span class="plus">+4</span> −4</div>
+        </div>
+      </li>
+      <li class="tl-row entry">
+        <div class="tl-time"><span class="d">Aug 13</span><span class="t">22:12</span></div>
+        <div class="tl-rail"><span class="dot"></span></div>
+        <div class="tl-content">
+          <div class="entry-head"><h4>Rewrite T9 intro as flowing continuation prose, drop task-ID references</h4><span class="hash">c1f083b</span></div>
+          <p class="entry-p">Rewrote the intro from a standalone-restart list with task-ID references into one flowing first-person paragraph that picks up the prior section's own handoff line, and folded in the McMahon comparison sentence that was promised but never delivered.</p>
+          <div class="diffstat">1 file &middot; <span class="plus">+12</span> −39</div>
+        </div>
+      </li>
+      <li class="tl-row entry">
+        <div class="tl-time"><span class="d">Aug 13</span><span class="t">22:18</span></div>
+        <div class="tl-rail"><span class="dot"></span></div>
+        <div class="tl-content">
+          <div class="entry-head"><h4>Drop task-ID references from checkpoint_3.py comments and variable names</h4><span class="hash">9d9742a</span></div>
+          <p class="entry-p">Reworded inline comments and renamed two visible-source dataframe variables (t9_headline_comparison, t9_full_comparison) away from task IDs, and fixed a stale cross-reference to T9's now-nonexistent guiding-questions callout.</p>
+          <div class="diffstat">1 file &middot; <span class="plus">+20</span> −20</div>
+        </div>
+      </li>
+      <li class="tl-row entry">
+        <div class="tl-time"><span class="d">Aug 13</span><span class="t">22:24</span></div>
+        <div class="tl-rail"><span class="dot"></span></div>
+        <div class="tl-content">
+          <div class="entry-head"><h4>Remove T9 content that duplicated the section directly above it</h4><span class="hash">ae174a7</span></div>
+          <p class="entry-p">Now nested under the existing evaluation section, three of T9's pieces turned out to be pure duplicates of content already rendered just above it. Kept only what was genuinely new: the all-three-tier recall comparison and the site-sparsity figure.</p>
+          <div class="diffstat">1 file &middot; <span class="plus">+16</span> −59</div>
+        </div>
+      </li>
+      <li class="tl-row entry">
+        <div class="tl-time"><span class="d">Aug 13</span><span class="t">22:26</span></div>
+        <div class="tl-rail"><span class="dot"></span></div>
+        <div class="tl-content">
+          <div class="entry-head"><h4>Drop remaining T4/T7/T9 ID references from T10's still-open callout prose</h4><span class="hash">2481f89</span></div>
+          <p class="entry-p">Reworded T10's still-open task_callout() summary/guiding-questions prose to describe what completed tasks found rather than naming them by ID, leaving the working depends_on=&quot;T9&quot; field untouched.</p>
+          <div class="diffstat">1 file &middot; <span class="plus">+9</span> −7</div>
+        </div>
+      </li>
+      <li class="tl-row entry">
+        <div class="tl-time"><span class="d">Aug 13</span><span class="t">22:31</span></div>
+        <div class="tl-rail"><span class="dot"></span></div>
+        <div class="tl-content">
+          <div class="entry-head"><h4>Source T9's per-tier recall from comparison_df instead of re-deriving it</h4><span class="hash">838a55d</span></div>
+          <p class="entry-p">T9's comparison cell re-extracted per-tier recall from the same objects comparison_df already used for a different metric slice. Extended build_model_comparison() to include all three tiers' recall so T9 only adds a majority-baseline row to a copy of that table.</p>
+          <div class="diffstat">1 file &middot; <span class="plus">+35</span> −38</div>
+        </div>
+      </li>
+      <li class="tl-row entry">
+        <div class="tl-time"><span class="d">Aug 13</span><span class="t">22:37</span></div>
+        <div class="tl-rail"><span class="dot"></span></div>
+        <div class="tl-content">
+          <div class="entry-head"><h4>Use the actual risk-tier identifiers instead of low/medium/high labels</h4><span class="hash">519eded</span></div>
+          <p class="entry-p">Two spots labeled tiers &quot;low risk&quot;/&quot;medium-risk&quot; instead of the within_reduced_monitoring/above_trigger/mcl_exceedance identifiers the team standardized on before Checkpoint 3. Reworded to match checkpoint_2.py's precise-name-plus-gloss convention.</p>
+          <div class="diffstat">1 file &middot; <span class="plus">+5</span> −2</div>
+        </div>
+      </li>
+      <li class="tl-row entry">
+        <div class="tl-time"><span class="d">Aug 13</span><span class="t">22:44</span></div>
+        <div class="tl-rail"><span class="dot"></span></div>
+        <div class="tl-content">
+          <div class="entry-head"><h4>Keep the T7 comparison table narrow after widening comparison_df</h4><span class="hash">4eaf66f</span></div>
+          <p class="entry-p">Widening comparison_df to 7 columns for T9's benefit also widened the original 5-column &quot;Model comparison&quot; table where it displays — a print-crop risk per AGENTS.md. Kept that table's display at its original 5 headline columns while comparison_df still carries the extra two internally.</p>
+          <div class="diffstat">1 file &middot; <span class="plus">+14</span> −1</div>
+        </div>
+      </li>
+      <li class="tl-row entry">
+        <div class="tl-time"><span class="d">Aug 13</span><span class="t">22:49</span></div>
+        <div class="tl-rail"><span class="dot"></span></div>
+        <div class="tl-content">
+          <div class="entry-head"><h4>Document actual print workflow; split the two widest tables in checkpoint_3</h4><span class="hash">72dce9a</span></div>
+          <p class="entry-p">AGENTS.md's print-workflow doc only mentioned molab, not the team's actual HTML-export-then-Chrome-print path, which can crop wide tables the same way. Documented the real workflow, then split two 12- and 9-column single-row training-summary tables into narrower, logically grouped pairs.</p>
+          <div class="diffstat">2 files &middot; <span class="plus">+67</span> −20</div>
+        </div>
+      </li>
+    </ol>
+    <div class="tl-row thread">
+      <div class="tl-time"><span class="d">Aug 13</span><span class="t">23:07</span></div>
+      <div class="tl-rail"><span class="dot"></span></div>
+      <div class="tl-content">
+        <h3>Fleshing out T10's deployment discussion, then closing T10/T11</h3>
+        <p class="thread-quote">&ldquo;T10 landed in PR (https://github.com/egsy-intell/team-project/pull/90, available locally), and we need to add some additional context: 1. emphasis on site-sparsity. Use calculated sparsity numbers to emphasize the need for more data[…]&rdquo;</p>
+        <p class="thread-meta">branch E_t10 &middot; 5 prompts, 24 responses &middot; <a href="logs/ytorresv/33-fleshing-out-t10-deployment-discussion.md">full transcript &rarr;</a></p>
+      </div>
+    </div>
+    <ol class="entries">
+      <li class="tl-row entry">
+        <div class="tl-time"><span class="d">Aug 13</span><span class="t">23:36</span></div>
+        <div class="tl-rail"><span class="dot"></span></div>
+        <div class="tl-content">
+          <div class="entry-head"><h4>Add site-sparsity, predictor-scope, and regional-scope context to Step 5 deployment discussion</h4><span class="hash">6a109a8</span></div>
+          <p class="entry-p">Extended T10 with computed (not estimated) site-sparsity figures pulled from the real train/test partition, fact-checked McMahon et al. (2022)'s predictor set to argue DOC/VOC are more feasible near-term additions than tritium, and incorporated a third Check-In #2 peer-review item weighing a regional pilot against McMahon's narrower, better-performing design.</p>
+          <div class="diffstat">1 file &middot; <span class="plus">+115</span> −43</div>
+        </div>
+      </li>
+      <li class="tl-row entry">
+        <div class="tl-time"><span class="d">Aug 13</span><span class="t">23:36</span></div>
+        <div class="tl-rail"><span class="dot"></span></div>
+        <div class="tl-content">
+          <div class="entry-head"><h4>Mark T10/T11 complete: strip task callouts, move public-repo link to References</h4><span class="hash">d0ec21f</span></div>
+          <p class="entry-p">Stripped both task_callout()s now that T10's deployment discussion and T11's public-repo confirmation were done, moved T11's public-codebase paragraph into footer.py's References as project-wide trailing content, and dropped the now-dead checkpoint_1.py import it was the last reason for.</p>
+          <div class="diffstat">3 files &middot; <span class="plus">+17</span> −133</div>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <section class="phase">
+    <div class="tl-row milestone" id="p14">
+      <div class="tl-time"></div>
+      <div class="tl-rail"><span class="dot">14</span></div>
+      <div class="tl-content">
+        <h2>Wrap-up: conclusion and final deck</h2>
+        <p class="phase-blurb">With every Step 5 task complete, the last two threads: rewriting the report's Conclusion around the project's actual finding, then building the Check-In #3 presentation deck from the finished notebook.</p>
+      </div>
+    </div>
+    <div class="tl-row thread">
+      <div class="tl-time"><span class="d">Aug 13</span><span class="t">23:47</span></div>
+      <div class="tl-rail"><span class="dot"></span></div>
+      <div class="tl-content">
+        <h3>Rewriting the conclusion for the finished report</h3>
+        <p class="thread-quote">&ldquo;now that the step 5 is complete, we should update the conclusion to reflect the whole project. We should compress what we have about past checkpoints and give more breathing room to the completed step 5 tasks.&rdquo;</p>
+        <p class="thread-meta">branch conclusion-wrap-up &middot; 1 prompts, 6 responses &middot; <a href="logs/ytorresv/34-rewriting-the-conclusion.md">full transcript &rarr;</a></p>
+      </div>
+    </div>
+    <ol class="entries">
+      <li class="tl-row entry">
+        <div class="tl-time"><span class="d">Aug 13</span><span class="t">23:52</span></div>
+        <div class="tl-rail"><span class="dot"></span></div>
+        <div class="tl-content">
+          <div class="entry-head"><h4>Write-up Wrap-up: Update conclusion</h4><span class="hash">99bdfa5</span></div>
+          <p class="entry-p">Compressed Steps 1-4 into one &quot;How we got here&quot; retrospective and gave Step 5's actual results a full &quot;What Step 5 found&quot; section — the recall failures, the majority-baseline comparison, and a closing call for government/private entities to close the data-sparsity gap the project uncovered, since the modeling itself was properly cautious about leakage and that discipline wasn't the limiting factor.</p>
+          <div class="diffstat">1 file &middot; <span class="plus">+88</span> −70</div>
+        </div>
+      </li>
+      <li class="tl-row entry">
+        <div class="tl-time"><span class="d">Aug 13</span><span class="t">23:54</span></div>
+        <div class="tl-rail"><span class="dot"></span></div>
+        <div class="tl-content">
+          <div class="entry-head"><h4>Write-up Wrap-up: Update conclusion (#91)</h4><span class="hash">3882426</span></div>
+          <p class="entry-p">PR merge of the above.</p>
+          <div class="diffstat">1 file &middot; <span class="plus">+88</span> −70</div>
+        </div>
+      </li>
+    </ol>
+    <div class="tl-row thread">
+      <div class="tl-time"><span class="d">Aug 14</span><span class="t">00:10</span></div>
+      <div class="tl-rail"><span class="dot"></span></div>
+      <div class="tl-content">
+        <h3>Building the Check-In #3 deck</h3>
+        <p class="thread-quote">&ldquo;based on @specs/checkpoint-3/GRAD 50400 - Project Checkpoint-3.pdf and @preso/checkpoint2_deck.md , let's generate the checkpoint3_deck.md. At a high-level, it should satisfy the spec and provide a continuation of the narrative, now that the project is done.&rdquo;</p>
+        <p class="thread-meta">branch cp3-preso &middot; 3 prompts, 15 responses &middot; <a href="logs/ytorresv/35-building-the-check-in-3-deck.md">full transcript &rarr;</a></p>
+      </div>
+    </div>
+    <ol class="entries">
+      <li class="tl-row entry">
+        <div class="tl-time"><span class="d">Aug 14</span><span class="t">01:05</span></div>
+        <div class="tl-rail"><span class="dot"></span></div>
+        <div class="tl-content">
+          <div class="entry-head"><h4>Add Check-In #3 (Final) presentation deck</h4><span class="hash">bf6a31a</span></div>
+          <p class="entry-p">Built the 20-slide results-first Final deck by actually executing checkpoint_3.py for every figure rather than trusting stale exports (catching a 44/46-vs-46/46 drafting error along the way), naming peer-feedback items the spec requires, and generalizing scripts/toolkit.py's presentation command with a --source flag so each checkpoint can build its own deck.</p>
+          <div class="diffstat">6 files &middot; <span class="plus">+212</span> −10</div>
+        </div>
+      </li>
+    </ol>
+  </section>
+
   <footer class="page">
     <p>
-      Threads sourced from local Claude Code session logs (21 in this checkout, 9 run inside git worktrees) covering this repository; commits from <code>git log --all --grep="Co-Authored-By: Claude"</code>. Each commit is attributed to the thread whose active time window contains it, except two threads (Aug 5, Aug 7) whose commits merged days later via PR — those list their commit manually rather than by timestamp window. Full prompt/response transcripts for all 30 threads are in <a href="logs/ytorresv/index.md"><code>docs/ai/logs/</code></a>. Regenerate after adding threads or commits with <code>uv run python scripts/toolkit.py ai-disclosure ytorresv</code>.
+      Threads sourced from local Claude Code session logs (25 in this checkout, 9 run inside git worktrees) covering this repository; commits from <code>git log --all --grep="Co-Authored-By: Claude"</code>. Each commit is attributed to the thread whose active time window contains it, except two threads (Aug 5, Aug 7) whose commits merged days later via PR — those list their commit manually rather than by timestamp window. Full prompt/response transcripts for all 35 threads are in <a href="logs/ytorresv/index.md"><code>docs/ai/logs/</code></a>. Regenerate after adding threads or commits with <code>uv run python scripts/toolkit.py ai-disclosure ytorresv</code>.
     </p>
   </footer>
 
