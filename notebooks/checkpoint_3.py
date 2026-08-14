@@ -1429,86 +1429,12 @@ def _(RECALL_FLOOR, comparison_df, mo, model_a_cv_results, model_b_cv_results):
     return
 
 
-@app.cell(hide_code=True)
-def _(mo, task_callout):
-    mo.vstack(
-        [
-            mo.md("#### Model validation & benchmarking"),
-            task_callout(
-                "T9",
-                category="Step 5 - Evaluation",
-                lead="Yai, Somyaranjan",
-                depends_on="T7",
-                summary=(
-                    "Apply the per-class metrics framework and "
-                    "risk-tier thresholds to both models; benchmark "
-                    "against the Step 3 evaluation plan. Absorbs T4's "
-                    "scope: computing the actual site-sparsity-by-state "
-                    "figures for the Check-In #2 feedback integration, "
-                    "rather than leaving the ~5 sites/state figure as a "
-                    "placeholder estimate."
-                ),
-                guiding_questions=[
-                    (
-                        "How do the tuned models compare to the majority "
-                        "baseline and to each other on macro-F1 and "
-                        "per-tier recall, not just on `mcl_exceedance`? "
-                        "Note: Step 3's `majority_baseline` is computed "
-                        "over the full 236-site `ss_scored_df`, not the "
-                        "46-site held-out partition T7 actually scored "
-                        "against — a same-partition majority baseline is "
-                        "the fairer comparison, and on that partition "
-                        "Model A's held-out macro F1 (0.2347) already "
-                        "matches it exactly, since Model A predicts the "
-                        "majority tier for all 46 held-out sites."
-                    ),
-                    (
-                        "Does the benchmarking result change which model "
-                        "the team recommends for the deployment discussion "
-                        "in T10?"
-                    ),
-                    (
-                        "Per Check-In #2 peer feedback, does this section "
-                        "stay lighter on detail and lead with results, "
-                        "rather than listing every metric computed?"
-                    ),
-                    (
-                        "Per that same feedback, can we quantify how "
-                        "sparse the underlying site data is by state "
-                        "(e.g. ~5 sites/state on average across the "
-                        "bottom 15 states), and does that sparsity line "
-                        "up with where either model's errors concentrate? "
-                        "T7 found errors track each held-out study's true "
-                        "tier composition rather than geography per se "
-                        "(Cape Cod's 92%/85% error rates reflect it being "
-                        "overwhelmingly high-risk, not where it is) — does "
-                        "state-level sparsity explain why neither model "
-                        "ever learns enough signal to override the "
-                        "majority-tier default in the first place?"
-                    ),
-                    (
-                        "For context only, not as a scored benchmark: how "
-                        "does either model's `mcl_exceedance` recall/"
-                        "precision compare to McMahon et al. (2022)'s own "
-                        "boosted-regression-tree model (SI §S5: 0.96 "
-                        "sensitivity, 0.72 specificity), given its target "
-                        "(binary PFAS detection) and predictor set "
-                        "(geochemistry-inclusive) both differ from ours?"
-                    ),
-                ],
-            ),
-        ]
-    )
-    return
-
-
 @app.cell
 def _(mo):
     mo.md(r"""
     ### Model validation & benchmarking
 
-    **Task T9** · Step 5 - Evaluation · Lead: Yai, Somyaranjan · Depends
-    on: T7. Absorbs T4's scope: this section computes the actual
+    Absorbs T4's scope: this section computes the actual
     site-sparsity-by-state figure for the Check-In #2 feedback
     integration, replacing the ~5 sites/state placeholder estimate with
     a real number.
@@ -1559,6 +1485,7 @@ def _(
     model_a_best_estimator,
     model_b_best_estimator,
     pd,
+    plot_error_rate_by_study,
     score_model,
     tapwater_test_df,
     tapwater_train_df,
@@ -1652,7 +1579,24 @@ def _(
         ),
         mo.md("#### Where errors concentrate, by held-out study"),
         mo.ui.table(model_a_errors_by_study),
+        plot_error_rate_by_study(model_a_errors_by_study, "Model A"),
         mo.ui.table(model_b_errors_by_study),
+        plot_error_rate_by_study(model_b_errors_by_study, "Model B"),
+        mo.md(
+            "Neither model meets Step 3's success criteria on the "
+            "held-out set. Model A is statistically indistinguishable "
+            "from the majority baseline (identical 0.2347 macro F1) — "
+            "it predicts the majority tier for every held-out site. "
+            "Model B does marginally better (0.2825 macro F1, 0.07 "
+            "`mcl_exceedance` recall) but still misses every "
+            "medium-risk site. Errors concentrate heavily in Cape Cod "
+            "(92%/85% error rate for Model A/B) and moderately in "
+            "Minnesota (33% for both), while the smallest study, "
+            "Northeast Iowa, has zero error — so state-level sparsity "
+            "alone doesn't explain the gap; it lines up instead with "
+            "each held-out study's true risk-tier mix, consistent "
+            "with T7's finding."
+        ),
     ])
     return
 
