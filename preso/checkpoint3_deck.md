@@ -48,7 +48,7 @@ date: Final — August 14, 2026
 # Step 5: Building & Tuning the Two Models
 
 ::: notes
-[Speaker: Raj] Thanks, Yai. Both models trained on the exact same 190 sites, the same 27 land-use predictors, and the same grouped cross-validation folds, so any difference between them comes from the classifier, not the data prep. Grouping by whole study means an entire study moves together into either the fitting or validation side of a fold, which is a stricter, more honest test than a random row-level split would be — it forces each model to prove it generalizes to places it hasn't seen, not just rows it hasn't seen.
+[Speaker: Raj] Thanks, Yai. Both models trained on the exact same 190 sites, the same 27 land-use predictors, and the same grouped cross-validation folds, so any difference between them comes from the classifier, not the data prep. Grouping by whole study means an entire study moves together into either the fitting or validation side of a fold, which is a stricter, more honest test than a random row-level split would be — it forces each model to prove it generalizes to places it hasn't seen, not just rows it hasn't seen. One practical wrinkle from that: a State or Site Type that only shows up in one or two studies can be entirely absent from a fold's fitting data. We audited every fold for that ahead of time and built the preprocessing to handle it safely rather than let it break tuning silently.
 :::
 
 ## Model A: Interpretable Baseline
@@ -59,7 +59,7 @@ date: Final — August 14, 2026
 - Biggest coefficients: mostly **State** indicators, not land-use features
 
 ::: notes
-[Speaker: Raj] Grid search picked C=10 with no class weighting — grouped cross-validation preferred that over the "balanced" setting we'd planned in Step 4. On training data it reached 0.37 macro F1, and its best recall on the high-risk tier across the whole grid was 0.52 — already below our 0.70 floor before it ever saw a held-out site, which matters for what's coming. On interpretability, the model does mostly what we wanted: distance to the nearest PFAS site and nearby facility counts point the direction you'd expect, more sites and closer proximity raise risk, and so does nearby developed land. Two urban-burn variables ran the opposite direction from what we expected, a reminder that these are associations pulled from correlated predictors, not causal effects. More strikingly, six of the eight largest coefficients turned out to be State indicators, not land-use variables at all — geography is doing more of the work than our actual predictors are, which is a preview of a limitation Somya's going to quantify directly in a few minutes. That kind of check — actually being able to open the hood and see what's driving a prediction — is exactly what we designed Model A to give us, even before we knew how the held-out results would look. Over to Emir for Model B.
+[Speaker: Raj] Grid search picked C=10 with no class weighting — grouped cross-validation preferred that over the "balanced" setting we'd planned in Step 4. On training data it reached 0.37 macro F1, and its best recall on the high-risk tier across the whole grid was 0.52 — already below our 0.70 floor before it ever saw a held-out site, which matters for what's coming. On interpretability, the model does mostly what we wanted: distance to the nearest PFAS site and nearby facility counts point the direction you'd expect, more sites and closer proximity raise risk, and so does nearby developed land. Two urban-burn variables ran the opposite direction from what we expected, a reminder that these are associations pulled from correlated predictors, not causal effects. More strikingly, six of the eight largest coefficients turned out to be State indicators, not land-use variables at all — geography is doing more of the work than our actual predictors are, which is a preview of a limitation Somya's going to quantify directly in a few minutes. That kind of check — actually being able to open the hood and see what's driving a prediction — is exactly what we designed Model A to give us, even before we knew how the held-out results would look. It's also worth saying what didn't change: this is the same allowlisted predictor set, the same grouped folds, and the same imputation approach we proposed back at Check-In #2 — no last-minute redesign, just running the plan we already committed to. Over to Emir for Model B.
 :::
 
 ## Model B: Random Forest Ensemble
@@ -156,7 +156,7 @@ date: Final — August 14, 2026
 - Full pipeline: data prep → ∑TQ scoring → Model A/B training → held-out evaluation
 
 ::: notes
-[Speaker: Raj] One thing I own directly, alongside Yai: the full codebase behind everything you've just seen is public at github.com/egsy-intell/team-project, the same link that's in the written report. Every step is in there and runnable end to end — data cleaning, the ∑TQ pipeline, both models' training and tuning, and this held-out evaluation — so nothing we've shown you today is a one-off notebook run; anyone can clone it, rerun it, and land on the same 0.00 and 0.07 recall numbers Somya showed you.
+[Speaker: Yai] Raj and I own this one together: the full codebase behind everything you've just seen is public at github.com/egsy-intell/team-project, the same link that's in the written report. Every step is in there and runnable end to end — data cleaning, the ∑TQ pipeline, both models' training and tuning, and this held-out evaluation — so nothing we've shown you today is a one-off notebook run; anyone can clone it, rerun it, and land on the same 0.00 and 0.07 recall numbers Somya showed you.
 :::
 
 ## References
@@ -178,6 +178,8 @@ date: Final — August 14, 2026
 
 Special thanks to our Check-In #2 peer reviewers: **Sky Alexander, Sereyroath So, Gavin Thompson, and Radman Zarbock** — your review was fair and thorough, and shaped this presentation directly.
 
+Thanks again for reviewing our work — we truly appreciate your time and interest.
+
 ::: notes
-[Speaker: Yai] That's Step 5: two models built and tuned, an honest held-out result that neither cleared our bar, a data-sparsity limitation we quantified rather than guessed at, and a recommendation to fix the data before we chase the models further. Before we take questions, real thanks to Sky Alexander, Sereyroath So, Gavin Thompson, and Radman Zarbock for reviewing us at Check-In #2 — the feedback was fair, specific, and genuinely shaped what you saw today. Thanks for listening.
+[Speaker: Yai] That's Step 5: two models built and tuned, an honest held-out result that neither cleared our bar, a data-sparsity limitation we quantified rather than guessed at, and a recommendation to fix the data before we chase the models further. Before we take questions, real thanks to Sky Alexander, Sereyroath So, Gavin Thompson, and Radman Zarbock for reviewing us at Check-In #2 — the feedback was fair, specific, and genuinely shaped what you saw today. Thanks again for reviewing our work — we truly appreciate your time and interest. Thanks for listening.
 :::
