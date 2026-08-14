@@ -491,18 +491,25 @@ def _(pd):
 
         `results` is `{model_name: score_model() result}`; add a
         model by adding a dict entry, not by restructuring the table.
-        Pulls the three headline metrics (mcl_exceedance recall,
-        macro F1, mcl_exceedance precision) plus the overall Step 3
-        pass/fail from each model's `check_success_criteria()` output.
+        Pulls recall on all three risk tiers, macro F1, mcl_exceedance
+        precision, and the overall Step 3 pass/fail from each model's
+        `check_success_criteria()`/`evaluate_tier_model()` output.
         """
         _rows = []
         for _name, _result in results.items():
             _criteria = _result["criteria"]["criteria"].set_index("Metric")[
                 "Value"
             ]
+            _pc = _result["metrics"]["per_class"]
             _rows.append(
                 {
                     "Model": _name,
+                    "within_reduced_monitoring recall": round(
+                        _pc.loc["within_reduced_monitoring", "recall"], 2
+                    ),
+                    "above_trigger recall": round(
+                        _pc.loc["above_trigger", "recall"], 2
+                    ),
                     "mcl_exceedance recall": _criteria[
                         "mcl_exceedance recall"
                     ],
@@ -1451,14 +1458,7 @@ def _(mo):
 
 
 @app.cell
-def _(
-    mo,
-    model_a_held_out,
-    model_b_held_out,
-    pd,
-    tapwater_test_df,
-    tapwater_train_df,
-):
+def _(comparison_df, mo, pd, tapwater_test_df, tapwater_train_df):
     # Majority baseline, computed correctly: on the SAME 46-site test
     # partition scored above, not Step 3's 236-site ss_scored_df.
     _majority_share = (
@@ -1468,33 +1468,30 @@ def _(
         2 * _majority_share / (3 * (1 + _majority_share)), 4
     )
 
-    # Compare both models, already scored above, to the corrected
-    # baseline and to each other, using recall on ALL THREE tiers plus
-    # macro-F1 - not just mcl_exceedance, per the comparison above.
-    def _recall_row(name, result):
-        _pc = result["metrics"]["per_class"]
-        _macro_f1 = result["metrics"]["summary"]["macro_f1"]
-        return {
-            "model": name,
-            "recall_low_risk": round(
-                _pc.loc["within_reduced_monitoring", "recall"], 2
-            ),
-            "recall_medium_risk": round(_pc.loc["above_trigger", "recall"], 2),
-            "recall_high_risk": round(_pc.loc["mcl_exceedance", "recall"], 2),
-            "macro_f1": round(_macro_f1, 4),
-        }
-
-    all_tier_recall_comparison_df = pd.DataFrame([
-        {
-            "model": "Majority baseline (always guesses low risk)",
-            "recall_low_risk": 1.0,
-            "recall_medium_risk": 0.0,
-            "recall_high_risk": 0.0,
-            "macro_f1": majority_baseline_macro_f1,
-        },
-        _recall_row("Model A", model_a_held_out),
-        _recall_row("Model B", model_b_held_out),
-    ])
+    # Add the corrected baseline to the same per-tier recall columns
+    # already built into comparison_df above, rather than re-deriving
+    # each model's recall from its held-out result a second time.
+    all_tier_recall_comparison_df = pd.concat(
+        [
+            pd.DataFrame([{
+                "Model": "Majority baseline (always guesses low risk)",
+                "within_reduced_monitoring recall": 1.0,
+                "above_trigger recall": 0.0,
+                "mcl_exceedance recall": 0.0,
+                "Macro F1": majority_baseline_macro_f1,
+            }]),
+            comparison_df[
+                [
+                    "Model",
+                    "within_reduced_monitoring recall",
+                    "above_trigger recall",
+                    "mcl_exceedance recall",
+                    "Macro F1",
+                ]
+            ],
+        ],
+        ignore_index=True,
+    )
 
     # Compute the real site-sparsity-by-state figure, replacing the
     # Check-In #2 placeholder estimate with an actual number.
