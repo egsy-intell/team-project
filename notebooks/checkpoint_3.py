@@ -1432,7 +1432,7 @@ def _(RECALL_FLOOR, comparison_df, mo, model_a_cv_results, model_b_cv_results):
 @app.cell
 def _(mo):
     mo.md(r"""
-    ### Model validation & benchmarking
+    #### Model validation & benchmarking
 
     Absorbs T4's scope: this section computes the actual
     site-sparsity-by-state figure for the Check-In #2 feedback
@@ -1564,9 +1564,9 @@ def _(
     # Keep the section light: one table, one sparsity figure, one error
     # breakdown - no extra metrics dumped beyond what's needed.
     mo.vstack([
-        mo.md("#### Model comparison against Step 3 success criteria"),
+        mo.md("##### Model comparison against Step 3 success criteria"),
         mo.ui.table(t9_headline_comparison),
-        mo.md("#### Model comparison, all three risk tiers"),
+        mo.md("##### Model comparison, all three risk tiers"),
         mo.ui.table(t9_full_comparison),
         mo.md(
             f"15 sparsest states average "
@@ -1577,7 +1577,7 @@ def _(
                 columns={"index": "state", "State": "sites"}
             )
         ),
-        mo.md("#### Where errors concentrate, by held-out study"),
+        mo.md("##### Where errors concentrate, by held-out study"),
         mo.ui.table(model_a_errors_by_study),
         plot_error_rate_by_study(model_a_errors_by_study, "Model A"),
         mo.ui.table(model_b_errors_by_study),
