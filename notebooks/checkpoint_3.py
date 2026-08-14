@@ -192,14 +192,17 @@ def _(mo):
     mo.md("""
     #### Feedback selected for integration
 
-    Peer review on Check-In #2 surfaced two items the team is
+    Peer review on Check-In #2 surfaced three items the team is
     integrating into this submission: keeping the results sections
-    lighter on detail and leading with results, and quantifying the
+    lighter on detail and leading with results; quantifying the
     underlying site-count sparsity (e.g. ~5 sites/state on average
     across the bottom 15 states) to acknowledge the geographic
-    generalizability limit it creates. Both are threaded into the
-    benchmarking below and the deployment discussion's guiding
-    questions.
+    generalizability limit it creates; and a reviewer's doubt that a
+    national-scope model is well matched to the available data,
+    suggesting a single-state or regional analysis would control for
+    landform and geography more precisely. All three are threaded
+    into the benchmarking below and the deployment discussion's
+    guiding questions and recommendation.
     """)
     return
 
@@ -1552,6 +1555,15 @@ def _(comparison_df, mo, pd, tapwater_test_df, tapwater_train_df):
     bottom_15_avg_sites = round(_sites_per_state.head(15).mean(), 1)
     sparsest_states = _sites_per_state.head(15)
 
+    # Broader coverage figures for the deployment discussion's
+    # data-scaling argument, off the same combined State column.
+    total_site_count = int(_sites_per_state.sum())
+    represented_state_count = int(_sites_per_state.shape[0])
+    singleton_state_count = int((_sites_per_state == 1).sum())
+    top3_state_share = round(
+        _sites_per_state.tail(3).sum() / total_site_count, 4
+    )
+
     mo.vstack([
         mo.md("##### Model comparison, all three risk tiers"),
         mo.ui.table(all_tier_recall_comparison_df),
@@ -1575,8 +1587,26 @@ def _(comparison_df, mo, pd, tapwater_test_df, tapwater_train_df):
             "above, it lines up instead with each held-out study's "
             "true risk-tier mix."
         ),
+        mo.md(
+            f"Zooming out from the 15 sparsest states: our "
+            f"{total_site_count} combined training and held-out sites "
+            f"are spread across only {represented_state_count} states "
+            f"and territories, {singleton_state_count} of them "
+            f"represented by a single site, while the three "
+            f"best-covered states alone (Illinois, Minnesota, "
+            f"California) account for {top3_state_share:.1%} of every "
+            "site we have. That skew, not model tuning, is the "
+            "binding constraint on geographic generalization — see "
+            "the deployment discussion below."
+        ),
     ])
-    return
+    return (
+        bottom_15_avg_sites,
+        represented_state_count,
+        singleton_state_count,
+        top3_state_share,
+        total_site_count,
+    )
 
 
 @app.cell(hide_code=True)
@@ -1636,55 +1666,97 @@ def _(mo):
 
 
 @app.cell(hide_code=True)
-def _(mo):
-    mo.md("""
+def _(
+    mo,
+    represented_state_count,
+    singleton_state_count,
+    top3_state_share,
+    total_site_count,
+):
+    mo.md(f"""
     #### Pitfalls and lessons learned
 
-    The main lesson from this project is that validation performance within
-    the available studies did not translate reliably to unseen studies.
-    During grouped cross-validation, the best `mcl_exceedance` recall ranged
-    from 0.41 to 0.52, but it fell to 0.00–0.07 across the held-out studies.
-    The training data contained only 190 sites across seven study groups,
-    so even grouped cross-validation provided limited evidence about how
-    the models would generalize to new populations.
+    The main lesson from this project is that validation performance
+    within the available studies did not translate reliably to unseen
+    studies. During grouped cross-validation, the best
+    `mcl_exceedance` recall ranged from 0.41 to 0.52, but it fell to
+    0.00-0.07 across the held-out studies. The training data contained
+    only 190 sites across seven study groups, so even grouped
+    cross-validation provided limited evidence about how the models
+    would generalize to new populations.
 
-    Sparse and uneven geographic coverage compounds that limitation. The
-    held-out errors appeared to follow differences in each study's risk-tier
-    composition rather than geography alone, but the available data are not
-    dense enough to separate geographic effects from study design and class
-    composition confidently.
+    Sparse and uneven geographic coverage compounds that limitation.
+    Our {total_site_count} combined training and held-out sites are
+    spread across only {represented_state_count} states and
+    territories, {singleton_state_count} of them represented by a
+    single site, and the three best-covered states alone account for
+    {top3_state_share:.1%} of every site we have. The held-out errors
+    appeared to follow differences in each study's risk-tier
+    composition rather than geography alone, but with coverage this
+    thin we cannot separate geographic effects from study design and
+    class composition with any confidence. Closing that gap is a
+    data-collection problem before it is a modeling one: the next
+    step is scaling up site sampling in the underrepresented states,
+    not further tuning against the sites we already have.
 
-    A second limitation is predictor scope. Our models use land-use and
-    potential PFAS-source variables, whereas McMahon et al. (2022) found
-    important predictive value in geochemical and groundwater-age variables
-    for a different PFAS-detection target. Because the targets and predictor
-    sets differ, their reported performance is not a directly comparable
-    benchmark. Nevertheless, their findings suggest that landscape
-    variables alone may omit information needed for robust prediction.
+    A second limitation is predictor scope. Our models use land-use
+    and potential PFAS-source variables, whereas McMahon et al. (2022)
+    found important predictive value in geochemical and
+    groundwater-age variables for a different PFAS-detection target.
+    Because the targets and predictor sets differ, their reported
+    performance is not a directly comparable benchmark. Their top
+    five predictors were tritium concentration, distance to the
+    nearest fire-training area, dissolved organic carbon (DOC),
+    percentage of urban land use, and summed volatile organic
+    compound (VOC) concentration - three of five are chemical
+    measurements we do not currently model. DOC
+    and VOC look like the more feasible additions of the three: both
+    are measured with standard water-quality lab methods, whereas
+    McMahon et al. note that tritium is "rarely collected in
+    assessments of PFAS contamination of groundwater" because it
+    requires specialized isotope-lab analysis. We have not yet
+    confirmed whether a source comparable to Seawolf reports DOC or
+    VOC for our training sites, so this is a candidate for the next
+    data-scoping pass, not a confirmed plan.
     """)
     return
 
 
 @app.cell(hide_code=True)
-def _(mo):
-    mo.md("""
+def _(mo, represented_state_count, singleton_state_count, total_site_count):
+    mo.md(f"""
     #### Recommendation
 
     We recommend treating the current model as an exploratory research
     prototype rather than a screening-ready tool. The next development
-    cycle should prioritize collecting more geographically diverse and
-    class-balanced observations, incorporating additional scientifically
-    supported predictors, and evaluating the revised model on entirely
-    unseen regions or utilities. We should reconsider deployment only after
-    the model consistently meets the high-risk recall threshold under that
-    external validation.
+    cycle should prioritize: scaling up site sampling, since our
+    {total_site_count}-site, {represented_state_count}-state footprint
+    (including {singleton_state_count} single-site states) is too
+    sparse to support a national model; incorporating additional
+    scientifically supported predictors, such as McMahon et al.
+    (2022)'s DOC and VOC measurements; and evaluating the revised
+    model on entirely unseen regions or utilities. We should
+    reconsider deployment only after the model consistently meets the
+    high-risk recall threshold under that external validation.
 
-    We would not yet recommend restricting deployment to a data-dense
-    subregion: the present analysis has not demonstrated that geographic
-    narrowing resolves the generalization problem. A regional pilot could
-    be a useful next experiment, but it would require its own representative
+    Check-In #2 peer review separately questioned whether a project
+    this broad is well scoped for the data available, suggesting a
+    single-state or regional analysis would let us control for
+    landform and geography more precisely and remove confounding
+    variables a national model has to absorb. McMahon et al. (2022)
+    took exactly that narrower approach - five aquifer systems in the
+    eastern United States rather than a national sample - and their
+    model reached 0.96 sensitivity and 0.72 specificity, well above
+    what either of our national models produced even during
+    cross-validation. That comparison is not a controlled test of
+    regional scope (different targets and predictor sets, as noted
+    above), but it is consistent with the feedback, so we now weigh a
+    regional pilot as a stronger next step than our earlier framing
+    credited it as. It would still need its own representative
     training data, held-out evaluation, human-review procedure, and
-    performance-monitoring plan.
+    performance-monitoring plan - narrowing scope does not remove
+    those requirements, it only makes them easier to satisfy with the
+    data we can realistically collect.
     """)
     return
 
