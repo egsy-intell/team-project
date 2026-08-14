@@ -1503,16 +1503,6 @@ def _(mo, task_callout):
 
 
 @app.cell
-def _():
-    return
-
-
-@app.cell
-def _():
-    return
-
-
-@app.cell
 def _(mo):
     mo.md(r"""
     ### Model validation & benchmarking
@@ -1563,6 +1553,7 @@ def _(mo):
 
 @app.cell
 def _(
+    build_model_comparison,
     error_breakdown_by_study,
     mo,
     model_a_best_estimator,
@@ -1575,14 +1566,19 @@ def _(
     # Apply the per-class metrics framework to both models: run each
     # trained pipeline on the 46 held-out test sites and compute
     # precision/recall/F1 for all three risk tiers.
-    model_a_result = score_model(model_a_best_estimator, tapwater_test_df, "Model A")
-    model_b_result = score_model(model_b_best_estimator, tapwater_test_df, "Model B")
+    model_a_result = score_model(
+        model_a_best_estimator, tapwater_test_df, "Model A"
+    )
+    model_b_result = score_model(
+        model_b_best_estimator, tapwater_test_df, "Model B"
+    )
 
     # Apply the Step 3 risk-tier thresholds and benchmark each model
-    # against them. score_model() already ran check_success_criteria()
-    # internally - pull the pass/fail result out for both models.
-    model_a_criteria = model_a_result["criteria"]
-    model_b_criteria = model_b_result["criteria"]
+    # against them, reusing the same headline-metrics-plus-pass/fail
+    # table built earlier in the notebook rather than re-deriving it.
+    t9_headline_comparison = build_model_comparison(
+        {"Model A": model_a_result, "Model B": model_b_result}
+    )
 
     # Majority baseline, computed correctly: on the SAME 46-site test
     # partition T7 scored against, not Step 3's 236-site ss_scored_df.
@@ -1600,7 +1596,9 @@ def _(
         _macro_f1 = result["metrics"]["summary"]["macro_f1"]
         return {
             "model": name,
-            "recall_low_risk": round(_pc.loc["within_reduced_monitoring", "recall"], 2),
+            "recall_low_risk": round(
+                _pc.loc["within_reduced_monitoring", "recall"], 2
+            ),
             "recall_medium_risk": round(_pc.loc["above_trigger", "recall"], 2),
             "recall_high_risk": round(_pc.loc["mcl_exceedance", "recall"], 2),
             "macro_f1": round(_macro_f1, 4),
@@ -1629,16 +1627,29 @@ def _(
     # Check the sparsity figure against where each model's errors
     # concentrate, by held-out study - to see whether thin training data
     # explains the lack of signal, not geography directly.
-    model_a_errors_by_study = error_breakdown_by_study(model_a_result, tapwater_test_df)
-    model_b_errors_by_study = error_breakdown_by_study(model_b_result, tapwater_test_df)
+    model_a_errors_by_study = error_breakdown_by_study(
+        model_a_result, tapwater_test_df
+    )
+    model_b_errors_by_study = error_breakdown_by_study(
+        model_b_result, tapwater_test_df
+    )
 
     # Keep the section light: one table, one sparsity figure, one error
     # breakdown - no extra metrics dumped beyond what's needed.
     mo.vstack([
+        mo.md("#### Model comparison against Step 3 success criteria"),
+        mo.ui.table(t9_headline_comparison),
         mo.md("#### Model comparison, all three risk tiers"),
         mo.ui.table(t9_full_comparison),
-        mo.md(f"15 sparsest states average **{bottom_15_avg_sites} sites each**."),
-        mo.ui.table(sparsest_states.reset_index().rename(columns={"index": "state", "State": "sites"})),
+        mo.md(
+            f"15 sparsest states average "
+            f"**{bottom_15_avg_sites} sites each**."
+        ),
+        mo.ui.table(
+            sparsest_states.reset_index().rename(
+                columns={"index": "state", "State": "sites"}
+            )
+        ),
         mo.md("#### Where errors concentrate, by held-out study"),
         mo.ui.table(model_a_errors_by_study),
         mo.ui.table(model_b_errors_by_study),
