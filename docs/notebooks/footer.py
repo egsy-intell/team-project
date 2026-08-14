@@ -23,76 +23,94 @@ def _(mo):
     mo.md("""
     ## Conclusion
 
-    ### Rethinking the target
+    ### How we got here
 
-    This project's biggest lesson from the Step 1-2 data exploration
-    was that intuition can mislead once real data is in front of you.
-    We set out to
-    clarify a single variable, cumulative PFAS concentration, expecting
-    a straightforward low/medium/high split. Instead, the data's own
-    properties argued against that plan: non-detected values and
-    not-analyzed values are recorded identically low but mean different
-    things (see Step 2's Smalling load and clean-up above), and several
-    of the variables we care about are right-skewed rather than
-    symmetric (see Skewness and IQR outlier summary above). Weighting
-    every compound equally per ng/L, and cutting at our own sample's
-    median, never reflected how differently PFAS compounds are actually
-    regulated. That combination of findings is what moved us off the
-    original classification and onto the toxicity quotient (∑TQ) target
-    instead.
+    Every pivot in this project traced back to the same discovery:
+    intuition about PFAS data did not survive contact with the data
+    itself. Step 1-2 exploration showed that our original plan, a
+    single cumulative-concentration variable split at its own sample
+    median, could not work: non-detected and not-analyzed values are
+    recorded identically low but mean different things, several
+    variables are right-skewed rather than symmetric, and an
+    equal-weight-per-compound median cutoff never reflected how
+    differently PFAS compounds are actually regulated. That evidence
+    moved us onto the toxicity quotient (∑TQ) target instead, anchored
+    to the same trigger/MCL vocabulary water-resource operators already
+    track — closer to our underlying goal of anticipating compliance
+    with EPA's PFAS drinking-water rule than a sample-relative cutoff
+    ever could. The pivot had a real cost: of the 17 PFAS compounds
+    Smalling et al. (2023) report, EPA has set Maximum Contaminant
+    Levels for only six, so 11 compounds stayed in the dataset as a
+    descriptive slice rather than feeding the classified target, and
+    McMahon's groundwater ∑TQ turned out not to be on the same footing
+    as Smalling's, so we treated the two studies' scores as reported on
+    different scales rather than reconciling them.
 
-    ### Predictors carried forward
+    Step 3-4 built directly on that output: risk-tier cutoffs against
+    `ss_scored_df`'s ∑TQ, a study-grouped split and per-class evaluation
+    metrics, McMahon's groundwater data held out of training entirely
+    rather than combined with the tapwater set, and two competing
+    classifiers proposed — an interpretable logistic-regression
+    baseline (Model A) and a non-linear random-forest ensemble
+    (Model B). Step 5 trained and evaluated both against that plan.
 
-    The same distribution review also pointed to candidate predictors
-    worth carrying into modeling. Seawolf's `mean_dist_to_pfas_site` and
-    `number_pfas_sites_proximal`, i.e., proximity and exposure to
-    PFAS-associated sites such as fire stations and military
-    facilities, stood out in the box-plot and skewness review as
-    geographically meaningful and were retained through cleaning for
-    that reason.
+    ### What Step 5 found
 
-    Even though the pivot moved us away from our original plan, it left
-    us better aligned with our underlying goal. We set out to build a
-    tool that could help water-resource operators anticipate compliance
-    with EPA's PFAS drinking-water rule ahead of its phased deadlines.
-    Anchoring the target on ∑TQ, and on the same trigger/MCL vocabulary
-    operators already track, gets us closer to that goal than a
-    sample-relative median cutoff ever could.
+    Neither model cleared the bar Step 3 set. Model A's held-out
+    `mcl_exceedance` recall was 0.0000 (0 of 14 high-risk sites caught)
+    and Model B's was 0.0714 (1 of 14), both far short of the 0.70
+    recall floor — and this was not a held-out-set surprise, since both
+    models' cross-validated recall during tuning already topped out
+    well below that floor. Model B's one extra correct site is not a
+    meaningful edge over Model A, and Model B's apparently "perfect"
+    precision reflects a single correct prediction out of 46 held-out
+    sites, not a reliable pattern. Both models defaulted to predicting
+    the majority risk tier; against a same-partition majority baseline,
+    Model A was statistically indistinguishable from just guessing.
 
-    ### Scope cost
+    Chasing that gap with more tuning would have been the wrong
+    response. Training used only 190 sites across seven study groups,
+    and even our full 236-site combined training and held-out pool is
+    spread across just 36 states and territories, 9 of them represented
+    by a single site, while the three best-covered states alone
+    (Illinois, Minnesota, California) account for 35.6% of every site
+    we have. Held-out errors tracked each study's own risk-tier
+    composition rather than geography, but coverage this thin cannot
+    separate the two with any confidence. That is a data-collection
+    ceiling, not a modeling one: no amount of hyperparameter search or
+    model swapping fixes a model that has only ever seen a few hundred
+    sites clustered in a handful of states. We were deliberately
+    cautious about data leakage and selection bias throughout — the
+    study-grouped split, the held-out evaluation, keeping McMahon's
+    groundwater data out of training entirely rather than blending it
+    in — and that caution was necessary but not sufficient. Careful
+    modeling cannot substitute for volume and geographic breadth the
+    underlying data simply does not have yet.
 
-    That pivot has a cost: some of the compounds in the original
-    dataset are not part of the core ∑TQ analysis. Of the 17 PFAS
-    compounds Smalling et al. (2023) report, EPA has set Maximum
-    Contaminant Levels (MCLs) for only six: PFOA, PFOS, PFHxS, PFNA,
-    PFBS, and HFPO-DA (GenX). The remaining 11 compounds have, at best,
-    a state-level benchmark rather than an EPA one, and two (PFPeS,
-    PFPrS) have no benchmark identified in either source. Those
-    compounds stay in the dataset as a descriptive slice rather than
-    feeding the classified ∑TQ target.
+    ### Recommendation
 
-    That additional processing, worked out in the ∑TQ construction
-    section above, produced `ss_scored_df`, carrying the classified
-    `sum_tq_epa` alongside `ss_clean_df`'s predictors, and `mc_scored_df`,
-    McMahon's groundwater data scored the same way — though its
-    `sum_tq_epa` is not on the same footing as Smalling's, since a
-    missing GenX benchmark and a different non-detect convention push
-    every McMahon site above the trigger cutoff. Both stem from what
-    each source publishes rather than a cleaning choice we can revisit,
-    so we treat the two studies' ∑TQ as reported on different scales
-    rather than reconciling them into one modeling target.
-
-    ### Looking ahead to Step 5
-
-    The Step 3-4 evaluation and modeling design built directly on that
-    output: it set the risk-tier cutoffs against `ss_scored_df`'s ∑TQ
-    (Step 3), designed a study-grouped split and per-class evaluation
-    metrics, decided to hold McMahon's groundwater data out of training
-    rather than combine it with the tapwater set, and proposed two
-    competing classifiers, an interpretable baseline and a non-linear
-    ensemble (Step 4). Training both models and evaluating them against
-    that plan is Step 5 work for the project's final write-up and
-    presentation.
+    We recommend treating our models as exploratory research prototypes
+    rather than screening-ready tools, and we do not recommend deploying
+    either one operationally in its current form. Given the risks PFAS
+    exposure poses to drinking water, the priority for anyone continuing
+    this work — us, or another team, public or private — should be
+    closing the data-sparsity gap before further modeling: scaling up
+    site sampling in underrepresented states and regions, and
+    incorporating additional scientifically supported predictors, such
+    as McMahon et al. (2022)'s DOC and VOC measurements, where a
+    comparable source can be identified. Check-In #2 peer review
+    separately suggested a single-state or regional analysis would
+    control for landform and geography more precisely; McMahon et al.
+    (2022) took exactly that narrower approach and reached far higher
+    sensitivity and specificity than either of our national models, a
+    comparison that is not a controlled test of regional scope but is
+    consistent with that feedback. Either path, national or regional,
+    still needs the same thing before a model is worth deploying:
+    government and private entities investing in denser, more
+    representative PFAS site data. Only after that gap closes, and a
+    model consistently meets the high-risk recall threshold under
+    evaluation on entirely unseen regions, should deployment be
+    reconsidered.
     """)
     return
 
