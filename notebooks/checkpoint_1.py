@@ -620,7 +620,7 @@ def _(mc_merged_df, seawolf_dict_df, ss_merged_clean_df):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    ## Dataset-by-dataset review
+    ## Step 2: Dataset-by-dataset review
 
     The following subsections evaluate the structure, completeness,
     consistency, and modeling suitability of the Smalling, Seawolf, and McMahon
@@ -2064,7 +2064,7 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    ## Toxicity quotient (∑TQ) construction
+    ## Step 2.5: Toxicity quotient (∑TQ) construction
 
     Reshape each study's data to one row per site per compound, join
     `all_compound_dict_df`'s EPA/state TQ benchmarks, and compute

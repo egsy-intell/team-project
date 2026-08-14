@@ -189,7 +189,7 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    ### Step 5: Model Training & Execution
+    ### Model Training & Execution
 
     Carries Step 4's two proposed models, the interpretable baseline
     (Model A) and the competing ensemble (Model B), from proposal into
@@ -1214,7 +1214,7 @@ def _(
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    ### Step 5: Prediction, Evaluation & Benchmarking
+    ### Prediction, Evaluation & Benchmarking
 
     Scores both trained models against the held-out studies and Step
     3's success criteria.
@@ -1585,7 +1585,7 @@ def _(comparison_df, mo, pd, tapwater_test_df, tapwater_train_df):
 @app.cell(hide_code=True)
 def _(mo):
     mo.md("""
-    ### Step 5: Deployment Discussion
+    ### Deployment Discussion
     """)
     return
 
